@@ -54,6 +54,26 @@ The project combines structural ingestion, a Neo4j knowledge graph, pgvector-bac
 5. Drift detection and re-indexing: entity-level cosine drift, cluster centroid drift, Celery orchestration, and SLO dashboards.
 6. Evaluation and viva wrap: MCP-TaskBench expansion, ablations, reproducibility manifest, and presentation material.
 
+## Week 1 Implementation Status
+
+Implemented foundation pieces:
+
+- Stable SHA-256 content hashing and deterministic entity/relation IDs.
+- Parser-agnostic ingestion records for entities, relations, source locations, and parsed files.
+- Python source extractor using the standard AST as the first executable slice. The output records are designed so a Tree-sitter parser can replace the extraction backend without changing graph/event contracts.
+- Commit event contract for the `commit-events` Kafka topic.
+- Neo4j schema constraints/indexes in `src/idrkd/graph/schema.cypher`.
+- Idempotent Cypher upsert templates for entities and relations.
+- Kafka topic configuration in `configs/kafka-topics.yml`.
+- Unit tests for fingerprinting, path normalisation, entity extraction, and idempotent relation generation.
+
+Week 1 items still requiring live infrastructure:
+
+- Run Graphify against the chosen reference repository and compare initial node/edge counts.
+- Start Docker services and apply `schema.cypher` to Neo4j.
+- Wire the webhook listener and Kafka producer/consumer loop.
+- Add JavaScript Tree-sitter extraction after the Python ingestion slice is stable.
+
 ## Development Setup
 
 This repository is currently a scaffold. The expected local stack is:
@@ -68,6 +88,26 @@ This repository is currently a scaffold. The expected local stack is:
 - Prometheus, Grafana, and OpenTelemetry Collector
 
 Once implementation begins, install dependencies from the selected package manager and run tests from the project root. Dependency files will be added when the implementation modules are introduced.
+
+Current local verification without installing dev dependencies:
+
+```bash
+PYTHONPATH=src python3 -m compileall -q src tests
+PYTHONPATH=src python3 - <<'PY'
+import importlib.util
+from pathlib import Path
+
+for test_file in sorted(Path("tests/unit").glob("test_*.py")):
+    spec = importlib.util.spec_from_file_location(test_file.stem, test_file)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    for name in sorted(dir(module)):
+        if name.startswith("test_"):
+            getattr(module, name)()
+            print(f"PASS {test_file}:{name}")
+PY
+```
 
 ## Reference Materials
 

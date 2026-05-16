@@ -1,0 +1,22 @@
+topics:
+  commit-events:
+    partitions: 6
+    retention: 7d
+    key: repo_id
+    schema: CommitEvent.v1
+  entity-changed:
+    partitions: 12
+    retention: 14d
+    key: entity_id
+    schema: EntityChanged.v1
+  drift-detected:
+    partitions: 6
+    retention: 30d
+    key: entity_id
+    schema: DriftDetected.v1
+  reindex-requests:
+    partitions: 6
+    retention: 7d
+    key: entity_id
+    schema: ReindexRequest.v1
+
