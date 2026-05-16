@@ -76,7 +76,22 @@ Week 1 items still requiring live infrastructure:
 
 ## Development Setup
 
-This repository is currently a scaffold. The expected local stack is:
+This repository uses `uv` for Python environment and dependency management.
+
+```bash
+uv sync --group dev
+uv run pytest
+uv run ruff check .
+uv run mypy src
+```
+
+For model training/distillation dependencies:
+
+```bash
+uv sync --group dev --extra ml
+```
+
+The expected local service stack is:
 
 - Python 3.11 or newer
 - Docker or Docker Desktop
@@ -87,26 +102,13 @@ This repository is currently a scaffold. The expected local stack is:
 - MinIO
 - Prometheus, Grafana, and OpenTelemetry Collector
 
-Once implementation begins, install dependencies from the selected package manager and run tests from the project root. Dependency files will be added when the implementation modules are introduced.
+Run Python commands through `uv run` so they use the locked project environment rather than the system Python.
 
-Current local verification without installing dev dependencies:
+Current local verification:
 
 ```bash
-PYTHONPATH=src python3 -m compileall -q src tests
-PYTHONPATH=src python3 - <<'PY'
-import importlib.util
-from pathlib import Path
-
-for test_file in sorted(Path("tests/unit").glob("test_*.py")):
-    spec = importlib.util.spec_from_file_location(test_file.stem, test_file)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    for name in sorted(dir(module)):
-        if name.startswith("test_"):
-            getattr(module, name)()
-            print(f"PASS {test_file}:{name}")
-PY
+uv run python -m compileall -q src tests
+uv run pytest tests/unit
 ```
 
 ## Reference Materials

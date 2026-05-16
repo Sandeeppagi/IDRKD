@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
@@ -36,4 +37,3 @@ models/checkpoints/*
 !data/processed/.gitkeep
 !models/adapters/.gitkeep
 !models/checkpoints/.gitkeep
-
