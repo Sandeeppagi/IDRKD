@@ -6,11 +6,22 @@ from dataclasses import asdict
 import json
 from typing import Any
 
-from idrkd.common.models import CodeEntity, CodeRelation
+from idrkd.common.models import CodeEntity, CodeRelation, EntityKind
 
 
-UPSERT_ENTITY = """
-MERGE (n:CodeEntity {id: $id})
+ENTITY_LABELS: dict[EntityKind, str] = {
+    EntityKind.FILE: "File",
+    EntityKind.MODULE: "Module",
+    EntityKind.CLASS: "Class",
+    EntityKind.FUNCTION: "Function",
+    EntityKind.IMPORT: "Import",
+    EntityKind.SCHEMA: "Schema",
+    EntityKind.DOCUMENT: "Document",
+}
+
+
+UPSERT_ENTITY_TEMPLATE = """
+MERGE (n:CodeEntity:{typed_label} {{id: $id}})
 ON CREATE SET
   n.created_at = datetime($created_at),
   n.lamport_clock = $lamport_clock
@@ -60,6 +71,14 @@ def entity_params(entity: CodeEntity) -> dict[str, Any]:
     data["properties_json"] = json.dumps(entity.properties, sort_keys=True)
     data.pop("properties")
     return data
+
+
+def typed_entity_label(kind: EntityKind) -> str:
+    return ENTITY_LABELS[kind]
+
+
+def upsert_entity_query(entity: CodeEntity) -> str:
+    return UPSERT_ENTITY_TEMPLATE.format(typed_label=typed_entity_label(entity.kind))
 
 
 def relation_params(relation: CodeRelation) -> dict[str, Any]:

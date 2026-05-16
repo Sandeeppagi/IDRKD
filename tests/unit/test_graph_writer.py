@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from idrkd.graph.cypher import UPSERT_RELATION, relation_params
+from idrkd.common.models import EntityKind
+from idrkd.graph.cypher import UPSERT_RELATION, relation_params, typed_entity_label, upsert_entity_query
 from idrkd.graph.writer import _read_cypher_statements
 from idrkd.ingestion.python_extractor import parse_python_file
 
@@ -22,6 +23,22 @@ def test_relation_params_include_temporal_fields_for_idempotent_merge() -> None:
     assert "properties" not in params
     assert "ON CREATE SET" in UPSERT_RELATION
     assert "MERGE (source)-[r:RELATES_TO {id: $id}]->(target)" in UPSERT_RELATION
+
+
+def test_upsert_entity_query_uses_typed_neo4j_label() -> None:
+    parsed = parse_python_file(
+        tenant_id="tenant-a",
+        repo_id="repo-a",
+        path="src/example.py",
+        source="def run():\n    return None\n",
+    )
+    function = next(entity for entity in parsed.entities if entity.kind is EntityKind.FUNCTION)
+
+    query = upsert_entity_query(function)
+
+    assert typed_entity_label(EntityKind.FILE) == "File"
+    assert typed_entity_label(EntityKind.FUNCTION) == "Function"
+    assert "MERGE (n:CodeEntity:Function {id: $id})" in query
 
 
 def test_schema_reader_splits_cypher_statements(tmp_path: Path) -> None:

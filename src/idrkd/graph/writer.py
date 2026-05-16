@@ -8,7 +8,7 @@ from typing import Any
 from neo4j import GraphDatabase
 
 from idrkd.common.models import CodeEntity, CodeRelation, ParsedFile
-from idrkd.graph.cypher import UPSERT_ENTITY, UPSERT_RELATION, entity_params, relation_params
+from idrkd.graph.cypher import UPSERT_RELATION, entity_params, relation_params, upsert_entity_query
 
 
 SCHEMA_PATH = Path(__file__).with_name("schema.cypher")
@@ -43,7 +43,7 @@ class Neo4jCodeGraphWriter:
     def upsert_entities(self, entities: tuple[CodeEntity, ...]) -> int:
         with self._driver.session() as session:
             for entity in entities:
-                session.execute_write(_run_statement, UPSERT_ENTITY, entity_params(entity))
+                session.execute_write(_run_statement, upsert_entity_query(entity), entity_params(entity))
         return len(entities)
 
     def upsert_relations(self, relations: tuple[CodeRelation, ...]) -> int:
