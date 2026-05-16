@@ -6,6 +6,11 @@ services:
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/change-me
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -15,11 +20,21 @@ services:
       POSTGRES_USER: idrkd
       POSTGRES_PASSWORD: idrkd
       POSTGRES_DB: idrkd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idrkd -d idrkd"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   kafka:
     image: apache/kafka:3.8.0
@@ -35,4 +50,53 @@ services:
     environment:
       MINIO_ROOT_USER: idrkd
       MINIO_ROOT_PASSWORD: change-me-now
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    command: ["--config=/etc/otelcol-contrib/config.yml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    volumes:
+      - ../configs/otel-collector.yml:/etc/otelcol-contrib/config.yml:ro
+
+  graphify:
+    build:
+      context: ..
+      dockerfile: docker/graphify.Dockerfile
+    profiles: ["graphify"]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - ../data/raw:/work/raw:ro
+      - ../data/processed/graphify-out:/work/graphify-out
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: change-me
+    command:
+      - /bin/sh
+      - -lc
+      - rm -rf /tmp/httpx /work/graphify-out/httpx && cp -R /work/raw/httpx /tmp/httpx && graphify update /tmp/httpx --force --no-cluster && mkdir -p /work/graphify-out && cp -R /tmp/httpx/graphify-out /work/graphify-out/httpx
