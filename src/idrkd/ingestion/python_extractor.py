@@ -1,15 +1,9 @@
-"""Python source extractor for the Week 1 ingestion MVP.
-
-The HLD calls for Tree-sitter. This module uses Python's standard AST for the
-first executable slice so the pipeline can be tested without native grammar
-packages. The public output records are parser-agnostic and can be fed by a
-Tree-sitter implementation later.
-"""
+"""Python Tree-sitter source extractor for the Week 1 ingestion MVP."""
 
 from __future__ import annotations
 
-import ast
-from collections.abc import Iterable
+from tree_sitter import Language, Node, Parser
+import tree_sitter_python
 
 from idrkd.common.fingerprints import entity_id, normalise_repo_path, relation_id, sha256_text
 from idrkd.common.models import (
@@ -20,6 +14,9 @@ from idrkd.common.models import (
     RelationType,
     SourceLocation,
 )
+
+
+PYTHON_LANGUAGE = Language(tree_sitter_python.language())
 
 
 class PythonExtractionError(ValueError):
@@ -33,13 +30,15 @@ def parse_python_file(
     path: str,
     source: str,
 ) -> ParsedFile:
-    """Parse Python source into deterministic entity and relation records."""
+    """Parse Python source into deterministic Tree-sitter-backed records."""
     repo_path = normalise_repo_path(path)
     content_hash = sha256_text(source)
-    try:
-        tree = ast.parse(source, filename=repo_path)
-    except SyntaxError as exc:
-        raise PythonExtractionError(f"Cannot parse {repo_path}: {exc}") from exc
+    source_bytes = source.encode("utf-8")
+    parser = Parser()
+    parser.language = PYTHON_LANGUAGE
+    tree = parser.parse(source_bytes)
+    if tree.root_node.has_error:
+        raise PythonExtractionError(f"Cannot parse {repo_path}: Tree-sitter reported errors")
 
     file_entity = _entity(
         tenant_id=tenant_id,
@@ -57,9 +56,10 @@ def parse_python_file(
     entities: list[CodeEntity] = [file_entity]
     relations: list[CodeRelation] = []
 
-    for node in tree.body:
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            import_name = _import_name(node)
+    for node in tree.root_node.named_children:
+        definition_node, decorators = _unwrap_decorated_definition(node, source_bytes)
+        if definition_node.type in {"import_statement", "import_from_statement"}:
+            import_name = _import_name(definition_node, source_bytes)
             import_entity = _entity(
                 tenant_id=tenant_id,
                 repo_id=repo_id,
@@ -67,8 +67,8 @@ def parse_python_file(
                 kind=EntityKind.IMPORT,
                 name=import_name,
                 qualified_name=f"{repo_path}:{import_name}",
-                start_line=node.lineno,
-                end_line=getattr(node, "end_lineno", node.lineno),
+                start_line=_start_line(definition_node),
+                end_line=_end_line(definition_node),
                 content_hash=content_hash,
             )
             entities.append(import_entity)
@@ -81,36 +81,49 @@ def parse_python_file(
                     import_entity.id,
                 )
             )
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif definition_node.type == "function_definition":
             entities.append(
-                _function_entity(tenant_id, repo_id, repo_path, content_hash, node, node.name)
+                _function_entity(
+                    tenant_id,
+                    repo_id,
+                    repo_path,
+                    content_hash,
+                    definition_node,
+                    source_bytes,
+                    _node_name(definition_node, source_bytes),
+                    decorators,
+                )
             )
             relations.append(_relation(tenant_id, repo_id, file_entity.id, RelationType.DEFINES, entities[-1].id))
-        elif isinstance(node, ast.ClassDef):
+        elif definition_node.type == "class_definition":
+            class_name = _node_name(definition_node, source_bytes)
             class_entity = _entity(
                 tenant_id=tenant_id,
                 repo_id=repo_id,
                 path=repo_path,
                 kind=EntityKind.CLASS,
-                name=node.name,
-                qualified_name=f"{_module_name(repo_path)}.{node.name}",
-                start_line=node.lineno,
-                end_line=getattr(node, "end_lineno", node.lineno),
+                name=class_name,
+                qualified_name=f"{_module_name(repo_path)}.{class_name}",
+                start_line=_start_line(definition_node),
+                end_line=_end_line(definition_node),
                 content_hash=content_hash,
-                properties={"bases": [_name(base) for base in node.bases]},
+                properties={"bases": _class_bases(definition_node, source_bytes)},
             )
             entities.append(class_entity)
             relations.append(
                 _relation(tenant_id, repo_id, file_entity.id, RelationType.DEFINES, class_entity.id)
             )
-            for child in _class_methods(node):
+            for child, child_decorators in _class_methods(definition_node, source_bytes):
+                child_name = _node_name(child, source_bytes)
                 method_entity = _function_entity(
                     tenant_id,
                     repo_id,
                     repo_path,
                     content_hash,
                     child,
-                    f"{node.name}.{child.name}",
+                    source_bytes,
+                    f"{class_name}.{child_name}",
+                    child_decorators,
                 )
                 entities.append(method_entity)
                 relations.append(
@@ -183,30 +196,28 @@ def _function_entity(
     repo_id: str,
     path: str,
     content_hash: str,
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    node: Node,
+    source_bytes: bytes,
     qualified_suffix: str,
+    decorators: list[str] | None = None,
 ) -> CodeEntity:
-    args = [arg.arg for arg in node.args.args]
+    function_name = _node_name(node, source_bytes)
     return _entity(
         tenant_id=tenant_id,
         repo_id=repo_id,
         path=path,
         kind=EntityKind.FUNCTION,
-        name=node.name,
+        name=function_name,
         qualified_name=f"{_module_name(path)}.{qualified_suffix}",
-        start_line=node.lineno,
-        end_line=getattr(node, "end_lineno", node.lineno),
+        start_line=_start_line(node),
+        end_line=_end_line(node),
         content_hash=content_hash,
         properties={
-            "async": isinstance(node, ast.AsyncFunctionDef),
-            "args": args,
-            "decorators": [_name(dec) for dec in node.decorator_list],
+            "async": _is_async_function(node),
+            "args": _parameter_names(node, source_bytes),
+            "decorators": decorators or [],
         },
     )
-
-
-def _class_methods(node: ast.ClassDef) -> Iterable[ast.FunctionDef | ast.AsyncFunctionDef]:
-    return (child for child in node.body if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)))
 
 
 def _module_name(path: str) -> str:
@@ -214,22 +225,123 @@ def _module_name(path: str) -> str:
     return without_ext.replace("/", ".")
 
 
-def _import_name(node: ast.Import | ast.ImportFrom) -> str:
-    if isinstance(node, ast.Import):
-        return ",".join(alias.name for alias in node.names)
-    module = "." * node.level + (node.module or "")
-    imported = ",".join(alias.name for alias in node.names)
-    return f"{module}:{imported}"
+def _class_methods(node: Node, source_bytes: bytes) -> list[tuple[Node, list[str]]]:
+    body = node.child_by_field_name("body")
+    if body is None:
+        return []
+
+    methods: list[tuple[Node, list[str]]] = []
+    for child in body.named_children:
+        definition_node, decorators = _unwrap_decorated_definition(child, source_bytes)
+        if definition_node.type == "function_definition":
+            methods.append((definition_node, decorators))
+    return methods
 
 
-def _name(node: ast.AST) -> str:
-    if isinstance(node, ast.Name):
-        return node.id
-    if isinstance(node, ast.Attribute):
-        return f"{_name(node.value)}.{node.attr}"
-    if isinstance(node, ast.Call):
-        return _name(node.func)
-    if isinstance(node, ast.Constant):
-        return repr(node.value)
-    return node.__class__.__name__
+def _unwrap_decorated_definition(node: Node, source_bytes: bytes) -> tuple[Node, list[str]]:
+    if node.type != "decorated_definition":
+        return node, []
 
+    decorators = [
+        _decorator_name(child, source_bytes)
+        for child in node.named_children
+        if child.type == "decorator"
+    ]
+    definition = node.child_by_field_name("definition")
+    return definition or node, decorators
+
+
+def _import_name(node: Node, source_bytes: bytes) -> str:
+    if node.type == "import_statement":
+        return ",".join(
+            _text(child, source_bytes)
+            for child in node.named_children
+            if child.type in {"dotted_name", "aliased_import"}
+        )
+
+    module_parts: list[str] = []
+    imported_parts: list[str] = []
+    seen_import_keyword = False
+    for child in node.children:
+        if child.type == "import":
+            seen_import_keyword = True
+            continue
+        if not child.is_named:
+            if child.type == "." and not seen_import_keyword:
+                module_parts.append(".")
+            continue
+        if child.type in {"dotted_name", "aliased_import", "wildcard_import"}:
+            target = _text(child, source_bytes)
+            if seen_import_keyword:
+                imported_parts.append(target)
+            else:
+                module_parts.append(target)
+
+    return f"{''.join(module_parts)}:{','.join(imported_parts)}"
+
+
+def _node_name(node: Node, source_bytes: bytes) -> str:
+    name = node.child_by_field_name("name")
+    if name is not None:
+        return _text(name, source_bytes)
+    for child in node.named_children:
+        if child.type == "identifier":
+            return _text(child, source_bytes)
+    return _text(node, source_bytes)
+
+
+def _class_bases(node: Node, source_bytes: bytes) -> list[str]:
+    superclasses = node.child_by_field_name("superclasses")
+    if superclasses is None:
+        return []
+    return [
+        _text(child, source_bytes)
+        for child in superclasses.named_children
+        if child.type not in {"keyword_argument", "dictionary_splat", "list_splat"}
+    ]
+
+
+def _parameter_names(node: Node, source_bytes: bytes) -> list[str]:
+    parameters = node.child_by_field_name("parameters")
+    if parameters is None:
+        return []
+
+    names: list[str] = []
+    for child in parameters.named_children:
+        name = _first_identifier(child)
+        if name is not None:
+            names.append(_text(name, source_bytes))
+    return names
+
+
+def _first_identifier(node: Node) -> Node | None:
+    if node.type == "identifier":
+        return node
+    for child in node.named_children:
+        identifier = _first_identifier(child)
+        if identifier is not None:
+            return identifier
+    return None
+
+
+def _decorator_name(node: Node, source_bytes: bytes) -> str:
+    named_children = list(node.named_children)
+    if not named_children:
+        return _text(node, source_bytes).lstrip("@")
+    return _text(named_children[0], source_bytes)
+
+
+def _is_async_function(node: Node) -> bool:
+    return any(child.type == "async" for child in node.children)
+
+
+def _start_line(node: Node) -> int:
+    return node.start_point[0] + 1
+
+
+def _end_line(node: Node) -> int:
+    return node.end_point[0] + 1
+
+
+def _text(node: Node, source_bytes: bytes) -> str:
+    return source_bytes[node.start_byte : node.end_byte].decode("utf-8")

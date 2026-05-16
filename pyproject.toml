@@ -18,6 +18,7 @@ dependencies = [
   "tree-sitter>=0.22",
   "numpy>=1.26",
   "scikit-learn>=1.5",
+  "tree-sitter-python>=0.23",
 ]
 
 [dependency-groups]
