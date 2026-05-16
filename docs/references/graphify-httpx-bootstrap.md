@@ -31,4 +31,6 @@ Notes:
 
 - The installed Graphify CLI does not expose the originally planned `--neo4j-push bolt://localhost:7687` flag.
 - For the Docker-verified path, the project uses `graphify update` to produce a local `graph.json`.
-- Loading that graph into Neo4j remains a follow-up integration task.
+- IDRKD provides `idrkd.graph.graphify_importer` as the missing bridge from
+  Graphify `graph.json` to Neo4j. The importer creates `:GraphifyNode` nodes
+  and `:GRAPHIFY_RELATION` relationships with idempotent `MERGE` writes.

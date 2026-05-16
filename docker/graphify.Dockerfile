@@ -11,3 +11,7 @@ RUN pip install --no-cache-dir graphifyy
 
 WORKDIR /work
 
+COPY pyproject.toml /work/pyproject.toml
+COPY src /work/src
+
+RUN pip install --no-cache-dir .

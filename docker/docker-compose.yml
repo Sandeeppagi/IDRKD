@@ -99,4 +99,4 @@ services:
     command:
       - /bin/sh
       - -lc
-      - rm -rf /tmp/httpx /work/graphify-out/httpx && cp -R /work/raw/httpx /tmp/httpx && graphify update /tmp/httpx --force --no-cluster && mkdir -p /work/graphify-out && cp -R /tmp/httpx/graphify-out /work/graphify-out/httpx
+      - repo="$${GRAPHIFY_SOURCE_DIR:-httpx}" && out="$${GRAPHIFY_OUTPUT_NAME:-$$repo}" && rm -rf "/tmp/$$repo" "/work/graphify-out/$$out" && cp -R "/work/raw/$$repo" "/tmp/$$repo" && graphify update "/tmp/$$repo" --force --no-cluster && python -m idrkd.graph.graphify_importer --graph "/tmp/$$repo/graphify-out/graph.json" --neo4j-uri "$$NEO4J_URI" --neo4j-user "$$NEO4J_USER" --neo4j-password "$$NEO4J_PASSWORD" --tenant-id "$${TENANT_ID:-default}" --repo-id "$${REPO_ID:-$$out}" --source-label "$$out" && mkdir -p /work/graphify-out && cp -R "/tmp/$$repo/graphify-out" "/work/graphify-out/$$out"
