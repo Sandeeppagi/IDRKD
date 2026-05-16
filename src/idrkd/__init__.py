@@ -1,0 +1,2 @@
+"""IDRKD application package."""
+

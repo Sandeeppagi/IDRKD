@@ -1,0 +1,2 @@
+"""Structural ingestion components."""
+

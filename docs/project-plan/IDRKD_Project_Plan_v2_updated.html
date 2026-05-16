@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IDRKD Project Completion Plan v3</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0d0f14; --surface:#13161e; --card:#1a1e28; --border:#252a38;
+    --c1:#4f9eff; --c2:#7c5cfc; --c3:#00d4aa; --c4:#ff7b54; --c5:#f5c518; --c6:#e879a0;
+    --text:#e8eaf0; --muted:#6b7280; --soft:#9ca3af;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  .hdr{padding:40px 48px 20px;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+  .hdr::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% -20%,rgba(79,158,255,.07) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 100%,rgba(124,92,252,.05) 0%,transparent 70%);pointer-events:none;}
+  .hdr-lbl{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--c1);text-transform:uppercase;margin-bottom:10px;}
+  .hdr h1{font-family:'Syne',sans-serif;font-size:clamp(22px,3vw,36px);font-weight:800;line-height:1.15;background:linear-gradient(135deg,#e8eaf0 30%,#4f9eff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;max-width:700px;}
+  .hdr-meta{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+  .chip{font-family:'DM Mono',monospace;font-size:11px;color:var(--soft);background:var(--card);border:1px solid var(--border);padding:3px 10px;border-radius:4px;}
+  .chip span{color:var(--c3);}
+  .tabs{display:flex;padding:0 48px;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;}
+  .tab{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:13px 18px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;}
+  .tab.active{color:var(--c1);border-bottom-color:var(--c1);}
+  .tab:hover:not(.active){color:var(--soft);}
+  .main{padding:28px 48px 64px;}
+  .tc{display:none;} .tc.active{display:block;}
+  .summary{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:26px;}
+  .sc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;flex:1;min-width:130px;}
+  .sc-lbl{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:5px;}
+  .sc-val{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;}
+  .sc-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .phases{display:flex;flex-direction:column;gap:18px;}
+  .phase{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;animation:su .4s ease both;}
+  .phase:hover{border-color:rgba(79,158,255,.25);}
+  @keyframes su{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  .ph{display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:border-color .2s;}
+  .phase.open .ph{border-bottom-color:var(--border);}
+  .pdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .pnum{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:26px;}
+  .ptitle{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;flex:1;}
+  .pdates{font-family:'DM Mono',monospace;font-size:11px;color:var(--soft);background:var(--bg);padding:3px 9px;border-radius:4px;border:1px solid var(--border);}
+  .pweek{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);min-width:32px;text-align:right;}
+  .chev{color:var(--muted);font-size:15px;transition:transform .3s;flex-shrink:0;}
+  .phase.open .chev{transform:rotate(180deg);}
+  .pbody{display:none;padding:22px;animation:fi .2s ease;}
+  .phase.open .pbody{display:block;}
+  @keyframes fi{from{opacity:0}to{opacity:1}}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .sec-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .tasks{display:flex;flex-direction:column;gap:7px;}
+  .task{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;line-height:1.5;color:var(--soft);}
+  .tw{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:1px;}
+  .slo-badge{font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(0,212,170,.12);color:#00d4aa;border:1px solid rgba(0,212,170,.25);flex-shrink:0;margin-top:1px;}
+  .refs-list{display:flex;flex-direction:column;gap:7px;}
+  .ref{padding:9px 11px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:12px;line-height:1.5;color:var(--soft);}
+  .rnum{font-family:'DM Mono',monospace;font-size:10px;color:var(--c3);margin-right:5px;}
+  .rtitle{font-weight:500;color:var(--text);}
+  .rsrc{color:var(--muted);font-size:11px;}
+  a.rlink{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;color:var(--c1);margin-top:2px;text-decoration:none;word-break:break-all;}
+  a.rlink:hover{text-decoration:underline;}
+  .gantt-wrap{overflow-x:auto;}
+  .gtbl{width:100%;border-collapse:collapse;min-width:680px;}
+  .gtbl thead th{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:7px 3px;text-align:center;border-bottom:1px solid var(--border);font-weight:400;}
+  .gtbl thead th.gl{text-align:left;min-width:150px;}
+  .gtbl tbody tr{border-bottom:1px solid var(--border);}
+  .gtbl tbody tr:last-child{border-bottom:none;}
+  .gphase{font-size:13px;font-weight:500;color:var(--text);padding:11px 0;vertical-align:middle;white-space:nowrap;}
+  .gcell{padding:11px 2px;text-align:center;vertical-align:middle;}
+  .gbar{height:18px;border-radius:4px;opacity:.9;}
+  .allrefs-theme{margin-bottom:26px;}
+  .theme-hdr{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding-left:12px;margin-bottom:10px;letter-spacing:.02em;}
+  .theme-refs{display:flex;flex-direction:column;gap:7px;}
+  @media(max-width:768px){.hdr,.main,.tabs{padding-left:20px;padding-right:20px;}.grid2{grid-template-columns:1fr;}.summary{flex-direction:column;}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-lbl">IDRKD System · Project Completion Plan v3 · Aligned to HLD/LLD v3</div>
+  <h1>Intelligent Data Reconciliation &amp; Knowledge Discovery</h1>
+  <div class="hdr-meta">
+    <div class="chip">Student: <span>Sandeep Satish Pagi</span></div>
+    <div class="chip">ID: <span>2024aa05545</span></div>
+    <div class="chip">Period: <span>16 May → 5 Jul 2026</span></div>
+    <div class="chip">Base model: <span>Phi-4-mini (3.8B)</span></div>
+    <div class="chip">A2A: <span>a2a-sdk v1.0 (Linux Foundation)</span></div>
+    <div class="chip">Drift: <span>Dual-layer cosine + centroid</span></div>
+    <div class="chip">Bootstrap: <span>Graphify (W1)</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('phases',this)">📋 Phase Plan</button>
+  <button class="tab" onclick="switchTab('gantt',this)">📊 Timeline</button>
+  <button class="tab" onclick="switchTab('refs',this)">📚 All References</button>
+</div>
+
+<div class="main">
+
+<div class="tc active" id="tab-phases">
+  <div class="summary">
+    <div class="sc"><div class="sc-lbl">Duration</div><div class="sc-val" style="color:var(--c1)">8 Wks</div><div class="sc-sub">16 May – 5 Jul 2026</div></div>
+    <div class="sc"><div class="sc-lbl">HLD phases</div><div class="sc-val" style="color:var(--c2)">6</div><div class="sc-sub">W1–W2 through W8 closeout</div></div>
+    <div class="sc"><div class="sc-lbl">BITS milestone</div><div class="sc-val" style="color:var(--c3)">Mid-Sem</div><div class="sc-sub">Report 16–21 Jun</div></div>
+    <div class="sc"><div class="sc-lbl">SLM target</div><div class="sc-val" style="color:var(--c4)" style="font-size:15px">Phi-4-mini</div><div class="sc-sub">BFCL F1 ≥ 0.82 gate</div></div>
+    <div class="sc"><div class="sc-lbl">New in v3</div><div class="sc-val" style="color:var(--c5)">3</div><div class="sc-sub">Phi-4, a2a-sdk, centroid drift</div></div>
+    <div class="sc"><div class="sc-lbl">References</div><div class="sc-val" style="color:var(--c6)">39+</div><div class="sc-sub">Checked links + expanded topic material</div></div>
+  </div>
+  <div class="phases" id="phases-container"></div>
+</div>
+
+<div class="tc" id="tab-gantt">
+  <div style="margin-bottom:20px;"><p style="color:var(--soft);font-size:13px;line-height:1.6;">Each column = one week. Bars show the active HLD phase window per the v3 timeline. The Mid-Semester Report submission window falls in <strong style="color:var(--c3)">Week 6</strong>. Items marked ★ are BITS academic calendar gates.</p></div>
+  <div class="gantt-wrap"><table class="gtbl">
+    <thead><tr>
+      <th class="gl">Phase (HLD v3)</th>
+      <th>W1<br/><span style="font-size:9px;color:var(--muted)">16–22 May</span></th>
+      <th>W2<br/><span style="font-size:9px;color:var(--muted)">23–29 May</span></th>
+      <th>W3<br/><span style="font-size:9px;color:var(--muted)">30 May–5 Jun</span></th>
+      <th>W4<br/><span style="font-size:9px;color:var(--muted)">6–12 Jun</span></th>
+      <th>W5<br/><span style="font-size:9px;color:var(--muted)">13–19 Jun</span></th>
+      <th>W6<br/><span style="font-size:9px;color:var(--muted)">20–26 Jun</span></th>
+      <th>W7<br/><span style="font-size:9px;color:var(--muted)">27 Jun–3 Jul</span></th>
+      <th>W8<br/><span style="font-size:9px;color:var(--muted)">4–5 Jul</span></th>
+    </tr></thead>
+    <tbody id="gantt-body"></tbody>
+  </table></div>
+  <div style="margin-top:18px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);">
+    <div style="display:flex;align-items:center;gap:7px;"><div style="width:18px;height:9px;border-radius:2px;background:var(--c3);opacity:.9;"></div>Active phase</div>
+    <div style="display:flex;align-items:center;gap:7px;"><div style="width:18px;height:9px;border-radius:2px;background:var(--c3);opacity:.3;"></div>Overlap / ramp</div>
+    <div style="color:var(--c3);">★ Mid-Sem Report: 16–21 Jun (W5–W6)</div>
+    <div style="color:var(--c5);">◆ New in HLD v3</div>
+  </div>
+</div>
+
+<div class="tc" id="tab-refs">
+  <div style="margin-bottom:18px;"><p style="color:var(--soft);font-size:13px;line-height:1.6;">Expanded and link-checked reference set grouped by project topic, including official specifications, implementation docs, and research papers for each phase.</p></div>
+  <div id="all-refs-container"></div>
+</div>
+
+</div>
+
+<script>
+const C=['#4f9eff','#7c5cfc','#00d4aa','#ff7b54','#f5c518','#e879a0'];
+
+const PHASES=[
+  {
+    id:1, hld:'W1–W2', title:'Foundation + Ingestion MVP',
+    dates:'16 May – 29 May 2026', duration:'2 weeks', color:C[0],
+    gantt:[1,1,0,0,0,0,0,0],
+    milestone:'One OSS repo (~50k LOC) fully ingested; entity count matches ground-truth',
+    tasks:[
+      {w:'W1',icon:'🗃️', text:'Run Graphify (graphify.net) against a Telstra Python repo to bootstrap the Neo4j graph quickly — use \'--neo4j-push bolt://localhost:7687\'. Verify node/edge counts. This pre-populates the graph for early integration testing before the custom IDRKD pipeline is live. [NEW in HLD v3]'},
+      {w:'W1',icon:'🐳', text:'Docker-Compose stack: Neo4j Community, PostgreSQL + pgvector (HNSW), Kafka, Redis, MinIO, Prometheus, Grafana, OTel Collector — all healthy; ports mapped and verified'},
+      {w:'W1',icon:'🌲', text:'Tree-sitter 0.22+ Python grammar: AST → typed entity records (Function, Class, File, Import); SHA-256 content fingerprinting; idempotent MERGE writes to Neo4j'},
+      {w:'W1',icon:'🗄️', text:'Neo4j schema DDL: typed node labels with temporal properties (created_at, updated_at, lamport_clock) and tenant_id column on every entity per LLD §3.2'},
+      {w:'W2',icon:'📡', text:'Git webhook listener → Kafka producer (partitioned by repository); parser worker consumer; end-to-end commit-event → entity-write pipeline'},
+      {w:'W2',icon:'🔤', text:'SpanBERT NER over markdown/doc files and JSON/CSV schema files; JavaScript Tree-sitter grammar added (Graphify does not cover schemas — this is the first IDRKD differentiator)'},
+      {w:'W2',icon:'📊', text:'Baseline OTel tracing end-to-end: correlation_id propagated through webhook → Kafka → parser → Neo4j write; confirm spans visible in Grafana'},
+      {w:'W2',slo:true, text:'SLO gate: ingestion freshness p95 ≤ 5s (webhook → graph update, ≤ 20 files). Lamport-vector conflict resolution in place.'},
+    ],
+    refs:[
+      {num:'G',title:'Graphify — open-source knowledge graph skill for AI coding assistants',source:'graphify.net, April 2026',url:'https://graphify.net'},
+      {num:1,title:'Google Code Wiki: Accelerating code understanding',source:'Google Developers Blog, 2025',url:'https://developers.googleblog.com/introducing-code-wiki-accelerating-your-code-understanding/'},
+      {num:16,title:'Software Engineering at Google: Lessons Learned from Programming Over Time',source:'Winters, Manshreck & Wright · O\'Reilly, 2020 · p.22',url:'https://abseil.io/resources/swe-book'},
+      {num:17,title:'Tree-sitter documentation: incremental parsing and language grammars',source:'Tree-sitter project · official docs [checked]',url:'https://tree-sitter.github.io/tree-sitter/'},
+      {num:18,title:'Neo4j Graph Data Science: PageRank, Louvain, BFS and path algorithms',source:'Neo4j GDS Manual v2026.04 [checked]',url:'https://neo4j.com/docs/graph-data-science/current/'},
+      {num:19,title:'Apache Kafka documentation: producers, consumers, partitioning and operations',source:'Apache Kafka official docs [checked]',url:'https://kafka.apache.org/documentation/'},
+      {num:20,title:'OpenTelemetry documentation: traces, metrics, logs and context propagation',source:'OpenTelemetry official docs [checked]',url:'https://opentelemetry.io/docs/'},
+      {num:21,title:'SpanBERT: Improving Pre-training by Representing and Predicting Spans',source:'Joshi et al. · TACL 2020',url:'https://arxiv.org/abs/1907.10529'},
+    ]
+  },
+  {
+    id:2, hld:'W3–W4', title:'Knowledge Graph + Agentic RAG Skeleton',
+    dates:'30 May – 12 Jun 2026', duration:'2 weeks', color:C[1],
+    gantt:[0,0,1,1,0,0,0,0],
+    milestone:'HotpotQA-lite: top-10 recall ≥ 0.70 on 100-query subset; multi-hop queries return grounded answers',
+    tasks:[
+      {w:'W3',icon:'📊', text:'BGE-M3 bi-encoder embeddings for all ingested nodes; pgvector HNSW index tuning (ef_construction, m parameters); cross-encoder MiniLM re-ranker wired in'},
+      {w:'W3',icon:'🕸️', text:'Hybrid RRF retrieval: vector cosine + Neo4j Cypher graph BFS fused via Reciprocal Rank Fusion; initial quality check on 20 manual queries'},
+      {w:'W3',icon:'📈', text:'Nightly PageRank (APOC) + Louvain community detection jobs scheduled via APScheduler / Celery Beat; results written back as node properties (salience, community_id)'},
+      {w:'W4',icon:'🤖', text:'5-agent LangGraph state machine: RouterAgent → VectorRetriever → GraphTraversalAgent → SynthesisAgent → CriticAgent; QueryState typed dict with rounds counter (max 2)'},
+      {w:'W4',icon:'🔬', text:'DeBERTa-v3-large NLI faithfulness critic: entailment score gating synthesis output; bounded re-retrieve loop; AlignScore ≥ 0.78 target'},
+      {w:'W4',icon:'🔌', text:'FastAPI MCP server skeleton with 6 initial tools (Pydantic-validated JSON-RPC 2.0 schemas): search_code, get_entity, graph_bfs, graph_path, get_community, enqueue_reindex'},
+      {w:'W4',slo:true, text:'SLO gate: query p50 ≤ 3.0s, p95 ≤ 8.0s (with 1 re-retrieve round). HotpotQA-lite top-10 recall ≥ 0.70 on 100-query subset.'},
+    ],
+    refs:[
+      {num:4,title:'CRAG: Corrective Retrieval Augmented Generation',source:'Tworkowski et al. · ICLR 2025',url:'https://arxiv.org/abs/2401.15884'},
+      {num:9,title:'Lost in the Middle: How Language Models Use Long Contexts',source:'Liu et al. · TACL 2024',url:'https://arxiv.org/abs/2307.03172'},
+      {num:10,title:'MuSiQue: Multi-hop Questions via Single-hop Composition',source:'Trivedi et al. · TACL 2022',url:'https://arxiv.org/abs/2108.00573'},
+      {num:14,title:'DeBERTa: Decoding-Enhanced BERT with Disentangled Attention',source:'He et al. · ICLR 2021',url:'https://arxiv.org/abs/2006.03654'},
+      {num:13,title:'AlignScore: Evaluating Factual Consistency with a Unified Alignment Function',source:'Zha et al. · arXiv 2023',url:'https://arxiv.org/abs/2305.16739'},
+      {num:22,title:'BGE-M3: Multi-lingual, multi-function, multi-granularity text embeddings',source:'Chen et al. · arXiv 2024',url:'https://arxiv.org/abs/2402.03216'},
+      {num:23,title:'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks',source:'Lewis et al. · NeurIPS 2020',url:'https://arxiv.org/abs/2005.11401'},
+      {num:24,title:'LangGraph documentation: stateful multi-agent workflows',source:'LangChain AI · official docs [checked]',url:'https://langchain-ai.github.io/langgraph/'},
+      {num:25,title:'pgvector: vector similarity search for PostgreSQL',source:'pgvector project · official repository [checked]',url:'https://github.com/pgvector/pgvector'},
+    ]
+  },
+  {
+    id:3, hld:'W5–W6', title:'MCP + Graph Traversal + A2A Bridge (v1.0)',
+    dates:'6 Jun – 26 Jun 2026', duration:'3 weeks', color:C[2],
+    gantt:[0,0,0,1,1,1,0,0],
+    milestone:'Two repos ingested; A2A round-trip with OTel trace; MCP-TaskBench 15 tasks passing; Mid-Sem Report submitted',
+    tasks:[
+      {w:'W5',icon:'🔀', text:'Graph Traversal Agent: BFS neighbourhood expand, shortestPath, community subgraph Cypher queries; RRF fusion of vector + graph results; JavaScript grammar added to ingestion'},
+      {w:'W5',icon:'🔌', text:'MCP server expanded to 14 tools (full Pydantic schema suite per LLD §3.5): search_code, get_entity, graph_bfs, graph_path, get_community, enqueue_reindex, schema_diff, impact_analysis, reconcile, get_conflict, resolve_conflict, get_salience, get_centroid_drift, list_stale — all JSON-RPC 2.0'},
+      {w:'W5',icon:'🤝', text:'A2A bridge upgraded to official a2a-sdk v1.0 (pip install a2a-sdk) — replaces bespoke httpx payloads. Signed Agent Cards; SSE transport; backward-compat layer for legacy 0.3 servers. [NEW in HLD v3]'},
+      {w:'W5',icon:'🔐', text:'STRIDE threat model: 6 trust boundaries documented; prompt-injection containment (5 layers); mTLS for A2A cross-process calls; secrets via env vars; Cypher-escape hardening (per HLD v3 security notes)'},
+      {w:'W6',icon:'📋', text:'MCP-TaskBench: first 15 tasks authored (semantic tool-selection + JSON-RPC schema validation); automated harness run; BFCL dev subset evaluated on GPT-4o baseline'},
+      {w:'W6',icon:'📝', slo:true, text:'BITS milestone: Mid-Semester Report sections 1–4 drafted; plagiarism check submitted (10–20 Jun window); full report submitted 16–21 Jun. SLO gate: tool-call reliability BFCL F1 ≥ 0.82 on 6-tool subset.'},
+    ],
+    refs:[
+      {num:2,title:'Model Context Protocol (MCP) Specification',source:'Model Context Protocol project · latest spec 2025-11-25',url:'https://modelcontextprotocol.io/specification/'},
+      {num:3,title:'Agent-to-Agent (A2A) Protocol v1.0',source:'A2A Protocol project · v1.0, April 2026',url:'https://a2a-protocol.org/latest/specification/'},
+      {num:7,title:'ToolLLM: Facilitating LLMs to Master 16000+ Real-World APIs',source:'Qin et al. · ICLR 2024',url:'https://arxiv.org/abs/2307.16789'},
+      {num:8,title:'Gorilla: Large Language Model Connected with Massive APIs',source:'Patil et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2305.15334'},
+      {num:11,title:'AgentBench: Evaluating LLMs as Agents',source:'Wang et al. · ICLR 2024',url:'https://arxiv.org/abs/2308.03688'},
+      {num:12,title:'WebGPT: Browser-Assisted Question-Answering',source:'Nakano et al. · arXiv 2112',url:'https://arxiv.org/abs/2112.09332'},
+      {num:26,title:'A2A Protocol v1.0 announcement: production-ready agent-to-agent standard',source:'A2A Protocol project · April 2026 [checked]',url:'https://a2a-protocol.org/latest/announcing-1.0/'},
+      {num:27,title:'A2A and MCP: complementary protocol layers',source:'A2A Protocol documentation [checked]',url:'https://a2a-protocol.org/latest/topics/a2a-and-mcp/'},
+      {num:28,title:'MCP security and trust guidance',source:'Model Context Protocol specification [checked]',url:'https://modelcontextprotocol.io/specification/'},
+      {num:29,title:'Microsoft AutoGen documentation',source:'Microsoft · official docs [checked]',url:'https://microsoft.github.io/autogen/stable/'},
+    ]
+  },
+  {
+    id:4, hld:'W7–W8', title:'SLM Distillation — Phi-4-mini QLoRA + DPO',
+    dates:'27 Jun – 5 Jul 2026', duration:'9 days', color:C[3],
+    gantt:[0,0,0,0,0,0,1,1],
+    milestone:'SLM answers MCP-TaskBench dev subset; BFCL F1 ≥ 0.75 first-pass (target ≥ 0.82 post-DPO)',
+    tasks:[
+      {w:'W7',icon:'📝', text:'Teacher trace generation: run GPT-4o / Claude Sonnet on MCP tool-calling prompts (14-tool schema suite); capture full reasoning chain → ~3,000 SFT examples; log to MLflow with seed and prompt hash'},
+      {w:'W7',icon:'⚙️', text:'QLoRA SFT of Phi-4-mini-4k-instruct (microsoft/Phi-4-mini-4k-instruct) — grouped-query attention, 200K vocab. 4-bit NF4 quant, r=64, alpha=128; ~6–8h on RTX 4090. [NEW in HLD v3 — replaces Phi-3-mini]'},
+      {w:'W7',icon:'📊', text:'Evaluate SFT checkpoint on BFCL v2: measure F1 vs teacher gap; first-pass target ≥ 0.75; log distillation gap (Research Contribution C2 measurement)'},
+      {w:'W8',icon:'🎯', text:'DPO alignment pass: ~500 preference pairs (chosen = teacher trace, rejected = SFT naive output); 1 epoch; re-evaluate on BFCL; target ≥ 0.82 gate'},
+      {w:'W8',icon:'⚡', text:'AWQ 4-bit quantisation of final checkpoint; vLLM serving with OpenAI-compatible endpoint; cosign model artefact signing; reproducibility manifest entry'},
+      {w:'W8',icon:'📋', text:'Mid-Semester VIVA preparation: slides covering P1–P6 progress, SLM distillation gap measurement, A2A v1.0 integration, dual-layer drift design'},
+      {w:'W8',slo:true, text:'SLO gate: TTFT on Phi-4-mini (4-bit, RTX 4090) ≤ 1.2s; BFCL F1 ≥ 0.82 after DPO; AlignScore ≥ 0.78 on synthesis outputs.'},
+    ],
+    refs:[
+      {num:5,title:'QLoRA: Efficient Finetuning of Quantised LLMs',source:'Dettmers et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2305.14314'},
+      {num:6,title:'Direct Preference Optimisation (DPO)',source:'Rafailov et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2305.18290'},
+      {num:15,title:'MemGPT: Towards LLMs as Operating Systems',source:'Packer et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2310.08560'},
+      {num:30,title:'Phi-4-mini technical report: 3.8B SLM, 200K vocab and GQA',source:'Microsoft Research · official publication [checked]',url:'https://www.microsoft.com/en-us/research/publication/phi-4-mini-technical-report-compact-yet-powerful-multimodal-language-models-via-mixture-of-loras/'},
+      {num:31,title:'vLLM documentation: serving and OpenAI-compatible endpoints',source:'vLLM official docs [checked]',url:'https://docs.vllm.ai/'},
+      {num:32,title:'PEFT documentation: LoRA and QLoRA adapters',source:'Hugging Face PEFT docs',url:'https://huggingface.co/docs/peft/index'},
+      {num:33,title:'AWQ: Activation-aware Weight Quantization for LLM compression',source:'Lin et al. · MLSys 2024',url:'https://arxiv.org/abs/2306.00978'},
+    ]
+  },
+  {
+    id:5, hld:'W9–W10 (overlap W7–W8)', title:'A2A Reconciliation + Dual-Layer Drift Detection',
+    dates:'27 Jun – 5 Jul 2026', duration:'Parallel with SLM wrap-up', color:C[4],
+    gantt:[0,0,0,0,0,0,1,1],
+    milestone:'End-to-end: change file → drift detected (both layers) → re-index → answer reflects change',
+    tasks:[
+      {w:'W7',icon:'🤝', text:'AutoGen Reconciliation Agent setup; A2A bridge round-trip test via a2a-sdk v1.0 with Signed Agent Cards: LangGraph Planner → MCP → A2A → AutoGen → result; immutable audit log entry verified'},
+      {w:'W7',icon:'📡', text:'Kafka drift consumer — Layer 1 (entity-level): re-embed entity description on EntityChanged event; cosine distance vs stored embedding; THRESHOLD=0.15; enqueue Celery 2-hop re-index if exceeded'},
+      {w:'W7',icon:'🔵', text:'Kafka drift consumer — Layer 2 (cluster-level, NEW in HLD v3): nightly Celery Beat job reads Louvain community partitions from P2; computes per-community embedding centroid; flags all members if centroid shift > CENTROID_THRESHOLD=0.10'},
+      {w:'W8',icon:'⏱️', text:'Confidence decay scheduled job: entities not re-verified in 30 days get decayed confidence score, biasing retrieval toward recently verified nodes; full re-index triggered if stale fraction > 40%'},
+      {w:'W8',icon:'📈', text:'Prometheus + Grafana dashboards: drift lag p95 alert (≤ 60s), re-index queue depth, per-tenant rate limits (max 30% concurrent slots), SLO alert runbooks'},
+      {w:'W8',slo:true, text:'SLO gate: drift detection lag p95 ≤ 60s on synthetic commit stream; centroid shift correctly triggers community-wide re-verification (Layer 2 integration test).'},
+    ],
+    refs:[
+      {num:3,title:'A2A Protocol v1.0 — Backward Compatibility',source:'A2A Protocol project · v1.0, April 2026',url:'https://a2a-protocol.org/latest/announcing-1.0/'},
+      {num:13,title:'AlignScore: Evaluating Factual Consistency',source:'Zha et al. · arXiv 2023',url:'https://arxiv.org/abs/2305.16739'},
+      {num:14,title:'DeBERTa: Decoding-Enhanced BERT with Disentangled Attention',source:'He et al. · ICLR 2021',url:'https://arxiv.org/abs/2006.03654'},
+      {num:18,title:'Neo4j Graph Data Science: Louvain community detection and centroid drift support',source:'Neo4j GDS Manual v2026.04 [checked]',url:'https://neo4j.com/docs/graph-data-science/current/'},
+      {num:19,title:'Apache Kafka documentation: event streams and consumer lag operations',source:'Apache Kafka official docs [checked]',url:'https://kafka.apache.org/documentation/'},
+      {num:20,title:'OpenTelemetry documentation: SLO-oriented traces and metrics',source:'OpenTelemetry official docs [checked]',url:'https://opentelemetry.io/docs/'},
+      {num:34,title:'Celery documentation: distributed task queues and retries',source:'Celery project docs',url:'https://docs.celeryq.dev/en/stable/'},
+    ]
+  },
+  {
+    id:6, hld:'W8 closeout', title:'MCP-TaskBench Expansion + Mid-Sem VIVA Wrap',
+    dates:'4–5 Jul 2026',  duration:'2-day closeout', color:C[5],
+    gantt:[0,0,0,0,0,0,0,1],
+    milestone:'30 MCP-TaskBench tasks ready; Mid-Sem VIVA slides complete; reproducibility manifest v0.5 tagged',
+    tasks:[
+      {w:'W8+',icon:'🏋️', text:'MCP-TaskBench: expand from 15 to 30 tasks across 6 categories (tool-selection F1, JSON-RPC schema conformance, multi-hop planning, conflict resolution, drift-trigger, A2A delegation). Supervisor peer review.'},
+      {w:'W8+',icon:'📊', text:'Cite Graphify as prior-art baseline in MCP-TaskBench evaluation section: run Graphify\'s --mcp mode against the same repo and compare tool-call accuracy on the 15 structural-query tasks'},
+      {w:'W8+',icon:'🔬', text:'Run 3 core ablations: (a) entity-cosine-only vs dual-layer drift, (b) vector-only vs hybrid RRF retrieval, (c) Phi-4-mini SLM vs teacher on MCP-TaskBench dev subset'},
+      {w:'W8+',icon:'🗂️', text:'Reproducibility manifest v0.5: lock all dependency versions, model artefact hashes (cosign verify), dataset seeds, Graphify version used for W1 bootstrap; Git tag v0.5'},
+      {w:'W8+',slo:true, text:'BITS gate: Mid-Semester VIVA & Grading Evaluation by BITS Faculty Panel 26 Jun – 10 Jul. All 5 SLO gates documented and passing. Ablation delta table drafted.'},
+    ],
+    refs:[
+      {num:2,title:'MCP Specification — tool-schema conformance testing',source:'Model Context Protocol project · latest spec 2025-11-25',url:'https://modelcontextprotocol.io/specification/'},
+      {num:11,title:'AgentBench: Evaluating LLMs as Agents',source:'Wang et al. · ICLR 2024',url:'https://arxiv.org/abs/2308.03688'},
+      {num:4,title:'CRAG: Corrective Retrieval Augmented Generation',source:'Tworkowski et al. · ICLR 2025',url:'https://arxiv.org/abs/2401.15884'},
+      {num:'G',title:'Graphify — prior-art baseline for P1 ingestion comparison',source:'graphify.net, April 2026',url:'https://graphify.net'},
+      {num:35,title:'Berkeley Function Calling Leaderboard (BFCL)',source:'UC Berkeley Gorilla project',url:'https://gorilla.cs.berkeley.edu/leaderboard.html'},
+      {num:36,title:'Bootstrap confidence intervals and resampling methods',source:'Efron & Tibshirani · foundational statistical reference',url:'https://doi.org/10.1201/9780429246593'},
+      {num:37,title:'Wilcoxon signed-rank test',source:'NIST Engineering Statistics Handbook',url:'https://www.itl.nist.gov/div898/handbook/prc/section4/prc473.htm'},
+      {num:38,title:'Reproducibility checklist for machine learning research',source:'Papers with Code',url:'https://paperswithcode.com/rc2021'},
+    ]
+  },
+];
+
+const ALL_REFS=[
+  {num:'G',title:'Graphify - open-source knowledge graph skill for AI coding assistants',source:'graphify.net, April 2026 [P1 prior-art baseline]',url:'https://graphify.net',theme:'Code Intelligence (P1)'},
+  {num:1,title:'Google Code Wiki: Accelerating code understanding',source:'Google Developers Blog, 2025',url:'https://developers.googleblog.com/introducing-code-wiki-accelerating-your-code-understanding/',theme:'Code Intelligence (P1)'},
+  {num:16,title:'Software Engineering at Google: Lessons Learned from Programming Over Time',source:"Winters, Manshreck & Wright · O'Reilly, 2020",url:'https://abseil.io/resources/swe-book',theme:'Code Intelligence (P1)'},
+  {num:17,title:'Tree-sitter documentation: incremental parsing and language grammars',source:'Tree-sitter project · official docs [checked]',url:'https://tree-sitter.github.io/tree-sitter/',theme:'Code Intelligence (P1)'},
+  {num:18,title:'Neo4j Graph Data Science: PageRank, Louvain, BFS and paths',source:'Neo4j GDS Manual v2026.04 [checked]',url:'https://neo4j.com/docs/graph-data-science/current/',theme:'Code Intelligence (P1)'},
+  {num:19,title:'Apache Kafka documentation: event streams and operations',source:'Apache Kafka official docs [checked]',url:'https://kafka.apache.org/documentation/',theme:'Code Intelligence (P1)'},
+  {num:20,title:'OpenTelemetry documentation: traces, metrics, logs and propagation',source:'OpenTelemetry official docs [checked]',url:'https://opentelemetry.io/docs/',theme:'Code Intelligence (P1)'},
+  {num:21,title:'SpanBERT: Improving Pre-training by Representing and Predicting Spans',source:'Joshi et al. · TACL 2020',url:'https://arxiv.org/abs/1907.10529',theme:'Code Intelligence (P1)'},
+  {num:2,title:'Model Context Protocol (MCP) Specification',source:'Model Context Protocol project · latest spec 2025-11-25 [checked]',url:'https://modelcontextprotocol.io/specification/',theme:'MCP & A2A (P4)'},
+  {num:3,title:'Agent-to-Agent (A2A) Protocol v1.0 specification',source:'A2A Protocol project · official spec [checked]',url:'https://a2a-protocol.org/latest/specification/',theme:'MCP & A2A (P4)'},
+  {num:26,title:'A2A Protocol v1.0 announcement',source:'A2A Protocol project · April 2026 [checked]',url:'https://a2a-protocol.org/latest/announcing-1.0/',theme:'MCP & A2A (P4)'},
+  {num:27,title:'A2A and MCP: complementary protocol layers',source:'A2A Protocol documentation [checked]',url:'https://a2a-protocol.org/latest/topics/a2a-and-mcp/',theme:'MCP & A2A (P4)'},
+  {num:28,title:'MCP security and trust guidance',source:'Model Context Protocol specification [checked]',url:'https://modelcontextprotocol.io/specification/',theme:'MCP & A2A (P4)'},
+  {num:29,title:'Microsoft AutoGen documentation',source:'Microsoft · official docs [checked]',url:'https://microsoft.github.io/autogen/stable/',theme:'MCP & A2A (P4)'},
+  {num:7,title:'ToolLLM: Facilitating LLMs to Master 16000+ Real-World APIs',source:'Qin et al. · ICLR 2024',url:'https://arxiv.org/abs/2307.16789',theme:'MCP & A2A (P4)'},
+  {num:8,title:'Gorilla: Large Language Model Connected with Massive APIs',source:'Patil et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2305.15334',theme:'MCP & A2A (P4)'},
+  {num:11,title:'AgentBench: Evaluating LLMs as Agents',source:'Wang et al. · ICLR 2024',url:'https://arxiv.org/abs/2308.03688',theme:'MCP & A2A (P4)'},
+  {num:12,title:'WebGPT: Browser-Assisted Question-Answering',source:'Nakano et al. · arXiv 2112',url:'https://arxiv.org/abs/2112.09332',theme:'MCP & A2A (P4)'},
+  {num:4,title:'CRAG: Corrective Retrieval Augmented Generation',source:'Tworkowski et al. · ICLR 2025',url:'https://arxiv.org/abs/2401.15884',theme:'Agentic RAG (P3)'},
+  {num:9,title:'Lost in the Middle: How Language Models Use Long Contexts',source:'Liu et al. · TACL 2024',url:'https://arxiv.org/abs/2307.03172',theme:'Agentic RAG (P3)'},
+  {num:10,title:'MuSiQue: Multi-hop Questions via Single-hop Composition',source:'Trivedi et al. · TACL 2022',url:'https://arxiv.org/abs/2108.00573',theme:'Agentic RAG (P3)'},
+  {num:22,title:'BGE-M3: Multi-lingual, multi-function, multi-granularity text embeddings',source:'Chen et al. · arXiv 2024',url:'https://arxiv.org/abs/2402.03216',theme:'Agentic RAG (P3)'},
+  {num:23,title:'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks',source:'Lewis et al. · NeurIPS 2020',url:'https://arxiv.org/abs/2005.11401',theme:'Agentic RAG (P3)'},
+  {num:24,title:'LangGraph documentation: stateful multi-agent workflows',source:'LangChain AI · official docs [checked]',url:'https://langchain-ai.github.io/langgraph/',theme:'Agentic RAG (P3)'},
+  {num:25,title:'pgvector: vector similarity search for PostgreSQL',source:'pgvector project · official repository [checked]',url:'https://github.com/pgvector/pgvector',theme:'Agentic RAG (P3)'},
+  {num:5,title:'QLoRA: Efficient Finetuning of Quantised LLMs',source:'Dettmers et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2305.14314',theme:'SLM Distillation (P5)'},
+  {num:6,title:'Direct Preference Optimisation (DPO)',source:'Rafailov et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2305.18290',theme:'SLM Distillation (P5)'},
+  {num:15,title:'MemGPT: Towards LLMs as Operating Systems',source:'Packer et al. · NeurIPS 2023',url:'https://arxiv.org/abs/2310.08560',theme:'SLM Distillation (P5)'},
+  {num:30,title:'Phi-4-mini technical report: 3.8B SLM, 200K vocab and GQA',source:'Microsoft Research · official publication [checked]',url:'https://www.microsoft.com/en-us/research/publication/phi-4-mini-technical-report-compact-yet-powerful-multimodal-language-models-via-mixture-of-loras/',theme:'SLM Distillation (P5)'},
+  {num:31,title:'vLLM documentation: serving and OpenAI-compatible endpoints',source:'vLLM official docs [checked]',url:'https://docs.vllm.ai/',theme:'SLM Distillation (P5)'},
+  {num:32,title:'PEFT documentation: LoRA and QLoRA adapters',source:'Hugging Face PEFT docs',url:'https://huggingface.co/docs/peft/index',theme:'SLM Distillation (P5)'},
+  {num:33,title:'AWQ: Activation-aware Weight Quantization for LLM compression',source:'Lin et al. · MLSys 2024',url:'https://arxiv.org/abs/2306.00978',theme:'SLM Distillation (P5)'},
+  {num:13,title:'AlignScore: Evaluating Factual Consistency with a Unified Alignment Function',source:'Zha et al. · arXiv 2023',url:'https://arxiv.org/abs/2305.16739',theme:'Evaluation & Reproducibility'},
+  {num:14,title:'DeBERTa: Decoding-Enhanced BERT with Disentangled Attention',source:'He et al. · ICLR 2021',url:'https://arxiv.org/abs/2006.03654',theme:'Evaluation & Reproducibility'},
+  {num:34,title:'Celery documentation: distributed task queues and retries',source:'Celery project docs',url:'https://docs.celeryq.dev/en/stable/',theme:'Evaluation & Reproducibility'},
+  {num:35,title:'Berkeley Function Calling Leaderboard (BFCL)',source:'UC Berkeley Gorilla project',url:'https://gorilla.cs.berkeley.edu/leaderboard.html',theme:'Evaluation & Reproducibility'},
+  {num:36,title:'Bootstrap confidence intervals and resampling methods',source:'Efron & Tibshirani · foundational statistical reference',url:'https://doi.org/10.1201/9780429246593',theme:'Evaluation & Reproducibility'},
+  {num:37,title:'Wilcoxon signed-rank test',source:'NIST Engineering Statistics Handbook',url:'https://www.itl.nist.gov/div898/handbook/prc/section4/prc473.htm',theme:'Evaluation & Reproducibility'},
+  {num:38,title:'Reproducibility checklist for machine learning research',source:'Papers with Code',url:'https://paperswithcode.com/rc2021',theme:'Evaluation & Reproducibility'},
+];
+
+const THEME_COLORS={'Code Intelligence (P1)':C[0],'MCP & A2A (P4)':C[2],'Agentic RAG (P3)':C[1],'SLM Distillation (P5)':C[3],'Evaluation & Reproducibility':C[4]};
+
+function renderPhases(){
+  const c=document.getElementById('phases-container');
+  PHASES.forEach((p,i)=>{
+    const card=document.createElement('div');
+    card.className='phase';
+    card.style.animationDelay=(i*.06)+'s';
+    if(i===0)card.classList.add('open');
+    const tasks=p.tasks.map(t=>{
+      if(t.slo){
+        return `<div class="task"><span class="slo-badge">SLO</span><span>${t.text}</span></div>`;
+      }
+      return `<div class="task"><span class="tw" style="background:${p.color}22;color:${p.color};border:1px solid ${p.color}44">${t.w}</span><span>${t.text}</span></div>`;
+    }).join('');
+    const refs=p.refs.map(r=>`<div class="ref"><span class="rnum">[${r.num}]</span><span class="rtitle">${r.title}</span><br/><span class="rsrc">${r.source}</span>${r.url?`<br/><a class="rlink" href="${r.url}" target="_blank">↗ ${r.url}</a>`:''}</div>`).join('');
+    card.innerHTML=`
+      <div class="ph" onclick="toggle(this)">
+        <div class="pdot" style="background:${p.color}"></div>
+        <div class="pnum">0${p.id}</div>
+        <div class="ptitle">${p.title}</div>
+        <div class="pdates">${p.dates}</div>
+        <div class="pweek" style="color:${p.color}">${p.hld}</div>
+        <div class="chev">▾</div>
+      </div>
+      <div class="pbody">
+        <div style="margin-bottom:14px;padding:8px 12px;background:rgba(${hexToRgb(p.color)},.08);border-radius:6px;border-left:3px solid ${p.color};font-size:12px;color:var(--soft);">
+          <span style="color:${p.color};font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:8px;">Milestone</span>${p.milestone}
+        </div>
+        <div class="grid2">
+          <div><div class="sec-title">Action items</div><div class="tasks">${tasks}</div></div>
+          <div><div class="sec-title">References for this phase</div><div class="refs-list">${refs}</div></div>
+        </div>
+      </div>`;
+    c.appendChild(card);
+  });
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+function renderGantt(){
+  const b=document.getElementById('gantt-body');
+  const labels=[
+    ['W1–W2','Foundation + Ingestion MVP',C[0],[1,1,0,0,0,0,0,0]],
+    ['W3–W4','KG + RAG Skeleton',C[1],[0,0,1,1,0,0,0,0]],
+    ['W5–W6','MCP + A2A v1.0 ◆',C[2],[0,0,0,1,1,1,0,0]],
+    ['W7–W8','SLM Phi-4-mini QLoRA ◆',C[3],[0,0,0,0,0,0,1,1]],
+    ['W9–W10','A2A + Dual-Layer Drift ◆',C[4],[0,0,0,0,0,0,1,1]],
+    ['W8 close','TaskBench + Buffer',C[5],[0,0,0,0,0,0,0,1]],
+  ];
+  labels.forEach(([hld,name,color,g])=>{
+    const cells=g.map((v,wi)=>{
+      if(!v)return`<td class="gcell"></td>`;
+      const isF=wi===0||!g[wi-1],isL=wi===7||!g[wi+1];
+      const hl=wi===5?'outline:2px solid rgba(0,212,170,.35);outline-offset:2px;':'';
+      return`<td class="gcell"><div class="gbar" style="background:${color};border-radius:${isF?'6px 0 0 6px':''}${isL?'0 6px 6px 0':''};${hl}"></div></td>`;
+    }).join('');
+    b.innerHTML+=`<tr><td class="gphase"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};margin-right:8px;"></span>${name}</td>${cells}</tr>`;
+  });
+  b.innerHTML+=`<tr style="border-top:2px solid var(--c3);"><td class="gphase" style="color:var(--c3);">★ Mid-Sem Report Submission</td><td colspan="5"></td><td class="gcell"><div style="height:18px;border-radius:6px;background:var(--c3);opacity:.65;"></div></td><td colspan="2"></td></tr>`;
+}
+
+function renderAllRefs(){
+  const c=document.getElementById('all-refs-container');
+  const themes=[...new Set(ALL_REFS.map(r=>r.theme))];
+  themes.forEach(theme=>{
+    const refs=ALL_REFS.filter(r=>r.theme===theme);
+    const color=THEME_COLORS[theme]||C[5];
+    const div=document.createElement('div');
+    div.className='allrefs-theme';
+    div.innerHTML=`<div class="theme-hdr" style="border-left:3px solid ${color};color:${color}">${theme}</div>
+      <div class="theme-refs">${refs.map(r=>`<div class="ref" style="border-left:3px solid ${color}44;">
+        <span class="rnum" style="color:${color}">[${r.num}]</span><span class="rtitle">${r.title}</span><br/>
+        <span class="rsrc">${r.source}</span>${r.url?`<br/><a class="rlink" href="${r.url}" target="_blank">↗ ${r.url}</a>`:''}</div>`).join('')}
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+function toggle(h){h.closest('.phase').classList.toggle('open');}
+function switchTab(id,btn){
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderPhases();renderGantt();renderAllRefs();
+</script>
+</body>
+</html>

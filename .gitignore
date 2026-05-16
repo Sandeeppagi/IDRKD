@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+~$*
+*.swp
+
+# Runtime outputs
+logs/
+tmp/
+reports/
+coverage/
+htmlcov/
+
+# Local datasets and model artifacts
+data/raw/*
+data/processed/*
+models/adapters/*
+models/checkpoints/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!models/adapters/.gitkeep
+!models/checkpoints/.gitkeep
+
