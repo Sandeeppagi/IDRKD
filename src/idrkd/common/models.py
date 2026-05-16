@@ -58,6 +58,9 @@ class CodeRelation:
     target_id: str
     relation_type: RelationType
     properties: dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    lamport_clock: int = 0
 
 
 @dataclass(frozen=True)
@@ -69,4 +72,3 @@ class ParsedFile:
     content_hash: str
     entities: tuple[CodeEntity, ...]
     relations: tuple[CodeRelation, ...]
-
