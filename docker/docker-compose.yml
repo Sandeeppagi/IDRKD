@@ -20,6 +20,8 @@ services:
       POSTGRES_USER: idrkd
       POSTGRES_PASSWORD: idrkd
       POSTGRES_DB: idrkd
+    volumes:
+      - ../configs/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U idrkd -d idrkd"]
       interval: 10s
