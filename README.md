@@ -54,25 +54,28 @@ The project combines structural ingestion, a Neo4j knowledge graph, pgvector-bac
 5. Drift detection and re-indexing: entity-level cosine drift, cluster centroid drift, Celery orchestration, and SLO dashboards.
 6. Evaluation and viva wrap: MCP-TaskBench expansion, ablations, reproducibility manifest, and presentation material.
 
-## Week 1 Implementation Status
+## Implementation Status Through Week 3
 
-Implemented foundation pieces:
+Implemented foundation and Week 2-3 MVP pieces:
 
+- Docker Compose stack for Neo4j, PostgreSQL + pgvector/HNSW, Kafka, Redis, MinIO, Prometheus, Grafana, and OTel Collector.
+- Graphify Docker bootstrap against a public Telstra Python repo with an IDRKD Neo4j importer bridge.
 - Stable SHA-256 content hashing and deterministic entity/relation IDs.
-- Parser-agnostic ingestion records for entities, relations, source locations, and parsed files.
-- Python source extractor using the standard AST as the first executable slice. The output records are designed so a Tree-sitter parser can replace the extraction backend without changing graph/event contracts.
-- Commit event contract for the `commit-events` Kafka topic.
-- Neo4j schema constraints/indexes in `src/idrkd/graph/schema.cypher`.
-- Idempotent Cypher upsert templates for entities and relations.
-- Kafka topic configuration in `configs/kafka-topics.yml`.
-- Unit tests for fingerprinting, path normalisation, entity extraction, and idempotent relation generation.
+- Tree-sitter Python and JavaScript extraction into typed records.
+- JSON/CSV schema extraction and Markdown/document NER facade.
+- Commit webhook serialization, Kafka event contracts, and commit-event parser pipeline.
+- OpenTelemetry correlation helper, ingestion SLO gate, and Lamport clock stamping.
+- Neo4j typed labels, temporal properties, tenant scoping, and idempotent graph writer.
+- BGE-M3 embedding adapter contract, pgvector search SQL, hybrid RRF retrieval, MiniLM reranker facade, and graph analytics primitives.
+- Specs for Week 1, Week 2, and Week 3 under `specs/`.
 
-Week 1 items still requiring live infrastructure:
+Current local verification:
 
-- Run Graphify against the chosen reference repository and compare initial node/edge counts.
-- Start Docker services and apply `schema.cypher` to Neo4j.
-- Wire the webhook listener and Kafka producer/consumer loop.
-- Add JavaScript Tree-sitter extraction after the Python ingestion slice is stable.
+```bash
+uv run pytest tests/unit
+uv run ruff check src tests/unit
+uv run mypy src
+```
 
 ## Development Setup
 

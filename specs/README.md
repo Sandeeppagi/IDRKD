@@ -31,4 +31,14 @@ specs/
     pgvector-hnsw.spec.md
     python-ingestion.spec.md
     neo4j-schema-writer.spec.md
+  week-2/
+    README.md
+    commit-ingestion-pipeline.spec.md
+    schema-document-extraction.spec.md
+    tracing-slo.spec.md
+  week-3/
+    README.md
+    embedding-vector-retrieval.spec.md
+    hybrid-rrf-retrieval.spec.md
+    graph-analytics.spec.md
 ```

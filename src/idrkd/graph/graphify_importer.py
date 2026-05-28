@@ -288,7 +288,9 @@ def _optional_str(value: object) -> str | None:
 def _optional_float(value: object) -> float | None:
     if value is None:
         return None
-    return float(value)
+    if isinstance(value, str | int | float):
+        return float(value)
+    raise TypeError(f"Cannot convert Graphify weight to float: {value!r}")
 
 
 def main() -> None:
