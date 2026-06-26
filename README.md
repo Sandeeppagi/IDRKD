@@ -54,9 +54,9 @@ The project combines structural ingestion, a Neo4j knowledge graph, pgvector-bac
 5. Drift detection and re-indexing: entity-level cosine drift, cluster centroid drift, Celery orchestration, and SLO dashboards.
 6. Evaluation and viva wrap: MCP-TaskBench expansion, ablations, reproducibility manifest, and presentation material.
 
-## Implementation Status Through Week 3
+## Implementation Status Through 26 June 2026
 
-Implemented foundation and Week 2-3 MVP pieces:
+Implemented foundation and June 26 MVP pieces:
 
 - Docker Compose stack for Neo4j, PostgreSQL + pgvector/HNSW, Kafka, Redis, MinIO, Prometheus, Grafana, and OTel Collector.
 - Graphify Docker bootstrap against a public Telstra Python repo with an IDRKD Neo4j importer bridge.
@@ -67,6 +67,9 @@ Implemented foundation and Week 2-3 MVP pieces:
 - OpenTelemetry correlation helper, ingestion SLO gate, and Lamport clock stamping.
 - Neo4j typed labels, temporal properties, tenant scoping, and idempotent graph writer.
 - BGE-M3 embedding adapter contract, pgvector search SQL, hybrid RRF retrieval, MiniLM reranker facade, and graph analytics primitives.
+- MCP JSON-RPC 2.0 tool registry with the 14-tool W5-W6 suite and Pydantic request/response contracts.
+- A2A bridge primitives with signed Agent Cards, deterministic HMAC verification, task envelopes, and trace-context propagation.
+- Security gates for tenant isolation, read-only Cypher enforcement, and prompt-injection marker detection.
 - Specs for Week 1, Week 2, and Week 3 under `specs/`.
 
 Current local verification:
