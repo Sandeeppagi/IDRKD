@@ -1,6 +1,6 @@
 import pytest
 
-from idrkd.a2a import A2ABridge, AgentCard, sign_agent_card
+from idrkd.a2a import A2ABridge, build_idrkd_agent_card, sign_agent_card
 from idrkd.mcp import JsonRpcRequest, McpToolRegistry, TOOL_DEFINITIONS
 from idrkd.security import detect_prompt_injection, validate_read_only_cypher, validate_tenant_scope
 
@@ -56,18 +56,20 @@ def test_security_gates_block_prompt_injection_and_write_cypher() -> None:
 
 
 def test_a2a_bridge_signs_cards_and_preserves_trace_context() -> None:
-    card = AgentCard(
-        agent_id="planner",
+    card = build_idrkd_agent_card(
         name="LangGraph Planner",
+        description="Routes IDRKD queries across agents.",
+        version="0.1.0",
         endpoint="http://planner.local/a2a",
         capabilities=("mcp.delegate",),
     )
     bridge = A2ABridge(local_card=card, shared_secret="secret")
     signed = bridge.signed_card()
     tampered = sign_agent_card(
-        AgentCard(
-            agent_id="planner",
+        build_idrkd_agent_card(
             name="Other",
+            description="Routes IDRKD queries across agents.",
+            version="0.1.0",
             endpoint="http://planner.local/a2a",
             capabilities=("mcp.delegate",),
         ),
@@ -83,7 +85,7 @@ def test_a2a_bridge_signs_cards_and_preserves_trace_context() -> None:
 
     assert bridge.verify_remote_card(signed)
     assert not bridge.verify_remote_card(tampered)
-    assert message.sender == "planner"
+    assert message.sender == "LangGraph Planner"
     assert message.traceparent.endswith("-01")
 
 

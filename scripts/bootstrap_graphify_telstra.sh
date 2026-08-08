@@ -13,6 +13,6 @@ docker compose -f docker/docker-compose.yml up -d neo4j
 GRAPHIFY_SOURCE_DIR=telstra-messaging-api-sdk-python \
 GRAPHIFY_OUTPUT_NAME=telstra-messaging-api-sdk-python \
 REPO_ID=telstra-messaging-api-sdk-python \
-docker compose -f docker/docker-compose.yml --profile graphify run --rm graphify
+docker compose -f docker/docker-compose.yml --profile graphify up graphify
 
 echo "Graphify output: data/processed/graphify-out/telstra-messaging-api-sdk-python"

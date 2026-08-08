@@ -31,6 +31,39 @@ class GraphifyImportBatch:
     external_stub_count: int
 
 
+@dataclass(frozen=True)
+class GraphifySmokeResult:
+    tenant_id: str
+    repo_id: str
+    source_label: str
+    expected_nodes: int
+    imported_nodes: int
+    expected_relationships: int
+    imported_relationships: int
+    orphan_relationships: int
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.imported_nodes == self.expected_nodes
+            and self.imported_relationships == self.expected_relationships
+            and self.orphan_relationships == 0
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "tenant_id": self.tenant_id,
+            "repo_id": self.repo_id,
+            "source_label": self.source_label,
+            "expected_nodes": self.expected_nodes,
+            "imported_nodes": self.imported_nodes,
+            "expected_relationships": self.expected_relationships,
+            "imported_relationships": self.imported_relationships,
+            "orphan_relationships": self.orphan_relationships,
+            "passed": self.passed,
+        }
+
+
 def build_import_batch(
     graph: dict[str, Any],
     *,
@@ -168,6 +201,66 @@ def import_graphify_json(
     return batch
 
 
+def smoke_verify_graphify_import(
+    graph_path: Path,
+    *,
+    neo4j_uri: str,
+    neo4j_user: str,
+    neo4j_password: str,
+    tenant_id: str,
+    repo_id: str,
+    source_label: str,
+) -> GraphifySmokeResult:
+    graph = json.loads(graph_path.read_text(encoding="utf-8"))
+    batch = build_import_batch(
+        graph,
+        tenant_id=tenant_id,
+        repo_id=repo_id,
+        source_label=source_label,
+    )
+    driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+    try:
+        _wait_for_neo4j(driver)
+        with driver.session() as session:
+            record = session.run(
+                """
+                MATCH (n:GraphifyNode {tenant_id: $tenant_id, repo_id: $repo_id, source_label: $source_label})
+                WITH count(n) AS imported_nodes
+                OPTIONAL MATCH (:GraphifyNode {tenant_id: $tenant_id, repo_id: $repo_id, source_label: $source_label})
+                  -[r:GRAPHIFY_RELATION {tenant_id: $tenant_id, repo_id: $repo_id}]->
+                  (:GraphifyNode {tenant_id: $tenant_id, repo_id: $repo_id, source_label: $source_label})
+                WITH imported_nodes, count(r) AS imported_relationships
+                OPTIONAL MATCH ()-[all_r:GRAPHIFY_RELATION {tenant_id: $tenant_id, repo_id: $repo_id}]->()
+                WHERE all_r IS NOT NULL AND NOT (
+                  ('GraphifyNode' IN labels(startNode(all_r)) AND 'GraphifyNode' IN labels(endNode(all_r)))
+                  AND startNode(all_r).tenant_id = $tenant_id
+                  AND startNode(all_r).repo_id = $repo_id
+                  AND endNode(all_r).tenant_id = $tenant_id
+                  AND endNode(all_r).repo_id = $repo_id
+                )
+                RETURN imported_nodes, imported_relationships, count(all_r) AS orphan_relationships
+                """,
+                {"tenant_id": tenant_id, "repo_id": repo_id, "source_label": source_label},
+            ).single()
+    finally:
+        driver.close()
+    if record is None:
+        raise RuntimeError("Graphify smoke query returned no result")
+    result = GraphifySmokeResult(
+        tenant_id=tenant_id,
+        repo_id=repo_id,
+        source_label=source_label,
+        expected_nodes=len(batch.nodes),
+        imported_nodes=int(record["imported_nodes"]),
+        expected_relationships=len(batch.relationships),
+        imported_relationships=int(record["imported_relationships"]),
+        orphan_relationships=int(record["orphan_relationships"]),
+    )
+    if not result.passed:
+        raise RuntimeError(f"Graphify smoke verification failed: {json.dumps(result.as_dict(), sort_keys=True)}")
+    return result
+
+
 def _create_schema(tx: Any) -> None:
     tx.run(
         """
@@ -294,15 +387,30 @@ def _optional_float(value: object) -> float | None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Import Graphify graph.json into Neo4j")
-    parser.add_argument("--graph", required=True, type=Path)
-    parser.add_argument("--neo4j-uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
-    parser.add_argument("--neo4j-user", default=os.getenv("NEO4J_USER", "neo4j"))
-    parser.add_argument("--neo4j-password", default=os.getenv("NEO4J_PASSWORD", "change-me"))
-    parser.add_argument("--tenant-id", default=os.getenv("TENANT_ID", "default"))
-    parser.add_argument("--repo-id", default=os.getenv("REPO_ID", "graphify-bootstrap"))
-    parser.add_argument("--source-label", default=os.getenv("SOURCE_LABEL", "graphify-bootstrap"))
+    parser = argparse.ArgumentParser(description="Import or verify Graphify graph.json in Neo4j")
+    subparsers = parser.add_subparsers(dest="command")
+    import_parser = subparsers.add_parser("import", help="Import Graphify graph.json into Neo4j")
+    smoke_parser = subparsers.add_parser("smoke", help="Verify imported Graphify node/edge counts")
+    _add_graphify_args(import_parser, required_graph=True)
+    _add_graphify_args(smoke_parser, required_graph=True)
+    _add_graphify_args(parser, required_graph=False)
     args = parser.parse_args()
+
+    command = args.command or "import"
+    if args.graph is None:
+        parser.error("--graph is required")
+    if command == "smoke":
+        result = smoke_verify_graphify_import(
+            args.graph,
+            neo4j_uri=args.neo4j_uri,
+            neo4j_user=args.neo4j_user,
+            neo4j_password=args.neo4j_password,
+            tenant_id=args.tenant_id,
+            repo_id=args.repo_id,
+            source_label=args.source_label,
+        )
+        print(json.dumps(result.as_dict(), sort_keys=True))
+        return
 
     batch = import_graphify_json(
         args.graph,
@@ -321,6 +429,16 @@ def main() -> None:
         f"{len(batch.relationships)} relationships "
         f"({batch.graphify_edge_count} Graphify edges)."
     )
+
+
+def _add_graphify_args(parser: argparse.ArgumentParser, *, required_graph: bool) -> None:
+    parser.add_argument("--graph", required=required_graph, type=Path)
+    parser.add_argument("--neo4j-uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
+    parser.add_argument("--neo4j-user", default=os.getenv("NEO4J_USER", "neo4j"))
+    parser.add_argument("--neo4j-password", default=os.getenv("NEO4J_PASSWORD", "change-me"))
+    parser.add_argument("--tenant-id", default=os.getenv("TENANT_ID", "default"))
+    parser.add_argument("--repo-id", default=os.getenv("REPO_ID", "graphify-bootstrap"))
+    parser.add_argument("--source-label", default=os.getenv("SOURCE_LABEL", "graphify-bootstrap"))
 
 
 if __name__ == "__main__":

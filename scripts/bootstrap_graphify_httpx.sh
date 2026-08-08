@@ -9,6 +9,10 @@ if [ ! -d "data/raw/httpx/.git" ]; then
 fi
 
 docker compose -f docker/docker-compose.yml up -d neo4j
-docker compose -f docker/docker-compose.yml --profile graphify run --rm graphify
+GRAPHIFY_SOURCE_DIR=httpx \
+GRAPHIFY_OUTPUT_NAME=httpx \
+GRAPHIFY_GIT_URL=https://github.com/encode/httpx.git \
+REPO_ID=httpx \
+docker compose -f docker/docker-compose.yml --profile graphify up graphify
 
 echo "Graphify output: data/processed/graphify-out/httpx"

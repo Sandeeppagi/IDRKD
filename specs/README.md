@@ -41,4 +41,24 @@ specs/
     embedding-vector-retrieval.spec.md
     hybrid-rrf-retrieval.spec.md
     graph-analytics.spec.md
+  week-4/
+    README.md
+    agentic-rag-orchestrator.spec.md
+    faithfulness-critic.spec.md
+    query-slo.spec.md
+  week-5/
+    README.md
+    graph-traversal.spec.md
+    mcp-pydantic-schemas.spec.md
+    a2a-sdk-bridge.spec.md
+    security-hardening.spec.md
+  week-7/
+    README.md
+    slm-distillation.spec.md
+  week-8/
+    README.md
+    drift-reindex-workers.spec.md
+  week-9/
+    README.md
+    evaluation-harness.spec.md
 ```

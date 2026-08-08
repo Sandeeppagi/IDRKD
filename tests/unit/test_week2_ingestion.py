@@ -9,6 +9,8 @@ from idrkd.ingestion.kafka import commit_event_from_json, commit_event_to_json
 from idrkd.ingestion.pipeline import CommitIngestionPipeline
 from idrkd.ingestion.schema_extractor import parse_schema_file
 from idrkd.ingestion.slo import IngestionSlo, LamportClock, utc_now
+from idrkd.rag.embeddings import BgeM3EmbeddingAdapter
+from idrkd.rag.vector_store import VectorRecord
 
 
 JAVASCRIPT_SOURCE = """
@@ -112,6 +114,15 @@ class RecordingWriter:
         return {"entities": len(parsed.entities), "relations": len(parsed.relations)}
 
 
+@dataclass
+class RecordingEmbeddingSink:
+    records: list[VectorRecord]
+
+    def upsert_records(self, records: list[VectorRecord]) -> int:
+        self.records.extend(records)
+        return len(records)
+
+
 def test_commit_ingestion_pipeline_routes_changed_files(tmp_path: Path) -> None:
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "example.py").write_text("import os\n\ndef run():\n    return os.getcwd()\n", encoding="utf-8")
@@ -131,5 +142,35 @@ def test_commit_ingestion_pipeline_routes_changed_files(tmp_path: Path) -> None:
     assert result.parsed_files == 2
     assert result.entities == writer.entities
     assert result.relations == writer.relations
+    assert result.embeddings == 0
     assert result.slo_passed
     assert result.lamport_clock == 2
+
+
+def test_commit_ingestion_pipeline_upserts_entity_embeddings(tmp_path: Path) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "example.py").write_text("def run():\n    return 'ok'\n", encoding="utf-8")
+    writer = RecordingWriter()
+    embedding_sink = RecordingEmbeddingSink(records=[])
+    event = CommitEvent.create(
+        tenant_id="tenant-a",
+        repo_id="repo-a",
+        commit_sha="abc123",
+        changed_paths=("src/example.py",),
+    )
+    pipeline = CommitIngestionPipeline(
+        repo_root=tmp_path,
+        writer=writer,  # type: ignore[arg-type]
+        embedding_sink=embedding_sink,
+        embeddings=BgeM3EmbeddingAdapter(dimensions=8),
+        embedding_model_name="test-bge",
+    )
+
+    result = pipeline.process(event, correlation_id="corr-1")
+
+    assert result.embeddings == writer.entities
+    assert len(embedding_sink.records) == writer.entities
+    assert {record.tenant_id for record in embedding_sink.records} == {"tenant-a"}
+    assert {record.repo_id for record in embedding_sink.records} == {"repo-a"}
+    assert all(len(record.embedding) == 8 for record in embedding_sink.records)
+    assert all(record.embedding_model == "test-bge" for record in embedding_sink.records)

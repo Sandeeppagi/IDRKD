@@ -1,0 +1,319 @@
+"""Executable SFT/DPO distillation runners.
+
+The functions in this module are intentionally import-light: normal unit tests
+do not import PyTorch or download model weights, while real runs load the ML
+stack only after `dry_run=False`.
+"""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+import importlib
+import json
+from pathlib import Path
+from typing import Any, cast
+
+from idrkd.distillation.io import dataset_digest, read_jsonl_records
+from idrkd.distillation.training import DpoConfig, QLoRAConfig
+
+
+@dataclass(frozen=True)
+class DistillationRuntimeConfig:
+    dataset_path: Path
+    output_dir: Path
+    base_model_id: str = "Qwen/Qwen2.5-0.5B-Instruct"
+    max_seq_length: int = 1024
+    epochs: float = 1.0
+    learning_rate: float = 2e-4
+    per_device_train_batch_size: int = 1
+    gradient_accumulation_steps: int = 4
+    use_4bit: bool = False
+    device_map: str | None = "auto"
+    local_files_only: bool = False
+    max_steps: int = -1
+    seed: int = 42
+    dry_run: bool = False
+
+
+@dataclass(frozen=True)
+class DistillationRunResult:
+    stage: str
+    output_dir: str
+    base_model_id: str
+    dataset_path: str
+    dataset_sha256: str
+    record_count: int
+    dry_run: bool
+    metrics: dict[str, float]
+    created_at: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class DistillationSmokeResult:
+    sft: DistillationRunResult
+    dpo: DistillationRunResult
+    sft_adapter_written: bool
+    dpo_adapter_written: bool
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "sft": self.sft.as_dict(),
+            "dpo": self.dpo.as_dict(),
+            "sft_adapter_written": self.sft_adapter_written,
+            "dpo_adapter_written": self.dpo_adapter_written,
+        }
+
+
+def render_sft_text(record: dict[str, Any]) -> str:
+    messages = record.get("messages", [])
+    if not isinstance(messages, list):
+        raise ValueError("SFT record messages must be a list")
+    chunks = []
+    for message in messages:
+        if not isinstance(message, dict):
+            raise ValueError("SFT message must be an object")
+        chunks.append(f"<|{message['role']}|>\n{message['content']}")
+    return "\n".join(chunks) + "\n<|end|>"
+
+
+def train_sft(
+    config: DistillationRuntimeConfig,
+    *,
+    qlora: QLoRAConfig | None = None,
+) -> DistillationRunResult:
+    records = read_jsonl_records(config.dataset_path)
+    if not records:
+        raise ValueError("SFT dataset is empty")
+    active_qlora = qlora or QLoRAConfig(
+        base_model_id=config.base_model_id,
+        load_in_4bit=config.use_4bit,
+        max_seq_length=config.max_seq_length,
+    )
+    if config.dry_run:
+        return _write_result(
+            stage="sft",
+            config=config,
+            record_count=len(records),
+            metrics={"train_loss": 0.0},
+        )
+
+    modules = _load_ml_modules()
+    tokenizer = modules["AutoTokenizer"].from_pretrained(
+        config.base_model_id,
+        local_files_only=config.local_files_only,
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    model_kwargs: dict[str, Any] = {"local_files_only": config.local_files_only}
+    if config.device_map is not None:
+        model_kwargs["device_map"] = config.device_map
+    if config.use_4bit:
+        model_kwargs["quantization_config"] = modules["BitsAndBytesConfig"](
+            **active_qlora.quantization_kwargs()
+        )
+    model = modules["AutoModelForCausalLM"].from_pretrained(config.base_model_id, **model_kwargs)
+    if config.use_4bit:
+        model = modules["prepare_model_for_kbit_training"](model)
+    model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
+
+    dataset = modules["Dataset"].from_list([{"text": render_sft_text(record)} for record in records])
+    tokenized = _tokenize_text_dataset(dataset, tokenizer, config.max_seq_length)
+    args = modules["TrainingArguments"](
+        output_dir=str(config.output_dir),
+        num_train_epochs=config.epochs,
+        learning_rate=config.learning_rate,
+        per_device_train_batch_size=config.per_device_train_batch_size,
+        gradient_accumulation_steps=config.gradient_accumulation_steps,
+        max_steps=config.max_steps,
+        logging_steps=1,
+        save_strategy="epoch",
+        report_to=[],
+        seed=config.seed,
+    )
+    trainer = modules["Trainer"](
+        model=model,
+        args=args,
+        train_dataset=tokenized,
+        data_collator=modules["DataCollatorForLanguageModeling"](tokenizer=tokenizer, mlm=False),
+    )
+    train_output = trainer.train()
+    trainer.save_model(str(config.output_dir))
+    tokenizer.save_pretrained(str(config.output_dir))
+    return _write_result(
+        stage="sft",
+        config=config,
+        record_count=len(records),
+        metrics={"train_loss": float(getattr(train_output, "training_loss", 0.0) or 0.0)},
+    )
+
+
+def train_dpo(
+    config: DistillationRuntimeConfig,
+    *,
+    dpo: DpoConfig | None = None,
+) -> DistillationRunResult:
+    records = read_jsonl_records(config.dataset_path)
+    if not records:
+        raise ValueError("DPO dataset is empty")
+    active_dpo = dpo or DpoConfig(epochs=int(config.epochs), learning_rate=config.learning_rate)
+    if config.dry_run:
+        return _write_result(
+            stage="dpo",
+            config=config,
+            record_count=len(records),
+            metrics={"train_loss": 0.0, "beta": active_dpo.beta},
+        )
+
+    modules = _load_ml_modules()
+    tokenizer = modules["AutoTokenizer"].from_pretrained(
+        config.base_model_id,
+        local_files_only=config.local_files_only,
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    model_kwargs: dict[str, Any] = {"local_files_only": config.local_files_only}
+    if config.device_map is not None:
+        model_kwargs["device_map"] = config.device_map
+    if config.use_4bit:
+        model_kwargs["quantization_config"] = modules["BitsAndBytesConfig"](
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+    model = modules["AutoModelForCausalLM"].from_pretrained(config.base_model_id, **model_kwargs)
+    if config.use_4bit:
+        model = modules["prepare_model_for_kbit_training"](model)
+    model = modules["get_peft_model"](model, modules["LoraConfig"](**QLoRAConfig().peft_kwargs()))
+
+    dataset = modules["Dataset"].from_list(records)
+    args = modules["DPOConfig"](
+        output_dir=str(config.output_dir),
+        num_train_epochs=active_dpo.epochs,
+        learning_rate=active_dpo.learning_rate,
+        per_device_train_batch_size=config.per_device_train_batch_size,
+        gradient_accumulation_steps=config.gradient_accumulation_steps,
+        max_steps=config.max_steps,
+        logging_steps=1,
+        save_strategy="epoch",
+        report_to=[],
+        seed=config.seed,
+        beta=active_dpo.beta,
+        max_length=config.max_seq_length,
+    )
+    trainer = modules["DPOTrainer"](
+        model=model,
+        ref_model=None,
+        args=args,
+        train_dataset=dataset,
+        processing_class=tokenizer,
+    )
+    train_output = trainer.train()
+    trainer.save_model(str(config.output_dir))
+    tokenizer.save_pretrained(str(config.output_dir))
+    return _write_result(
+        stage="dpo",
+        config=config,
+        record_count=len(records),
+        metrics={"train_loss": float(getattr(train_output, "training_loss", 0.0) or 0.0), "beta": active_dpo.beta},
+    )
+
+
+def run_laptop_smoke_distillation(
+    *,
+    sft_config: DistillationRuntimeConfig,
+    dpo_config: DistillationRuntimeConfig,
+) -> DistillationSmokeResult:
+    sft_result = train_sft(sft_config)
+    sft_adapter_written = adapter_artifacts_written(sft_config.output_dir)
+    if not sft_adapter_written:
+        raise RuntimeError(f"SFT did not write PEFT adapter artifacts to {sft_config.output_dir}")
+
+    dpo_result = train_dpo(dpo_config)
+    dpo_adapter_written = adapter_artifacts_written(dpo_config.output_dir)
+    if not dpo_adapter_written:
+        raise RuntimeError(f"DPO did not write PEFT adapter artifacts to {dpo_config.output_dir}")
+
+    return DistillationSmokeResult(
+        sft=sft_result,
+        dpo=dpo_result,
+        sft_adapter_written=sft_adapter_written,
+        dpo_adapter_written=dpo_adapter_written,
+    )
+
+
+def adapter_artifacts_written(output_dir: Path) -> bool:
+    return (output_dir / "adapter_config.json").is_file() and (
+        (output_dir / "adapter_model.safetensors").is_file()
+        or (output_dir / "adapter_model.bin").is_file()
+    )
+
+
+def _tokenize_text_dataset(dataset: Any, tokenizer: Any, max_seq_length: int) -> Any:
+    def tokenize(batch: dict[str, list[str]]) -> dict[str, Any]:
+        tokenized = tokenizer(
+            batch["text"],
+            truncation=True,
+            max_length=max_seq_length,
+            padding=False,
+        )
+        tokenized["labels"] = [list(ids) for ids in tokenized["input_ids"]]
+        return cast(dict[str, Any], tokenized)
+
+    return dataset.map(tokenize, batched=True, remove_columns=["text"])
+
+
+def _write_result(
+    *,
+    stage: str,
+    config: DistillationRuntimeConfig,
+    record_count: int,
+    metrics: dict[str, float],
+) -> DistillationRunResult:
+    config.output_dir.mkdir(parents=True, exist_ok=True)
+    result = DistillationRunResult(
+        stage=stage,
+        output_dir=str(config.output_dir),
+        base_model_id=config.base_model_id,
+        dataset_path=str(config.dataset_path),
+        dataset_sha256=dataset_digest(config.dataset_path),
+        record_count=record_count,
+        dry_run=config.dry_run,
+        metrics=metrics,
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    (config.output_dir / f"{stage}-run-summary.json").write_text(
+        json.dumps(result.as_dict(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return result
+
+
+def _load_ml_modules() -> dict[str, Any]:
+    try:
+        transformers = importlib.import_module("transformers")
+        datasets = importlib.import_module("datasets")
+        peft = importlib.import_module("peft")
+        trl = importlib.import_module("trl")
+    except ImportError as exc:  # pragma: no cover - depends on optional extra
+        raise RuntimeError("Install ML dependencies with `uv sync --extra ml --group dev`.") from exc
+
+    return {
+        "AutoModelForCausalLM": transformers.AutoModelForCausalLM,
+        "AutoTokenizer": transformers.AutoTokenizer,
+        "BitsAndBytesConfig": transformers.BitsAndBytesConfig,
+        "DataCollatorForLanguageModeling": transformers.DataCollatorForLanguageModeling,
+        "Trainer": transformers.Trainer,
+        "TrainingArguments": transformers.TrainingArguments,
+        "Dataset": datasets.Dataset,
+        "LoraConfig": peft.LoraConfig,
+        "get_peft_model": peft.get_peft_model,
+        "prepare_model_for_kbit_training": peft.prepare_model_for_kbit_training,
+        "DPOConfig": trl.DPOConfig,
+        "DPOTrainer": trl.DPOTrainer,
+    }

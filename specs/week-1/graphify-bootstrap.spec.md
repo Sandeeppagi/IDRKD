@@ -13,7 +13,8 @@ In scope:
 - Build a Docker image with Graphify installed.
 - Run Graphify against `https://github.com/telstra/MessagingAPI-SDK-python.git`.
 - Persist Graphify `graph.json` into Neo4j.
-- Verify node and edge counts.
+- Verify imported node count, imported edge count, and zero orphan
+  relationships.
 
 Out of scope:
 
@@ -42,6 +43,9 @@ Neo4j graph contract:
   `updated_at`, and `lamport_clock`.
 - Missing external endpoints are preserved as stub nodes so all Graphify edges
   are importable.
+- Compose aligns the import with `TENANT_ID`, `REPO_ID`, and `SOURCE_LABEL`.
+  Defaults are `tenant-live`, `telstra-messaging-api-sdk-python`, and
+  `telstra-messaging-api-sdk-python`.
 
 ## Implementation
 
@@ -58,32 +62,57 @@ Neo4j graph contract:
 - Graphify runs against the Telstra Python repo.
 - Neo4j is populated from Graphify output.
 - The importer is idempotent via Neo4j `MERGE`.
-- Node and edge counts are recorded.
+- Imported node and edge counts exactly match the generated `graph.json`
+  including external stub nodes.
+- Smoke verification fails when an imported relationship has a missing
+  endpoint.
 
 ## Verification
 
 Run:
 
 ```bash
+docker compose --profile graphify up graphify
+```
+
+The helper script runs the same profile command:
+
+```bash
 scripts/bootstrap_graphify_telstra.sh
 ```
 
-Verify Neo4j counts:
+Verify Neo4j counts manually:
 
 ```cypher
-MATCH (n:GraphifyNode {repo_id: 'telstra-messaging-api-sdk-python'})
+MATCH (n:GraphifyNode {
+  tenant_id: 'tenant-live',
+  repo_id: 'telstra-messaging-api-sdk-python',
+  source_label: 'telstra-messaging-api-sdk-python'
+})
 RETURN count(n) AS telstra_nodes;
 
-MATCH (:GraphifyNode {repo_id: 'telstra-messaging-api-sdk-python'})
-      -[r:GRAPHIFY_RELATION]->
-      (:GraphifyNode {repo_id: 'telstra-messaging-api-sdk-python'})
+MATCH (:GraphifyNode {
+        tenant_id: 'tenant-live',
+        repo_id: 'telstra-messaging-api-sdk-python',
+        source_label: 'telstra-messaging-api-sdk-python'
+      })
+      -[r:GRAPHIFY_RELATION {
+        tenant_id: 'tenant-live',
+        repo_id: 'telstra-messaging-api-sdk-python'
+      }]->
+      (:GraphifyNode {
+        tenant_id: 'tenant-live',
+        repo_id: 'telstra-messaging-api-sdk-python',
+        source_label: 'telstra-messaging-api-sdk-python'
+      })
 RETURN count(r) AS telstra_edges;
 ```
 
 Expected verified counts:
 
-- `telstra_nodes`: `402`
-- `telstra_edges`: `505`
+- `telstra_nodes`: `400`
+- `telstra_edges`: `764`
+- `orphan_relationships`: `0`
 
 ## Notes
 

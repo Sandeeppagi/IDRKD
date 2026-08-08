@@ -20,6 +20,8 @@ dependencies = [
   "scikit-learn>=1.5",
   "tree-sitter-python>=0.23",
   "tree-sitter-javascript>=0.23",
+  "a2a-sdk[http-server]>=1.1",
+  "prometheus-client>=0.20",
 ]
 
 [dependency-groups]
@@ -28,17 +30,26 @@ dev = [
   "pytest-asyncio>=0.23",
   "ruff>=0.5",
   "mypy>=1.10",
+  "types-protobuf>=5.29",
 ]
 
 [project.optional-dependencies]
 ml = [
   "torch>=2.3",
   "transformers>=4.43",
+  "sentence-transformers>=3.0",
   "datasets>=2.20",
   "peft>=0.11",
   "trl>=0.9",
   "accelerate>=0.32",
 ]
+
+[project.scripts]
+idrkd-distill = "idrkd.distillation.cli:main"
+idrkd-quantize-awq = "idrkd.distillation.quantize_cli:main"
+idrkd-drift-worker = "idrkd.drift.cli:main"
+idrkd-graphify = "idrkd.graph.graphify_importer:main"
+idrkd-mcp-smoke = "idrkd.mcp.live_smoke:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -53,6 +64,7 @@ package = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100

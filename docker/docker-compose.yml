@@ -83,6 +83,143 @@ services:
     volumes:
       - ../configs/otel-collector.yml:/etc/otelcol-contrib/config.yml:ro
 
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/idrkd.Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      TENANT_ID: ${TENANT_ID:-tenant-live}
+      REPO_ID: ${REPO_ID:-week5-e2e}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: change-me
+      POSTGRES_DSN: postgresql://idrkd:idrkd@postgres:5432/idrkd
+      REDIS_URL: redis://redis:6379/0
+      IDRKD_STUDENT_MODEL_BASE_URL: ${IDRKD_STUDENT_MODEL_BASE_URL:-http://slm-server:8000/v1}
+      IDRKD_STUDENT_MODEL_ID: ${IDRKD_STUDENT_MODEL_ID:-idrkd-student-awq}
+      IDRKD_STUDENT_MODEL_API_KEY: ${IDRKD_STUDENT_MODEL_API_KEY:-idrkd-local}
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz', timeout=2).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  reindex-worker:
+    build:
+      context: ..
+      dockerfile: docker/idrkd.Dockerfile
+    command: ["idrkd-drift-worker", "reindex-loop"]
+    environment:
+      TENANT_ID: ${TENANT_ID:-tenant-live}
+      REPO_ID: ${REPO_ID:-week5-e2e}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: change-me
+      POSTGRES_DSN: postgresql://idrkd:idrkd@postgres:5432/idrkd
+      REDIS_URL: redis://redis:6379/0
+      REINDEX_QUEUE_KIND: mcp
+      REINDEX_QUEUE_KEY: idrkd:mcp:reindex
+      WORKER_METRICS_PORT: 9101
+      LOG_LEVEL: INFO
+    ports:
+      - "9101:9101"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "idrkd-drift-worker", "healthcheck"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+
+  drift-worker:
+    build:
+      context: ..
+      dockerfile: docker/idrkd.Dockerfile
+    profiles: ["drift"]
+    command: ["idrkd-drift-worker", "reindex-loop"]
+    environment:
+      TENANT_ID: ${TENANT_ID:-tenant-live}
+      REPO_ID: ${REPO_ID:-week5-e2e}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: change-me
+      POSTGRES_DSN: postgresql://idrkd:idrkd@postgres:5432/idrkd
+      REDIS_URL: redis://redis:6379/0
+      REINDEX_QUEUE_KIND: drift
+      REINDEX_QUEUE_KEY: idrkd:reindex
+      WORKER_METRICS_PORT: 9102
+      LOG_LEVEL: INFO
+    ports:
+      - "9102:9102"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "idrkd-drift-worker", "healthcheck"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+
+  slm-server:
+    image: vllm/vllm-openai:latest
+    profiles: ["slm-server"]
+    ports:
+      - "${IDRKD_SLM_PORT:-8000}:8000"
+    volumes:
+      - ../models:/models:ro
+    environment:
+      HF_HOME: /models/.cache/huggingface
+    command:
+      - --model
+      - ${IDRKD_SLM_MODEL_PATH:-/models/checkpoints/idrkd-student-awq}
+      - --served-model-name
+      - ${IDRKD_STUDENT_MODEL_ID:-idrkd-student-awq}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --quantization
+      - awq
+      - --max-model-len
+      - ${IDRKD_SLM_MAX_MODEL_LEN:-4096}
+      - --gpu-memory-utilization
+      - ${IDRKD_SLM_GPU_MEMORY_UTILIZATION:-0.9}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+
+  slm-server-laptop:
+    image: ollama/ollama:latest
+    profiles: ["slm-server-laptop"]
+    ports:
+      - "${IDRKD_SLM_LAPTOP_PORT:-11434}:11434"
+    volumes:
+      - ../models/ollama:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+
   graphify:
     build:
       context: ..
@@ -95,10 +232,16 @@ services:
       - ../data/raw:/work/raw:ro
       - ../data/processed/graphify-out:/work/graphify-out
     environment:
+      TENANT_ID: ${TENANT_ID:-tenant-live}
+      REPO_ID: ${REPO_ID:-telstra-messaging-api-sdk-python}
+      SOURCE_LABEL: ${GRAPHIFY_OUTPUT_NAME:-telstra-messaging-api-sdk-python}
+      GRAPHIFY_SOURCE_DIR: ${GRAPHIFY_SOURCE_DIR:-telstra-messaging-api-sdk-python}
+      GRAPHIFY_OUTPUT_NAME: ${GRAPHIFY_OUTPUT_NAME:-telstra-messaging-api-sdk-python}
+      GRAPHIFY_GIT_URL: ${GRAPHIFY_GIT_URL:-https://github.com/telstra/MessagingAPI-SDK-python.git}
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: change-me
     command:
       - /bin/sh
       - -lc
-      - repo="$${GRAPHIFY_SOURCE_DIR:-httpx}" && out="$${GRAPHIFY_OUTPUT_NAME:-$$repo}" && rm -rf "/tmp/$$repo" "/work/graphify-out/$$out" && cp -R "/work/raw/$$repo" "/tmp/$$repo" && graphify update "/tmp/$$repo" --force --no-cluster && python -m idrkd.graph.graphify_importer --graph "/tmp/$$repo/graphify-out/graph.json" --neo4j-uri "$$NEO4J_URI" --neo4j-user "$$NEO4J_USER" --neo4j-password "$$NEO4J_PASSWORD" --tenant-id "$${TENANT_ID:-default}" --repo-id "$${REPO_ID:-$$out}" --source-label "$$out" && mkdir -p /work/graphify-out && cp -R "/tmp/$$repo/graphify-out" "/work/graphify-out/$$out"
+      - repo="$${GRAPHIFY_SOURCE_DIR:-telstra-messaging-api-sdk-python}" && out="$${GRAPHIFY_OUTPUT_NAME:-$$repo}" && source_label="$${SOURCE_LABEL:-$$out}" && rm -rf "/tmp/$$repo" "/work/graphify-out/$$out" && if [ -d "/work/raw/$$repo" ]; then cp -R "/work/raw/$$repo" "/tmp/$$repo"; else git clone --depth 1 "$${GRAPHIFY_GIT_URL:-https://github.com/telstra/MessagingAPI-SDK-python.git}" "/tmp/$$repo"; fi && graphify update "/tmp/$$repo" --force --no-cluster && python -m idrkd.graph.graphify_importer import --graph "/tmp/$$repo/graphify-out/graph.json" --neo4j-uri "$$NEO4J_URI" --neo4j-user "$$NEO4J_USER" --neo4j-password "$$NEO4J_PASSWORD" --tenant-id "$${TENANT_ID:-tenant-live}" --repo-id "$${REPO_ID:-$$out}" --source-label "$$source_label" && python -m idrkd.graph.graphify_importer smoke --graph "/tmp/$$repo/graphify-out/graph.json" --neo4j-uri "$$NEO4J_URI" --neo4j-user "$$NEO4J_USER" --neo4j-password "$$NEO4J_PASSWORD" --tenant-id "$${TENANT_ID:-tenant-live}" --repo-id "$${REPO_ID:-$$out}" --source-label "$$source_label" && mkdir -p /work/graphify-out && cp -R "/tmp/$$repo/graphify-out" "/work/graphify-out/$$out"

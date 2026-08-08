@@ -1,4 +1,9 @@
-"""Deterministic A2A bridge primitives with signed agent cards."""
+"""A2A bridge primitives on top of the real a2a-sdk v1.0 AgentCard.
+
+Card signing stays a dependency-free, deterministic HMAC over the card's
+canonical JSON (this repo's own tested contract) rather than the SDK's
+own `[signing]` extra, whose exact API this repo doesn't pin to.
+"""
 
 from __future__ import annotations
 
@@ -9,25 +14,21 @@ import json
 from typing import Any
 from uuid import uuid4
 
+from a2a.types import AgentCard
+from google.protobuf.json_format import MessageToDict
+
 
 def _canonical_json(payload: dict[str, Any]) -> bytes:
     return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-@dataclass(frozen=True)
-class AgentCard:
-    agent_id: str
-    name: str
-    endpoint: str
-    capabilities: tuple[str, ...]
+def agent_card_payload(card: AgentCard) -> dict[str, Any]:
+    payload: dict[str, Any] = MessageToDict(card, preserving_proto_field_name=True)
+    return payload
 
-    def to_payload(self) -> dict[str, Any]:
-        return {
-            "agent_id": self.agent_id,
-            "name": self.name,
-            "endpoint": self.endpoint,
-            "capabilities": list(self.capabilities),
-        }
+
+def sign_payload(payload: dict[str, Any], secret: str) -> str:
+    return hmac.new(secret.encode("utf-8"), _canonical_json(payload), hashlib.sha256).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -36,8 +37,12 @@ class SignedAgentCard:
     signature: str
 
     def verify(self, secret: str) -> bool:
-        expected = sign_payload(self.card.to_payload(), secret)
+        expected = sign_payload(agent_card_payload(self.card), secret)
         return hmac.compare_digest(expected, self.signature)
+
+
+def sign_agent_card(card: AgentCard, secret: str) -> SignedAgentCard:
+    return SignedAgentCard(card=card, signature=sign_payload(agent_card_payload(card), secret))
 
 
 @dataclass(frozen=True)
@@ -60,14 +65,6 @@ class A2AMessage:
         }
 
 
-def sign_payload(payload: dict[str, Any], secret: str) -> str:
-    return hmac.new(secret.encode("utf-8"), _canonical_json(payload), hashlib.sha256).hexdigest()
-
-
-def sign_agent_card(card: AgentCard, secret: str) -> SignedAgentCard:
-    return SignedAgentCard(card=card, signature=sign_payload(card.to_payload(), secret))
-
-
 class A2ABridge:
     def __init__(self, *, local_card: AgentCard, shared_secret: str) -> None:
         self.local_card = local_card
@@ -85,7 +82,7 @@ class A2ABridge:
         traceparent: str,
     ) -> A2AMessage:
         return A2AMessage(
-            sender=self.local_card.agent_id,
+            sender=self.local_card.name,
             recipient=recipient,
             task=task,
             payload=payload,

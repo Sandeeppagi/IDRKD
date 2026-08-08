@@ -1,9 +1,11 @@
-"""Document extraction and lightweight SpanBERT-style NER facade."""
+"""Document extraction and optional SpanBERT-style NER."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import re
+from typing import Any, cast
 
 from idrkd.common.fingerprints import entity_id, normalise_repo_path, sha256_text
 from idrkd.common.models import CodeEntity, EntityKind, ParsedFile, SourceLocation
@@ -22,13 +24,46 @@ class NamedEntity:
 
 
 class SpanBertNerExtractor:
-    """NER facade with deterministic fallback for local development.
+    """NER extractor with optional Hugging Face token-classification pipeline.
 
-    The production implementation can swap this class for a real SpanBERT NER
-    model without changing the downstream document ingestion contract.
+    When `pipeline` is omitted, deterministic regex extraction keeps local tests
+    and offline development repeatable.
     """
 
+    def __init__(self, pipeline: object | None = None) -> None:
+        self._pipeline = pipeline
+
+    @classmethod
+    def from_transformers(
+        cls,
+        model_name: str = "SpanBERT/spanbert-large-cased",
+        *,
+        local_files_only: bool = False,
+    ) -> SpanBertNerExtractor:
+        from transformers import (
+            AutoModelForTokenClassification,
+            AutoTokenizer,
+            pipeline,
+        )
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=local_files_only)
+        model = AutoModelForTokenClassification.from_pretrained(
+            model_name,
+            local_files_only=local_files_only,
+        )
+        build_pipeline = cast(Callable[..., object], pipeline)
+        return cls(
+            build_pipeline(
+                "token-classification",
+                model=model,
+                tokenizer=tokenizer,
+                aggregation_strategy="simple",
+            )
+        )
+
     def extract(self, text: str) -> tuple[NamedEntity, ...]:
+        if self._pipeline is not None:
+            return tuple(_entities_from_pipeline(self._pipeline, text))
         entities = []
         for match in ENTITY_PATTERN.finditer(text):
             token = match.group(0)
@@ -79,3 +114,19 @@ def parse_document_file(
         entities=(entity,),
         relations=(),
     )
+
+
+def _entities_from_pipeline(pipeline_model: object, text: str) -> list[NamedEntity]:
+    ner = cast(Callable[[str], list[dict[str, Any]]], pipeline_model)
+    raw_entities = ner(text)
+    entities: list[NamedEntity] = []
+    for raw in raw_entities:
+        entity_text = str(raw.get("word") or raw.get("entity") or "").strip()
+        if not entity_text:
+            continue
+        start = int(raw.get("start", 0))
+        end = int(raw.get("end", start + len(entity_text)))
+        label = str(raw.get("entity_group") or raw.get("entity") or "ENTITY")
+        confidence = float(raw.get("score", 0.0))
+        entities.append(NamedEntity(entity_text, label, start, end, confidence))
+    return entities

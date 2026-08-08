@@ -28,11 +28,11 @@ Output:
 
 - Shared entities across vector and graph channels rank higher.
 - Source provenance is preserved.
-- MiniLM reranker facade can reorder fused hits.
+- MiniLM reranker can use an optional cross-encoder model and can reorder fused hits.
 - Retrieval remains deterministic under test.
 
 ## Verification
 
 ```bash
-uv run pytest tests/unit/test_week3_rag.py
+uv run pytest tests/unit/test_week3_rag.py tests/unit/test_mcp_server_and_real_adapters.py
 ```

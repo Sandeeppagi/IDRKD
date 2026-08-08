@@ -18,6 +18,8 @@ Output:
 - `IngestionResult`
 - schema applied before writes
 - parsed entities and relations written through `Neo4jCodeGraphWriter`
+- parsed entities embedded and written through an optional pgvector embedding
+  sink when configured
 
 Supported file types:
 
@@ -33,6 +35,7 @@ Supported file types:
 - `src/idrkd/ingestion/kafka.py`
 - `src/idrkd/ingestion/webhook.py`
 - `src/idrkd/ingestion/pipeline.py`
+- `src/idrkd/rag/vector_store.py`
 - `tests/unit/test_week2_ingestion.py`
 
 ## Acceptance Criteria
@@ -41,7 +44,9 @@ Supported file types:
 - Webhook payload can publish a commit event to Kafka producer interface.
 - Parser pipeline routes changed paths by file extension.
 - Writer schema is applied before graph writes.
-- Result reports parsed file, entity, relation, SLO, and Lamport counts.
+- When an embedding sink is configured, every parsed entity is converted into a
+  `VectorRecord` and upserted into pgvector.
+- Result reports parsed file, entity, relation, embedding, SLO, and Lamport counts.
 
 ## Verification
 

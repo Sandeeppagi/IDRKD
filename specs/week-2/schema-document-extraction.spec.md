@@ -21,9 +21,11 @@ Markdown/text outputs:
 NER contract:
 
 - `SpanBertNerExtractor.extract(text) -> tuple[NamedEntity, ...]`
+- optional real-model path: `SpanBertNerExtractor(pipeline=...)` or
+  `from_transformers(...)`
 - deterministic local fallback is used for tests
-- production SpanBERT can replace the fallback without changing downstream
-  parser or graph contracts
+- production SpanBERT-style pipelines can replace the fallback without
+  changing downstream parser or graph contracts
 
 ## Implementation
 
@@ -37,9 +39,10 @@ NER contract:
 - CSV headers become schema fields.
 - Document ingestion emits a Document entity.
 - NER output includes text, label, offsets, and confidence.
+- A supplied transformer NER pipeline is used when configured.
 
 ## Verification
 
 ```bash
-uv run pytest tests/unit/test_week2_ingestion.py
+uv run pytest tests/unit/test_week2_ingestion.py tests/unit/test_mcp_server_and_real_adapters.py
 ```

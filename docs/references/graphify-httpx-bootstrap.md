@@ -12,7 +12,8 @@ Input repository:
 Command used:
 
 ```bash
-docker compose -f docker/docker-compose.yml --profile graphify run --rm --no-deps --entrypoint /bin/sh graphify -lc 'rm -rf /tmp/httpx /work/graphify-out/httpx && cp -R /work/raw/httpx /tmp/httpx && graphify update /tmp/httpx --force --no-cluster && mkdir -p /work/graphify-out && cp -R /tmp/httpx/graphify-out /work/graphify-out/httpx && find /work/graphify-out/httpx -maxdepth 2 -type f -print'
+GRAPHIFY_SOURCE_DIR=httpx GRAPHIFY_OUTPUT_NAME=httpx REPO_ID=httpx \
+  docker compose --profile graphify up graphify
 ```
 
 Observed output:
@@ -34,3 +35,5 @@ Notes:
 - IDRKD provides `idrkd.graph.graphify_importer` as the missing bridge from
   Graphify `graph.json` to Neo4j. The importer creates `:GraphifyNode` nodes
   and `:GRAPHIFY_RELATION` relationships with idempotent `MERGE` writes.
+- The profile-based service now runs import and smoke verification in the same
+  repeatable container command.
