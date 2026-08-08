@@ -188,6 +188,15 @@ uv run idrkd-mcp-smoke --tenant-id tenant-live --repo-id week5-e2e
 That smoke verifies `tools/list`, `search_code`, `graph_bfs`, and `graph_path`
 against the running MCP server and live Neo4j/pgvector data.
 
+Run benchmark modes:
+
+```bash
+uv run python -m idrkd.evaluation.cli --mode registry-smoke --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-registry-smoke.json
+uv run python -m idrkd.evaluation.cli --mode student-agent --model-base-url http://localhost:11434/v1 --model-id qwen2.5:0.5b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-student-agent.json
+uv run python -m idrkd.evaluation.cli --mode teacher-agent --model-base-url http://localhost:11434/v1 --teacher-model-id qwen2.5:7b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-teacher-agent.json
+uv run python -m idrkd.evaluation.cli --mode ablation --ablation no_graph --model-base-url http://localhost:11434/v1 --model-id qwen2.5:0.5b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-ablation-no-graph.json
+```
+
 Run the Dockerized re-index worker and verify MCP enqueue consumption:
 
 ```bash

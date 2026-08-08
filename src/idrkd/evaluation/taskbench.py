@@ -10,7 +10,15 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from idrkd.evaluation.bfcl import FunctionCallPrediction, score_function_calls
+from idrkd.evaluation.model_agent import (
+    ToolCallPredictor,
+    filter_tools_for_ablations,
+    run_model_agent_case,
+)
 from idrkd.mcp.tools import JsonRpcRequest, McpToolRegistry
+
+
+BenchmarkMode = Literal["registry-smoke", "student-agent", "teacher-agent", "ablation"]
 
 
 class McpTask(BaseModel):
@@ -44,6 +52,10 @@ class EvalCaseResult:
     schema_valid: bool
     execution_success: bool
     expected_result_keys_present: bool
+    raw_model_output: str | None = None
+    parsed_tool_call: dict[str, Any] | None = None
+    execution_result: dict[str, Any] | None = None
+    latency_ms: float | None = None
     error: str | None = None
 
     @property
@@ -64,6 +76,8 @@ class EvalSummary:
     tool_recall: float
     tool_f1: float
     argument_accuracy: float
+    mode: BenchmarkMode = "registry-smoke"
+    ablations: tuple[str, ...] = ()
 
     @property
     def pass_rate(self) -> float:
@@ -90,6 +104,8 @@ class EvalSummary:
     def as_dict(self) -> dict[str, Any]:
         return {
             "cases": [case.__dict__ for case in self.cases],
+            "mode": self.mode,
+            "ablations": list(self.ablations),
             "pass_rate": self.pass_rate,
             "schema_valid_rate": self.schema_valid_rate,
             "tool_precision": self.tool_precision,
@@ -104,14 +120,34 @@ class TaskBenchRunner:
     def __init__(self, registry: McpToolRegistry) -> None:
         self._registry = registry
 
-    def run(self, tasks: list[McpTask]) -> EvalSummary:
+    def run(
+        self,
+        tasks: list[McpTask],
+        *,
+        mode: BenchmarkMode = "registry-smoke",
+        predictor: ToolCallPredictor | None = None,
+        ablations: tuple[str, ...] = (),
+    ) -> EvalSummary:
+        if mode != "registry-smoke" and predictor is None:
+            raise ValueError(f"{mode} requires a model-agent predictor")
         cases: list[EvalCaseResult] = []
         expected_calls: list[FunctionCallPrediction] = []
         predicted_calls: list[FunctionCallPrediction] = []
         for task in tasks:
             expected_calls.append(task.expected_call())
-            predicted_calls.append(task.expected_call())
-            cases.append(self._run_case(task))
+            case = (
+                self._run_registry_smoke_case(task)
+                if mode == "registry-smoke"
+                else self._run_model_agent_case(task, predictor=predictor, ablations=ablations)
+            )
+            if case.parsed_tool_call is not None:
+                predicted_calls.append(
+                    FunctionCallPrediction(
+                        name=case.parsed_tool_call["name"],
+                        arguments=case.parsed_tool_call["arguments"],
+                    )
+                )
+            cases.append(case)
         metrics = score_function_calls(expected_calls, predicted_calls)
         return EvalSummary(
             cases=tuple(cases),
@@ -119,13 +155,16 @@ class TaskBenchRunner:
             tool_recall=metrics.recall,
             tool_f1=metrics.f1,
             argument_accuracy=metrics.argument_accuracy,
+            mode=mode,
+            ablations=ablations,
         )
 
-    def _run_case(self, task: McpTask) -> EvalCaseResult:
+    def _run_registry_smoke_case(self, task: McpTask) -> EvalCaseResult:
         schema_valid = False
         execution_success = False
         keys_present = False
         error = None
+        result: dict[str, Any] | None = None
         try:
             list_response = self._registry.handle(JsonRpcRequest(method="tools/list", id=f"{task.id}:list"))
             schema_valid = _tool_exists_in_schema(list_response.result or {}, task.expected_tool)
@@ -151,6 +190,57 @@ class TaskBenchRunner:
             schema_valid=schema_valid,
             execution_success=execution_success,
             expected_result_keys_present=keys_present,
+            parsed_tool_call={
+                "name": task.expected_tool,
+                "arguments": task.arguments,
+            },
+            execution_result=result if execution_success else None,
+            error=error,
+        )
+
+    def _run_model_agent_case(
+        self,
+        task: McpTask,
+        *,
+        predictor: ToolCallPredictor | None,
+        ablations: tuple[str, ...],
+    ) -> EvalCaseResult:
+        assert predictor is not None
+        schema_valid = False
+        keys_present = False
+        error = None
+        list_response = self._registry.handle(JsonRpcRequest(method="tools/list", id=f"{task.id}:list"))
+        tools = filter_tools_for_ablations(list_response.result.get("tools", []) if list_response.result else [], ablations)
+        schema_valid = _tool_exists_in_schema({"tools": tools}, task.expected_tool)
+        prediction = run_model_agent_case(
+            registry=self._registry,
+            predictor=predictor,
+            prompt=task.prompt,
+            tools=tools,
+            task_id=task.id,
+        )
+        parsed = prediction.parsed_tool_call
+        execution_success = (
+            prediction.execution_error is None if task.should_succeed else prediction.execution_error is not None
+        )
+        if prediction.execution_result is not None:
+            keys_present = all(key in prediction.execution_result for key in task.expected_result_keys)
+        if prediction.execution_error is not None:
+            error = prediction.execution_error
+        return EvalCaseResult(
+            task_id=task.id,
+            category=task.category,
+            tool_correct=parsed is not None and parsed.name == task.expected_tool,
+            arguments_correct=parsed is not None and parsed.arguments == task.arguments,
+            schema_valid=schema_valid,
+            execution_success=execution_success,
+            expected_result_keys_present=keys_present,
+            raw_model_output=prediction.raw_model_output,
+            parsed_tool_call=(
+                {"name": parsed.name, "arguments": parsed.arguments} if parsed is not None else None
+            ),
+            execution_result=prediction.execution_result,
+            latency_ms=prediction.latency_ms,
             error=error,
         )
 
