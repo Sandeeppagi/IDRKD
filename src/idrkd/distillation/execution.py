@@ -7,7 +7,7 @@ stack only after `dry_run=False`.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 import importlib
 import json
@@ -23,6 +23,7 @@ class DistillationRuntimeConfig:
     dataset_path: Path
     output_dir: Path
     base_model_id: str = "Qwen/Qwen2.5-0.5B-Instruct"
+    sft_adapter_path: Path | None = None
     max_seq_length: int = 1024
     epochs: float = 1.0
     learning_rate: float = 2e-4
@@ -41,6 +42,7 @@ class DistillationRunResult:
     stage: str
     output_dir: str
     base_model_id: str
+    sft_adapter_path: str | None
     dataset_path: str
     dataset_sha256: str
     record_count: int
@@ -169,6 +171,7 @@ def train_dpo(
             metrics={"train_loss": 0.0, "beta": active_dpo.beta},
         )
 
+    sft_adapter_path = _validate_sft_adapter_path(config.sft_adapter_path)
     modules = _load_ml_modules()
     tokenizer = modules["AutoTokenizer"].from_pretrained(
         config.base_model_id,
@@ -189,7 +192,19 @@ def train_dpo(
     model = modules["AutoModelForCausalLM"].from_pretrained(config.base_model_id, **model_kwargs)
     if config.use_4bit:
         model = modules["prepare_model_for_kbit_training"](model)
-    model = modules["get_peft_model"](model, modules["LoraConfig"](**QLoRAConfig().peft_kwargs()))
+    if sft_adapter_path is not None:
+        model = modules["PeftModel"].from_pretrained(
+            model,
+            str(sft_adapter_path),
+            is_trainable=True,
+        )
+    else:
+        active_qlora = QLoRAConfig(
+            base_model_id=config.base_model_id,
+            load_in_4bit=config.use_4bit,
+            max_seq_length=config.max_seq_length,
+        )
+        model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
 
     dataset = modules["Dataset"].from_list(records)
     args = modules["DPOConfig"](
@@ -234,10 +249,14 @@ def run_laptop_smoke_distillation(
     if not sft_adapter_written:
         raise RuntimeError(f"SFT did not write PEFT adapter artifacts to {sft_config.output_dir}")
 
-    dpo_result = train_dpo(dpo_config)
-    dpo_adapter_written = adapter_artifacts_written(dpo_config.output_dir)
+    active_dpo_config = dpo_config
+    if active_dpo_config.sft_adapter_path is None:
+        active_dpo_config = replace(active_dpo_config, sft_adapter_path=sft_config.output_dir)
+
+    dpo_result = train_dpo(active_dpo_config)
+    dpo_adapter_written = adapter_artifacts_written(active_dpo_config.output_dir)
     if not dpo_adapter_written:
-        raise RuntimeError(f"DPO did not write PEFT adapter artifacts to {dpo_config.output_dir}")
+        raise RuntimeError(f"DPO did not write PEFT adapter artifacts to {active_dpo_config.output_dir}")
 
     return DistillationSmokeResult(
         sft=sft_result,
@@ -252,6 +271,16 @@ def adapter_artifacts_written(output_dir: Path) -> bool:
         (output_dir / "adapter_model.safetensors").is_file()
         or (output_dir / "adapter_model.bin").is_file()
     )
+
+
+def _validate_sft_adapter_path(adapter_path: Path | None) -> Path | None:
+    if adapter_path is None:
+        return None
+    if not adapter_path.is_dir():
+        raise ValueError(f"SFT adapter directory does not exist: {adapter_path}")
+    if not adapter_artifacts_written(adapter_path):
+        raise ValueError(f"SFT adapter artifacts are incomplete: {adapter_path}")
+    return adapter_path
 
 
 def _tokenize_text_dataset(dataset: Any, tokenizer: Any, max_seq_length: int) -> Any:
@@ -280,6 +309,7 @@ def _write_result(
         stage=stage,
         output_dir=str(config.output_dir),
         base_model_id=config.base_model_id,
+        sft_adapter_path=str(config.sft_adapter_path) if config.sft_adapter_path is not None else None,
         dataset_path=str(config.dataset_path),
         dataset_sha256=dataset_digest(config.dataset_path),
         record_count=record_count,
@@ -312,6 +342,7 @@ def _load_ml_modules() -> dict[str, Any]:
         "TrainingArguments": transformers.TrainingArguments,
         "Dataset": datasets.Dataset,
         "LoraConfig": peft.LoraConfig,
+        "PeftModel": peft.PeftModel,
         "get_peft_model": peft.get_peft_model,
         "prepare_model_for_kbit_training": peft.prepare_model_for_kbit_training,
         "DPOConfig": trl.DPOConfig,

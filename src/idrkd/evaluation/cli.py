@@ -3,16 +3,32 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 
+from idrkd.evaluation.measurements import MeasurementJob, build_measurement_bundle
 from idrkd.evaluation.model_agent import OpenAICompatibleToolCallPredictor
+from idrkd.evaluation.synthetic_schemas import (
+    build_synthetic_schema_registry,
+    build_synthetic_schema_tasks,
+    load_synthetic_schema_corpus,
+)
 from idrkd.evaluation.taskbench import TaskBenchRunner, load_tasks_jsonl, write_summary
 from idrkd.mcp.server import build_registry_from_env
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run IDRKD MCP-TaskBench tasks.")
+    subparsers = parser.add_subparsers(dest="command")
+    measurements_parser = subparsers.add_parser(
+        "build-measurements",
+        help="Write reproducible local evaluation measurement bundles.",
+    )
+    measurements_parser.add_argument("--tasks", type=Path, default=Path("eval/taskbench/seed_tasks.jsonl"))
+    measurements_parser.add_argument("--out-dir", type=Path, default=Path("eval/measurements"))
+    measurements_parser.add_argument("--seed", action="append", type=int, default=[])
+    measurements_parser.add_argument("--without-synthetic-schemas", action="store_true")
     parser.add_argument("--tasks", type=Path, default=Path("eval/taskbench/seed_tasks.jsonl"))
     parser.add_argument("--out", type=Path, default=Path("eval/taskbench/latest-summary.json"))
     parser.add_argument(
@@ -25,9 +41,36 @@ def main() -> None:
     parser.add_argument("--teacher-model-id", help="Model id for teacher-agent mode.")
     parser.add_argument("--api-key", default=os.getenv("IDRKD_EVAL_MODEL_API_KEY", "idrkd-local"))
     parser.add_argument("--ablation", action="append", default=[])
+    parser.add_argument(
+        "--include-synthetic-schemas",
+        action="store_true",
+        help="Append synthetic schema/conflict fixture tasks and use the fixture-backed registry.",
+    )
+    parser.add_argument("--synthetic-schemas", type=Path, default=Path("eval/synthetic_schemas/schemas.jsonl"))
+    parser.add_argument("--synthetic-conflicts", type=Path, default=Path("eval/synthetic_schemas/conflicts.jsonl"))
     args = parser.parse_args()
 
+    if args.command == "build-measurements":
+        manifest = build_measurement_bundle(
+            MeasurementJob(
+                tasks_path=args.tasks,
+                output_dir=args.out_dir,
+                include_synthetic_schemas=not args.without_synthetic_schemas,
+                seeds=tuple(args.seed) if args.seed else (11, 23, 37),
+            )
+        )
+        print(json.dumps({"manifest": str(args.out_dir / "manifest.json"), "runs": len(manifest["runs"])}, sort_keys=True))
+        return
+
     tasks = load_tasks_jsonl(args.tasks)
+    registry = build_registry_from_env()
+    if args.include_synthetic_schemas:
+        corpus = load_synthetic_schema_corpus(
+            schemas_path=args.synthetic_schemas,
+            conflicts_path=args.synthetic_conflicts,
+        )
+        tasks.extend(build_synthetic_schema_tasks(corpus))
+        registry = build_synthetic_schema_registry(corpus)
     predictor = None
     if args.mode != "registry-smoke":
         base_url = args.model_base_url or os.getenv("IDRKD_EVAL_MODEL_BASE_URL")
@@ -48,7 +91,7 @@ def main() -> None:
             model=model_id,
             api_key=args.api_key,
         )
-    summary = TaskBenchRunner(build_registry_from_env()).run(
+    summary = TaskBenchRunner(registry).run(
         tasks,
         mode=args.mode,
         predictor=predictor,

@@ -36,6 +36,12 @@ def main() -> None:
 
     train_dpo_parser = subparsers.add_parser("train-dpo", help="Run DPO preference training.")
     _add_training_args(train_dpo_parser, default_output=Path("models/adapters/local-smoke-dpo"))
+    train_dpo_parser.add_argument(
+        "--sft-adapter",
+        type=Path,
+        default=None,
+        help="Optional PEFT SFT adapter directory to load before DPO.",
+    )
 
     smoke_parser = subparsers.add_parser(
         "local-smoke",
@@ -103,6 +109,7 @@ def main() -> None:
             dpo_config=DistillationRuntimeConfig(
                 dataset_path=dpo_path,
                 output_dir=args.dpo_out,
+                sft_adapter_path=args.sft_out,
                 **common,
             ),
         )
@@ -118,6 +125,7 @@ def main() -> None:
         dataset_path=args.dataset,
         output_dir=args.out,
         base_model_id=args.base_model,
+        sft_adapter_path=getattr(args, "sft_adapter", None),
         max_seq_length=args.max_seq_length,
         epochs=args.epochs,
         learning_rate=args.learning_rate,

@@ -5,7 +5,6 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from docx import Document
-from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_BREAK, WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn

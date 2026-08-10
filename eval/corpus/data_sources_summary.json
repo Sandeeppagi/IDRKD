@@ -1,0 +1,28 @@
+{
+  "mcp_task_suite": {
+    "categories": [
+      "a2a_delegation",
+      "conflict_resolution",
+      "drift_trigger",
+      "multi_hop_planning",
+      "schema_conformance",
+      "tool_selection"
+    ],
+    "path": "eval/taskbench/seed_tasks.jsonl",
+    "records": 360
+  },
+  "repository_corpus": {
+    "graphify_edges": 46893,
+    "graphify_nodes": 32651,
+    "local_records": 5,
+    "path": "eval/corpus/repository_corpus.jsonl",
+    "py_js_loc_observed": 195631,
+    "records": 5
+  },
+  "synthetic_schemas": {
+    "conflict_records": 24,
+    "conflicts_path": "eval/synthetic_schemas/conflicts.jsonl",
+    "schema_records": 8,
+    "schemas_path": "eval/synthetic_schemas/schemas.jsonl"
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "aggregate": {
+    "registry-smoke": {
+      "max_peak_traced_mb": 0.870173,
+      "mean_latency_p95_seconds": 0.006629,
+      "mean_pass_rate": 1.0,
+      "mean_tool_f1": 1.0,
+      "promoted_runs": 3,
+      "runs": 3
+    },
+    "student-agent": {
+      "max_peak_traced_mb": 1.085217,
+      "mean_latency_p95_seconds": 0.000155,
+      "mean_pass_rate": 1.0,
+      "mean_tool_f1": 1.0,
+      "promoted_runs": 3,
+      "runs": 3
+    },
+    "teacher-agent": {
+      "max_peak_traced_mb": 1.084459,
+      "mean_latency_p95_seconds": 0.00016866666666666666,
+      "mean_pass_rate": 1.0,
+      "mean_tool_f1": 1.0,
+      "promoted_runs": 3,
+      "runs": 3
+    }
+  },
+  "created_at": "2026-08-10T13:12:09.570206+00:00",
+  "include_synthetic_schemas": true,
+  "measurement_type": "deterministic-local-replay",
+  "notes": "Student and teacher agent modes use deterministic oracle predictors to exercise the model-agent execution path without requiring a live model endpoint.",
+  "runs": [
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 6.709122,
+        "p95_ms": 6.709122,
+        "p95_seconds": 0.006709,
+        "total_ms": 2790.994917,
+        "ttft_seconds": 0.006709
+      },
+      "memory": {
+        "peak_traced_bytes": 912442,
+        "peak_traced_mb": 0.870173
+      },
+      "mode": "registry-smoke",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/registry-smoke/seed-11/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/registry-smoke/seed-11/raw-model-outputs.json",
+      "seed": 11,
+      "summary_path": "eval/measurements/registry-smoke/seed-11/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 0.133113,
+        "p95_ms": 0.156625,
+        "p95_seconds": 0.000157,
+        "total_ms": 2702.585958,
+        "ttft_seconds": 0.000167
+      },
+      "memory": {
+        "peak_traced_bytes": 1129827,
+        "peak_traced_mb": 1.077487
+      },
+      "mode": "student-agent",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/student-agent/seed-11/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/student-agent/seed-11/raw-model-outputs.json",
+      "seed": 11,
+      "summary_path": "eval/measurements/student-agent/seed-11/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 0.133579,
+        "p95_ms": 0.1565,
+        "p95_seconds": 0.000156,
+        "total_ms": 2733.179417,
+        "ttft_seconds": 0.000145
+      },
+      "memory": {
+        "peak_traced_bytes": 1133068,
+        "peak_traced_mb": 1.080578
+      },
+      "mode": "teacher-agent",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/teacher-agent/seed-11/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/teacher-agent/seed-11/raw-model-outputs.json",
+      "seed": 11,
+      "summary_path": "eval/measurements/teacher-agent/seed-11/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 6.590378,
+        "p95_ms": 6.590378,
+        "p95_seconds": 0.00659,
+        "total_ms": 2741.597333,
+        "ttft_seconds": 0.00659
+      },
+      "memory": {
+        "peak_traced_bytes": 856337,
+        "peak_traced_mb": 0.816667
+      },
+      "mode": "registry-smoke",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/registry-smoke/seed-23/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/registry-smoke/seed-23/raw-model-outputs.json",
+      "seed": 23,
+      "summary_path": "eval/measurements/registry-smoke/seed-23/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 0.132541,
+        "p95_ms": 0.152947,
+        "p95_seconds": 0.000153,
+        "total_ms": 2720.96525,
+        "ttft_seconds": 0.000139
+      },
+      "memory": {
+        "peak_traced_bytes": 1134631,
+        "peak_traced_mb": 1.082068
+      },
+      "mode": "student-agent",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/student-agent/seed-23/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/student-agent/seed-23/raw-model-outputs.json",
+      "seed": 23,
+      "summary_path": "eval/measurements/student-agent/seed-23/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 0.136499,
+        "p95_ms": 0.161959,
+        "p95_seconds": 0.000162,
+        "total_ms": 2742.928541,
+        "ttft_seconds": 0.000133
+      },
+      "memory": {
+        "peak_traced_bytes": 1135904,
+        "peak_traced_mb": 1.083282
+      },
+      "mode": "teacher-agent",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/teacher-agent/seed-23/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/teacher-agent/seed-23/raw-model-outputs.json",
+      "seed": 23,
+      "summary_path": "eval/measurements/teacher-agent/seed-23/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 6.587878,
+        "p95_ms": 6.587878,
+        "p95_seconds": 0.006588,
+        "total_ms": 2740.557167,
+        "ttft_seconds": 0.006588
+      },
+      "memory": {
+        "peak_traced_bytes": 898864,
+        "peak_traced_mb": 0.857224
+      },
+      "mode": "registry-smoke",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/registry-smoke/seed-37/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/registry-smoke/seed-37/raw-model-outputs.json",
+      "seed": 37,
+      "summary_path": "eval/measurements/registry-smoke/seed-37/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 0.132557,
+        "p95_ms": 0.154938,
+        "p95_seconds": 0.000155,
+        "total_ms": 2695.49375,
+        "ttft_seconds": 0.000143
+      },
+      "memory": {
+        "peak_traced_bytes": 1137932,
+        "peak_traced_mb": 1.085217
+      },
+      "mode": "student-agent",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/student-agent/seed-37/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/student-agent/seed-37/raw-model-outputs.json",
+      "seed": 37,
+      "summary_path": "eval/measurements/student-agent/seed-37/summary.json",
+      "tool_f1": 1.0
+    },
+    {
+      "argument_accuracy": 1.0,
+      "case_count": 416,
+      "latency": {
+        "mean_case_ms": 0.145056,
+        "p95_ms": 0.188219,
+        "p95_seconds": 0.000188,
+        "total_ms": 2851.274875,
+        "ttft_seconds": 0.000119
+      },
+      "memory": {
+        "peak_traced_bytes": 1137138,
+        "peak_traced_mb": 1.084459
+      },
+      "mode": "teacher-agent",
+      "pass_rate": 1.0,
+      "promoted": true,
+      "promotion_decision_path": "eval/measurements/teacher-agent/seed-37/promotion-decision.json",
+      "raw_model_outputs_path": "eval/measurements/teacher-agent/seed-37/raw-model-outputs.json",
+      "seed": 37,
+      "summary_path": "eval/measurements/teacher-agent/seed-37/summary.json",
+      "tool_f1": 1.0
+    }
+  ],
+  "seeds": [
+    11,
+    23,
+    37
+  ],
+  "task_count_per_run": 416
+}

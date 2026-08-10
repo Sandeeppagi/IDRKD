@@ -54,12 +54,19 @@ def test_taskbench_runner_executes_seed_tasks_against_registry() -> None:
 
     summary = TaskBenchRunner(registry).run(tasks)
 
-    assert len(summary.cases) == 6
+    assert len(summary.cases) == 360
     assert summary.tool_f1 == 1.0
     assert summary.argument_accuracy == 1.0
     assert summary.schema_valid_rate == 1.0
     assert summary.pass_rate == 1.0
-    assert set(summary.by_category()) >= {"tool_selection", "drift_trigger", "conflict_resolution"}
+    assert set(summary.by_category()) >= {
+        "tool_selection",
+        "schema_conformance",
+        "multi_hop_planning",
+        "conflict_resolution",
+        "drift_trigger",
+        "a2a_delegation",
+    }
 
 
 def test_parse_tool_call_from_raw_model_output() -> None:

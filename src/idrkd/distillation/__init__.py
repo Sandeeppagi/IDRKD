@@ -1,5 +1,11 @@
 """Pillar 5 student model distillation contracts."""
 
+from idrkd.distillation.admission import (
+    TraceAdmissionPolicy,
+    TraceAdmissionRecord,
+    admit_teacher_traces,
+    write_admission_bundle,
+)
 from idrkd.distillation.evaluation import BfclMetrics, DistillationGate
 from idrkd.distillation.execution import (
     DistillationRuntimeConfig,
@@ -51,10 +57,13 @@ __all__ = [
     "QLoRAConfig",
     "StudentModelClient",
     "TeacherTrace",
+    "TraceAdmissionPolicy",
+    "TraceAdmissionRecord",
     "ToolCall",
     "TraceStep",
     "TrainingPlan",
     "VllmServingConfig",
+    "admit_teacher_traces",
     "adapter_artifacts_written",
     "build_preference_dataset_jsonl",
     "build_preference_pair",
@@ -70,4 +79,5 @@ __all__ = [
     "train_dpo",
     "train_sft",
     "write_manifest",
+    "write_admission_bundle",
 ]
