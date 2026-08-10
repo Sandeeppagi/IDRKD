@@ -6,6 +6,10 @@ import argparse
 import json
 from pathlib import Path
 
+from idrkd.distillation.artifact_validation import (
+    validate_distilled_adapter_artifact,
+    validate_extracted_adapter_artifacts,
+)
 from idrkd.distillation.execution import (
     DistillationRuntimeConfig,
     run_laptop_smoke_distillation,
@@ -61,6 +65,28 @@ def main() -> None:
     smoke_parser.add_argument("--use-4bit", action="store_true")
     smoke_parser.add_argument("--device-map", default="auto")
     smoke_parser.add_argument("--local-files-only", action="store_true")
+
+    artifact_parser = subparsers.add_parser(
+        "validate-artifact",
+        help="Validate a distilled SFT+DPO PEFT adapter artifact archive or extracted tree.",
+    )
+    artifact_input = artifact_parser.add_mutually_exclusive_group(required=True)
+    artifact_input.add_argument("--archive", type=Path, help="Path to phi4-mini adapter tar.gz.")
+    artifact_input.add_argument("--extracted-dir", type=Path, help="Path to extracted artifact root.")
+    artifact_parser.add_argument(
+        "--extract-dir",
+        type=Path,
+        default=None,
+        help="Directory to extract archive into before validation.",
+    )
+    artifact_parser.add_argument("--run-generation", action="store_true")
+    artifact_parser.add_argument("--allow-downloads", action="store_true")
+    artifact_parser.add_argument(
+        "--prompt",
+        default="Select the best MCP tool for repository search.",
+        help="Tiny prompt used when --run-generation is enabled.",
+    )
+    artifact_parser.add_argument("--max-new-tokens", type=int, default=16)
 
     args = parser.parse_args()
     if args.command == "build-sft":
@@ -119,6 +145,30 @@ def main() -> None:
             "dpo": {"path": str(dpo_path), "records": len(dpo_records)},
         }
         print(json.dumps(payload, sort_keys=True))
+        return
+
+    if args.command == "validate-artifact":
+        try:
+            if args.archive is not None:
+                artifact_result = validate_distilled_adapter_artifact(
+                    args.archive,
+                    extract_dir=args.extract_dir,
+                    run_generation=args.run_generation,
+                    local_files_only=not args.allow_downloads,
+                    prompt=args.prompt,
+                    max_new_tokens=args.max_new_tokens,
+                )
+            else:
+                artifact_result = validate_extracted_adapter_artifacts(
+                    args.extracted_dir,
+                    run_generation=args.run_generation,
+                    local_files_only=not args.allow_downloads,
+                    prompt=args.prompt,
+                    max_new_tokens=args.max_new_tokens,
+                )
+        except (FileNotFoundError, RuntimeError, ValueError) as exc:
+            parser.exit(1, f"validate-artifact failed: {exc}\n")
+        print(json.dumps(artifact_result.as_dict(), sort_keys=True))
         return
 
     config = DistillationRuntimeConfig(

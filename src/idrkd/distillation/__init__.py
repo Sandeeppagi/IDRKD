@@ -6,6 +6,12 @@ from idrkd.distillation.admission import (
     admit_teacher_traces,
     write_admission_bundle,
 )
+from idrkd.distillation.artifact_validation import (
+    AdapterStageValidation,
+    DistilledArtifactValidation,
+    validate_distilled_adapter_artifact,
+    validate_extracted_adapter_artifacts,
+)
 from idrkd.distillation.evaluation import BfclMetrics, DistillationGate
 from idrkd.distillation.execution import (
     DistillationRuntimeConfig,
@@ -44,7 +50,9 @@ from idrkd.distillation.training import DpoConfig, QLoRAConfig, TrainingPlan
 __all__ = [
     "AwqQuantizationConfig",
     "AwqQuantizationJob",
+    "AdapterStageValidation",
     "BfclMetrics",
+    "DistilledArtifactValidation",
     "DistillationGate",
     "DistillationRuntimeConfig",
     "DistillationRunResult",
@@ -78,6 +86,8 @@ __all__ = [
     "teacher_trace_to_dict",
     "train_dpo",
     "train_sft",
+    "validate_distilled_adapter_artifact",
+    "validate_extracted_adapter_artifacts",
     "write_manifest",
     "write_admission_bundle",
 ]
