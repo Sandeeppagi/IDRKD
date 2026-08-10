@@ -35,13 +35,14 @@ dev = [
 
 [project.optional-dependencies]
 ml = [
-  "torch>=2.3",
+  "torch==2.8.0",
   "transformers>=4.43",
   "sentence-transformers>=3.0",
   "datasets>=2.20",
   "peft>=0.11",
   "trl>=0.9",
   "accelerate>=0.32",
+  "bitsandbytes",
 ]
 
 [project.scripts]
@@ -60,6 +61,16 @@ where = ["src"]
 
 [tool.uv]
 package = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
