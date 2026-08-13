@@ -259,15 +259,28 @@ ls -lah /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc
 jq . /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/idrkd-model-manifest.json
 ```
 
-Create a separate vLLM environment. On NVIDIA builders, `--torch-backend=auto`
-selects a current prebuilt wheel for the installed driver, avoiding local CUDA
-extension builds:
+Create a separate vLLM environment using the validated CUDA 12.9 release wheel.
+The index strategy allows CUDA packages to resolve from the official PyTorch
+index while normal Python dependencies resolve from PyPI:
 
 ```bash
 deactivate
 uv venv /workspace/.venv-vllm --python 3.12 --seed
 source /workspace/.venv-vllm/bin/activate
-uv pip install vllm --torch-backend=auto
+uv pip install \
+  "https://github.com/vllm-project/vllm/releases/download/v0.27.1/vllm-0.27.1%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl" \
+  --extra-index-url https://download.pytorch.org/whl/cu129 \
+  --index-strategy unsafe-best-match
+python - <<'PY'
+import torch
+import vllm
+
+assert hasattr(torch, "Tensor")
+assert torch.cuda.is_available()
+print("Torch:", torch.__version__, "CUDA:", torch.version.cuda)
+print("GPU:", torch.cuda.get_device_name(0))
+print("vLLM:", vllm.__version__)
+PY
 ```
 
 Serve the compressed checkpoint with vLLM and leave this terminal running:
