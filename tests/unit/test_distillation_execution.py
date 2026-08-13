@@ -235,11 +235,23 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
 
     class FakePeftModel:
         @staticmethod
-        def from_pretrained(model: object, adapter_path: str, *, is_trainable: bool) -> dict[str, object]:
+        def from_pretrained(
+            model: object,
+            adapter_path: str,
+            *,
+            is_trainable: bool,
+            adapter_name: str,
+        ) -> "FakePeftModel":
             calls["peft_model"] = model
             calls["adapter_path"] = adapter_path
             calls["is_trainable"] = is_trainable
-            return {"model": model, "adapter_path": adapter_path}
+            calls["adapter_name"] = adapter_name
+            return FakePeftModel()
+
+        def load_adapter(self, adapter_path: str, *, adapter_name: str, is_trainable: bool) -> None:
+            calls["reference_adapter_path"] = adapter_path
+            calls["reference_adapter_name"] = adapter_name
+            calls["reference_is_trainable"] = is_trainable
 
     class FakeDataset:
         @staticmethod
@@ -299,7 +311,13 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
 
     assert calls["adapter_path"] == str(sft_adapter)
     assert calls["is_trainable"] is True
+    assert calls["adapter_name"] == "train"
+    assert calls["reference_adapter_path"] == str(sft_adapter)
+    assert calls["reference_adapter_name"] == "reference"
+    assert calls["reference_is_trainable"] is False
     assert calls["get_peft_model_called"] is False
+    assert calls["trainer_kwargs"]["args"].kwargs["model_adapter_name"] == "train"
+    assert calls["trainer_kwargs"]["args"].kwargs["ref_adapter_name"] == "reference"
     assert calls["records"] == [
         {
             "prompt": f"<system>{SYSTEM_PROMPT}</system><user>Where is reconcile defined?</user><assistant>",

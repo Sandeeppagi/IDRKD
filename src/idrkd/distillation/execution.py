@@ -251,7 +251,9 @@ def train_dpo(
             model,
             str(sft_adapter_path),
             is_trainable=True,
+            adapter_name="train",
         )
+        model.load_adapter(str(sft_adapter_path), adapter_name="reference", is_trainable=False)
     else:
         active_qlora = QLoRAConfig(
             base_model_id=config.base_model_id,
@@ -259,8 +261,13 @@ def train_dpo(
             max_seq_length=config.max_seq_length,
         )
         model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
+    _ensure_trainable_parameters(model)
 
     dataset = modules["Dataset"].from_list(_render_dpo_records(records, tokenizer))
+    dpo_config_kwargs: dict[str, Any] = {}
+    if sft_adapter_path is not None:
+        dpo_config_kwargs["model_adapter_name"] = "train"
+        dpo_config_kwargs["ref_adapter_name"] = "reference"
     args = modules["DPOConfig"](
         output_dir=str(config.output_dir),
         num_train_epochs=active_dpo.epochs,
@@ -274,6 +281,7 @@ def train_dpo(
         seed=config.seed,
         beta=active_dpo.beta,
         max_length=config.max_seq_length,
+        **dpo_config_kwargs,
     )
     trainer = modules["DPOTrainer"](
         model=model,
@@ -335,6 +343,15 @@ def _validate_sft_adapter_path(adapter_path: Path | None) -> Path | None:
     if not adapter_artifacts_written(adapter_path):
         raise ValueError(f"SFT adapter artifacts are incomplete: {adapter_path}")
     return adapter_path
+
+
+def _ensure_trainable_parameters(model: Any) -> None:
+    named_parameters = getattr(model, "named_parameters", None)
+    if named_parameters is None:
+        return
+    trainable_count = sum(param.numel() for _, param in named_parameters() if getattr(param, "requires_grad", False))
+    if trainable_count == 0:
+        raise RuntimeError("DPO model has no trainable parameters")
 
 
 def _tokenize_text_dataset(dataset: Any, tokenizer: Any, max_seq_length: int) -> Any:
