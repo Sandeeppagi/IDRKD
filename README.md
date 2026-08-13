@@ -233,6 +233,8 @@ is supplied, because the CLI merges the base model and PEFT adapter first. The
 calibration loader applies the model chat template to SFT `messages` records:
 
 ```bash
+TOKENIZERS_PARALLELISM=false \
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
 idrkd-quantize \
   --input-model /workspace/IDRKD/models/checkpoints/merged-placeholder \
   --base-model microsoft/Phi-4-mini-instruct \
@@ -241,8 +243,13 @@ idrkd-quantize \
   --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
   --calibration /workspace/IDRKD/artifacts/datasets/idrkd-taskbench-sft-train-v3.jsonl \
   --max-calibration-samples 128 \
-  --max-sequence-length 4096
+  --max-sequence-length 4096 \
+  --sequential-target Linear
 ```
+
+`Linear` sequential targets keep AWQ calibration bounded to one dense module at
+a time. The expandable CUDA allocator also reduces fragmentation during AWQ
+smoothing on 48 GB builders.
 
 Inspect the checkpoint and manifest:
 

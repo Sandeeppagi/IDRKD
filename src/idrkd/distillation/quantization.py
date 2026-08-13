@@ -82,6 +82,7 @@ class AwqQuantizationJob:
     trust_remote_code: bool = False
     max_calibration_samples: int = 128
     max_sequence_length: int = 4096
+    sequential_targets: tuple[str, ...] = ("Linear",)
 
 
 def run_awq_quantization(job: AwqQuantizationJob) -> ModelArtifactManifest:
@@ -136,6 +137,7 @@ def _quantize_merged_model(
         recipe=recipe,
         max_seq_length=job.max_sequence_length,
         num_calibration_samples=len(samples),
+        sequential_targets=list(job.sequential_targets),
     )
 
     job.output_dir.mkdir(parents=True, exist_ok=True)
@@ -262,6 +264,8 @@ def _validate_job(job: AwqQuantizationJob) -> None:
         raise ValueError("max_calibration_samples must be positive")
     if job.max_sequence_length <= 0:
         raise ValueError("max_sequence_length must be positive")
+    if not job.sequential_targets or any(not target.strip() for target in job.sequential_targets):
+        raise ValueError("sequential_targets must contain at least one module class")
     if job.adapter_path is None and not job.input_model_path.exists():
         raise ValueError(f"Merged input model does not exist: {job.input_model_path}")
     if job.adapter_path is not None and not job.adapter_path.exists():

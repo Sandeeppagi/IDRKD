@@ -196,6 +196,7 @@ def test_quantization_merges_adapter_and_runs_llm_compressor(
     assert len(calls) == 1
     assert calls[0]["max_seq_length"] == 4096
     assert calls[0]["num_calibration_samples"] == 1
+    assert calls[0]["sequential_targets"] == ["Linear"]
     assert calls[0]["dataset"]["text"][0].startswith("<chat>user:")
     assert isinstance(calls[0]["recipe"][0], _FakeAWQModifier)
     assert calls[0]["recipe"][1].kwargs == {
