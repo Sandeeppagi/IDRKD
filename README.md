@@ -124,20 +124,58 @@ and DPO:
 uv run python -m idrkd.distillation.cli local-smoke --base-model Qwen/Qwen2.5-0.5B-Instruct --max-steps 5 --max-seq-length 128 --device-map none
 ```
 
-Production AWQ quantization is intended for a Linux/CUDA builder with AutoAWQ
-installed. It accepts either a merged model directory or a PEFT adapter to merge
-before quantization, and writes `idrkd-model-manifest.json` into the output
-directory:
+Production AWQ quantization is intended for a Linux/CUDA builder. AutoAWQ is
+deprecated, so run Stage 12 from a separate pinned environment instead of
+installing it into the working IDRKD `.venv`.
+
+Create the legacy AWQ environment on the CUDA builder:
 
 ```bash
-uv run python -m idrkd.distillation.quantize_cli \
-  --input-model models/checkpoints/merged-student \
-  --adapter models/adapters/local-smoke-dpo \
-  --base-model Qwen/Qwen2.5-0.5B-Instruct \
-  --out models/checkpoints/idrkd-student-awq \
-  --model-id idrkd-student-awq \
-  --calibration /private/tmp/idrkd-dpo.jsonl
+cd /workspace/IDRKD
+uv venv /workspace/.venv-awq --python 3.11
+source /workspace/.venv-awq/bin/activate
+uv pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu126
+uv pip install "autoawq==0.2.9" "transformers==4.51.3" "peft>=0.11" "accelerate" "datasets>=2.20"
+uv pip install --no-deps -e /workspace/IDRKD
 ```
+
+Verify the isolated stack and calibration traces:
+
+```bash
+python - <<'PY'
+import torch
+import transformers
+from awq import AutoAWQForCausalLM
+
+print("Torch:", torch.__version__)
+print("CUDA:", torch.version.cuda)
+print("CUDA available:", torch.cuda.is_available())
+print("Transformers:", transformers.__version__)
+PY
+wc -l /workspace/IDRKD/eval/distillation/frontier_admitted_teacher_traces.jsonl
+```
+
+Then quantize. The `--input-model` value may be a placeholder when `--adapter`
+is supplied, because the CLI merges the base model and PEFT adapter before AWQ:
+
+```bash
+idrkd-quantize-awq \
+  --input-model /workspace/IDRKD/models/checkpoints/merged-placeholder \
+  --base-model microsoft/Phi-4-mini-instruct \
+  --adapter /workspace/IDRKD/models/adapters/phi4-mini-dpo \
+  --out /workspace/IDRKD/models/checkpoints/phi4-mini-awq \
+  --model-id idrkd-phi4-mini-awq \
+  --calibration /workspace/IDRKD/eval/distillation/frontier_admitted_teacher_traces.jsonl \
+  --max-calibration-samples 128
+ls -lah /workspace/IDRKD/models/checkpoints/phi4-mini-awq
+cat /workspace/IDRKD/models/checkpoints/phi4-mini-awq/idrkd-model-manifest.json | jq .
+deactivate
+```
+
+If AutoAWQ fails because Phi-4-mini is unsupported by the archived package, stop
+there and leave the working training environment unchanged. The appropriate next
+code change is to migrate quantization to AutoAWQ's recommended successor,
+vLLM's `llm-compressor`.
 
 The expected local service stack is:
 

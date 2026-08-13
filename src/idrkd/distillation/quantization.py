@@ -184,8 +184,9 @@ def _load_quantization_modules() -> dict[str, Any]:
         from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as exc:  # pragma: no cover - depends on CUDA production extras
         raise RuntimeError(
-            "Install production quantization dependencies on a Linux/CUDA host, "
-            "for example `python -m pip install autoawq`, before running AWQ quantization."
+            "AutoAWQ quantization must run from an isolated legacy Linux/CUDA environment. "
+            "Do not install AutoAWQ into the working IDRKD .venv; see the README Stage 12 "
+            "AWQ runbook for the pinned torch/transformers/autoawq stack."
         ) from exc
 
     return {
