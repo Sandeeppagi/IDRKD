@@ -136,7 +136,14 @@ def test_taskbench_dataset_builders_match_evaluation_prompt_and_expected_call(tm
         },
     }
     assert json.loads(dpo_records[0]["chosen"]) == json.loads(sft_records[0]["messages"][2]["content"])
-    assert json.loads(dpo_records[0]["rejected"])["arguments"]["_idrkd_wrong_argument"] is True
+    assert json.loads(dpo_records[0]["rejected"]) == {
+        "name": "get_entity",
+        "arguments": {
+            "repo_id": "repo-a",
+            "tenant_id": "default",
+        },
+    }
+    assert dpo_records[0]["metadata"]["rejected_tool_call"]["name"] == "get_entity"
 
 
 def test_sft_and_dpo_training_dry_run_writes_reproducible_summary(tmp_path: Path) -> None:

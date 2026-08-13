@@ -226,9 +226,10 @@ def _taskbench_sft_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[st
 
 def _taskbench_dpo_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[str, Any]:
     target = ToolCall(name=task.expected_tool, arguments=task.arguments)
-    rejected_arguments = dict(task.arguments)
-    rejected_arguments["_idrkd_wrong_argument"] = True
-    rejected = ToolCall(name=task.expected_tool, arguments=rejected_arguments)
+    rejected = ToolCall(
+        name=_taskbench_hard_negative_tool(task.expected_tool),
+        arguments=_taskbench_hard_negative_arguments(task),
+    )
     return {
         "prompt": tool_selection_prompt(prompt=task.prompt, tools=tools),
         "chosen": tool_call_json(target),
@@ -238,8 +239,55 @@ def _taskbench_dpo_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[st
             "task_id": task.id,
             "category": task.category,
             "target_tool_call": {"name": target.name, "arguments": target.arguments},
+            "rejected_tool_call": {"name": rejected.name, "arguments": rejected.arguments},
         },
     }
+
+
+def _taskbench_hard_negative_tool(expected_tool: str) -> str:
+    hard_negatives = {
+        "search_code": "get_entity",
+        "get_entity": "search_code",
+        "graph_bfs": "get_community",
+        "graph_path": "graph_bfs",
+        "get_community": "graph_bfs",
+        "enqueue_reindex": "get_entity",
+        "schema_diff": "get_entity",
+        "impact_analysis": "get_entity",
+        "reconcile": "get_conflict",
+        "resolve_conflict": "get_conflict",
+        "get_centroid_drift": "get_community",
+        "get_conflict": "reconcile",
+    }
+    return hard_negatives.get(expected_tool, "get_entity")
+
+
+def _taskbench_hard_negative_arguments(task: McpTask) -> dict[str, Any]:
+    arguments = dict(task.arguments)
+    negative_tool = _taskbench_hard_negative_tool(task.expected_tool)
+    allowed_by_tool = {
+        "search_code": {"tenant_id", "repo_id", "query", "limit"},
+        "get_entity": {"tenant_id", "repo_id", "entity_id"},
+        "graph_bfs": {"tenant_id", "repo_id", "entity_id", "depth", "limit"},
+        "graph_path": {"tenant_id", "repo_id", "source_id", "target_id", "max_hops"},
+        "get_community": {"tenant_id", "repo_id", "entity_id", "limit"},
+        "enqueue_reindex": {"tenant_id", "repo_id", "entity_id"},
+        "schema_diff": {"tenant_id", "repo_id", "left_id", "right_id"},
+        "impact_analysis": {"tenant_id", "repo_id", "entity_id"},
+        "reconcile": {"tenant_id", "repo_id", "conflict_id"},
+        "resolve_conflict": {"tenant_id", "repo_id", "conflict_id", "resolution"},
+        "get_centroid_drift": {"tenant_id", "repo_id", "community_id"},
+        "get_conflict": {"tenant_id", "repo_id", "conflict_id"},
+    }
+    allowed = allowed_by_tool.get(negative_tool, set(arguments))
+    filtered = {key: value for key, value in arguments.items() if key in allowed}
+    if not filtered:
+        filtered = {
+            key: value
+            for key, value in arguments.items()
+            if key in {"tenant_id", "repo_id"}
+        }
+    return filtered or arguments
 
 
 def _expect_list(value: Any, field_name: str) -> list[Any]:
