@@ -16,7 +16,12 @@ from idrkd.distillation.execution import (
     train_dpo,
     train_sft,
 )
-from idrkd.distillation.io import build_preference_dataset_jsonl, build_sft_dataset_jsonl
+from idrkd.distillation.io import (
+    build_preference_dataset_jsonl,
+    build_sft_dataset_jsonl,
+    build_taskbench_preference_dataset_jsonl,
+    build_taskbench_sft_dataset_jsonl,
+)
 
 
 def main() -> None:
@@ -38,6 +43,18 @@ def main() -> None:
         help="Optional rejected JSON tool call. Prose values are kept only as metadata.",
     )
     pref_dataset.add_argument("--min-faithfulness", type=float, default=0.78)
+
+    taskbench_sft = subparsers.add_parser(
+        "build-taskbench-sft",
+        help="Build eval-aligned SFT JSONL from MCP-TaskBench expected calls.",
+    )
+    _add_taskbench_dataset_args(taskbench_sft)
+
+    taskbench_dpo = subparsers.add_parser(
+        "build-taskbench-dpo",
+        help="Build eval-aligned DPO JSONL from MCP-TaskBench expected calls.",
+    )
+    _add_taskbench_dataset_args(taskbench_dpo)
 
     train_sft_parser = subparsers.add_parser("train-sft", help="Run LoRA/QLoRA SFT training.")
     _add_training_args(train_sft_parser, default_output=Path("models/adapters/local-smoke-sft"))
@@ -108,6 +125,26 @@ def main() -> None:
             out_path=args.out,
             rejected_answer=args.rejected_answer,
             min_faithfulness=args.min_faithfulness,
+        )
+        print(json.dumps({"records": len(records), "out": str(args.out)}, sort_keys=True))
+        return
+    if args.command == "build-taskbench-sft":
+        records = build_taskbench_sft_dataset_jsonl(
+            tasks_path=args.tasks,
+            out_path=args.out,
+            include_synthetic_schemas=args.include_synthetic_schemas,
+            synthetic_schemas_path=args.synthetic_schemas,
+            synthetic_conflicts_path=args.synthetic_conflicts,
+        )
+        print(json.dumps({"records": len(records), "out": str(args.out)}, sort_keys=True))
+        return
+    if args.command == "build-taskbench-dpo":
+        records = build_taskbench_preference_dataset_jsonl(
+            tasks_path=args.tasks,
+            out_path=args.out,
+            include_synthetic_schemas=args.include_synthetic_schemas,
+            synthetic_schemas_path=args.synthetic_schemas,
+            synthetic_conflicts_path=args.synthetic_conflicts,
         )
         print(json.dumps({"records": len(records), "out": str(args.out)}, sort_keys=True))
         return
@@ -209,6 +246,14 @@ def _add_training_args(parser: argparse.ArgumentParser, *, default_output: Path)
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--max-steps", type=int, default=-1)
     parser.add_argument("--dry-run", action="store_true")
+
+
+def _add_taskbench_dataset_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--tasks", type=Path, default=Path("eval/taskbench/seed_tasks.jsonl"))
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--include-synthetic-schemas", action="store_true")
+    parser.add_argument("--synthetic-schemas", type=Path, default=Path("eval/synthetic_schemas/schemas.jsonl"))
+    parser.add_argument("--synthetic-conflicts", type=Path, default=Path("eval/synthetic_schemas/conflicts.jsonl"))
 
 
 def _normalise_device_map(value: str | None) -> str | None:

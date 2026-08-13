@@ -7,6 +7,8 @@ from idrkd.distillation import (
     adapter_artifacts_written,
     build_preference_dataset_jsonl,
     build_sft_dataset_jsonl,
+    build_taskbench_preference_dataset_jsonl,
+    build_taskbench_sft_dataset_jsonl,
     load_teacher_traces,
     teacher_trace_to_dict,
     train_dpo,
@@ -78,6 +80,34 @@ def test_teacher_trace_jsonl_round_trip_and_dataset_builders(tmp_path: Path) -> 
     assert sft_records[0]["metadata"]["tool_trace"]
     assert len(dpo_records) >= 500
     assert json.loads(dpo_records[0]["chosen"])["name"] == "search_code"
+    assert json.loads(dpo_records[0]["rejected"])["arguments"]["_idrkd_wrong_argument"] is True
+
+
+def test_taskbench_dataset_builders_match_evaluation_prompt_and_expected_call(tmp_path: Path) -> None:
+    sft_path = tmp_path / "taskbench-sft.jsonl"
+    dpo_path = tmp_path / "taskbench-dpo.jsonl"
+
+    sft_records = build_taskbench_sft_dataset_jsonl(
+        tasks_path=Path("eval/taskbench/seed_tasks.jsonl"),
+        out_path=sft_path,
+    )
+    dpo_records = build_taskbench_preference_dataset_jsonl(
+        tasks_path=Path("eval/taskbench/seed_tasks.jsonl"),
+        out_path=dpo_path,
+    )
+
+    assert len(sft_records) == 360
+    assert "Available MCP tools as JSON schemas" in sft_records[0]["messages"][1]["content"]
+    assert json.loads(sft_records[0]["messages"][2]["content"]) == {
+        "name": "search_code",
+        "arguments": {
+            "limit": 3,
+            "query": "customer lookup",
+            "repo_id": "repo-a",
+            "tenant_id": "default",
+        },
+    }
+    assert json.loads(dpo_records[0]["chosen"]) == json.loads(sft_records[0]["messages"][2]["content"])
     assert json.loads(dpo_records[0]["rejected"])["arguments"]["_idrkd_wrong_argument"] is True
 
 

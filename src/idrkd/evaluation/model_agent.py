@@ -59,7 +59,7 @@ class OpenAICompatibleToolCallPredictor:
                             "Return only JSON with keys: name, arguments."
                         ),
                     },
-                    {"role": "user", "content": _tool_selection_prompt(prompt=prompt, tools=tools)},
+                    {"role": "user", "content": tool_selection_prompt(prompt=prompt, tools=tools)},
                 ],
             }
         ).encode("utf-8")
@@ -143,7 +143,7 @@ def filter_tools_for_ablations(
     return filtered
 
 
-def _tool_selection_prompt(*, prompt: str, tools: list[dict[str, Any]]) -> str:
+def tool_selection_prompt(*, prompt: str, tools: list[dict[str, Any]]) -> str:
     return (
         f"User task:\n{prompt}\n\n"
         "Available MCP tools as JSON schemas:\n"

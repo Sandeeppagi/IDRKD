@@ -3,7 +3,8 @@
 This demo shows the local, reproducible path for IDRKD without requiring Docker,
 GPU training, vLLM, or external model downloads. It proves the core contracts:
 MCP tool evaluation works, SFT/DPO datasets are generated, and distillation
-targets now match the JSON tool-call format expected by TaskBench.
+targets now match the JSON tool-call format and prompt shape expected by
+TaskBench.
 
 ## Quick Run
 
@@ -57,6 +58,8 @@ Expected headline output:
 ```text
 SFT records: 500
 DPO records: 500
+TaskBench SFT records: 416
+TaskBench DPO records: 416
 TaskBench pass rate: 1.0
 TaskBench tool F1: 1.0
 ```
@@ -76,7 +79,9 @@ TaskBench expects a machine-readable tool call:
 ```
 
 The demo script prints the first SFT target, DPO chosen target, and DPO rejected
-target, then parses them with the same `parse_tool_call()` function used by
+target, plus the first TaskBench-aligned SFT target. It parses each with the
+same `parse_tool_call()` function used by evaluation. The TaskBench-aligned
+records also use the same tool-schema user prompt as live model-agent
 evaluation.
 
 ### 4. Show The Generated Artifacts
@@ -96,6 +101,8 @@ Useful files:
 ```text
 /private/tmp/idrkd-demo/idrkd-sft.jsonl
 /private/tmp/idrkd-demo/idrkd-dpo.jsonl
+/private/tmp/idrkd-demo/idrkd-taskbench-sft.jsonl
+/private/tmp/idrkd-demo/idrkd-taskbench-dpo.jsonl
 /private/tmp/idrkd-demo/sft-dry-run/sft-run-summary.json
 /private/tmp/idrkd-demo/dpo-dry-run/dpo-run-summary.json
 /private/tmp/idrkd-demo/registry-smoke-summary.json

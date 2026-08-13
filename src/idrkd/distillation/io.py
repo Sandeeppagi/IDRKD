@@ -9,7 +9,23 @@ from pathlib import Path
 from typing import Any
 
 from idrkd.distillation.preferences import build_preference_pair
-from idrkd.distillation.traces import TeacherTrace, ToolCall, TraceStep, select_sft_traces, sft_record
+from idrkd.distillation.traces import (
+    SYSTEM_PROMPT,
+    TeacherTrace,
+    ToolCall,
+    TraceStep,
+    select_sft_traces,
+    sft_record,
+    tool_call_json,
+)
+from idrkd.evaluation.model_agent import tool_selection_prompt
+from idrkd.evaluation.synthetic_schemas import (
+    build_synthetic_schema_registry,
+    build_synthetic_schema_tasks,
+    load_synthetic_schema_corpus,
+)
+from idrkd.evaluation.taskbench import McpTask, load_tasks_jsonl
+from idrkd.mcp.tools import McpToolRegistry
 
 
 def teacher_trace_to_dict(trace: TeacherTrace) -> dict[str, Any]:
@@ -128,8 +144,102 @@ def build_preference_dataset_jsonl(
     return records
 
 
+def build_taskbench_sft_dataset_jsonl(
+    *,
+    tasks_path: Path,
+    out_path: Path,
+    include_synthetic_schemas: bool = False,
+    synthetic_schemas_path: Path = Path("eval/synthetic_schemas/schemas.jsonl"),
+    synthetic_conflicts_path: Path = Path("eval/synthetic_schemas/conflicts.jsonl"),
+) -> list[dict[str, Any]]:
+    tasks, tools = _taskbench_tasks_and_tools(
+        tasks_path=tasks_path,
+        include_synthetic_schemas=include_synthetic_schemas,
+        synthetic_schemas_path=synthetic_schemas_path,
+        synthetic_conflicts_path=synthetic_conflicts_path,
+    )
+    records = [_taskbench_sft_record(task, tools) for task in tasks]
+    write_jsonl_records(out_path, records)
+    return records
+
+
+def build_taskbench_preference_dataset_jsonl(
+    *,
+    tasks_path: Path,
+    out_path: Path,
+    include_synthetic_schemas: bool = False,
+    synthetic_schemas_path: Path = Path("eval/synthetic_schemas/schemas.jsonl"),
+    synthetic_conflicts_path: Path = Path("eval/synthetic_schemas/conflicts.jsonl"),
+) -> list[dict[str, Any]]:
+    tasks, tools = _taskbench_tasks_and_tools(
+        tasks_path=tasks_path,
+        include_synthetic_schemas=include_synthetic_schemas,
+        synthetic_schemas_path=synthetic_schemas_path,
+        synthetic_conflicts_path=synthetic_conflicts_path,
+    )
+    records = [_taskbench_dpo_record(task, tools) for task in tasks]
+    write_jsonl_records(out_path, records)
+    return records
+
+
 def dataset_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _taskbench_tasks_and_tools(
+    *,
+    tasks_path: Path,
+    include_synthetic_schemas: bool,
+    synthetic_schemas_path: Path,
+    synthetic_conflicts_path: Path,
+) -> tuple[list[McpTask], list[dict[str, Any]]]:
+    tasks = load_tasks_jsonl(tasks_path)
+    registry: McpToolRegistry
+    if include_synthetic_schemas:
+        corpus = load_synthetic_schema_corpus(
+            schemas_path=synthetic_schemas_path,
+            conflicts_path=synthetic_conflicts_path,
+        )
+        tasks.extend(build_synthetic_schema_tasks(corpus))
+        registry = build_synthetic_schema_registry(corpus)
+    else:
+        registry = McpToolRegistry(principal_tenant_id="default")
+    return tasks, registry.list_tools()
+
+
+def _taskbench_sft_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[str, Any]:
+    target = ToolCall(name=task.expected_tool, arguments=task.arguments)
+    return {
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": tool_selection_prompt(prompt=task.prompt, tools=tools)},
+            {"role": "assistant", "content": tool_call_json(target)},
+        ],
+        "metadata": {
+            "source": "taskbench",
+            "task_id": task.id,
+            "category": task.category,
+            "target_tool_call": {"name": target.name, "arguments": target.arguments},
+        },
+    }
+
+
+def _taskbench_dpo_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[str, Any]:
+    target = ToolCall(name=task.expected_tool, arguments=task.arguments)
+    rejected_arguments = dict(task.arguments)
+    rejected_arguments["_idrkd_wrong_argument"] = True
+    rejected = ToolCall(name=task.expected_tool, arguments=rejected_arguments)
+    return {
+        "prompt": tool_selection_prompt(prompt=task.prompt, tools=tools),
+        "chosen": tool_call_json(target),
+        "rejected": tool_call_json(rejected),
+        "metadata": {
+            "source": "taskbench",
+            "task_id": task.id,
+            "category": task.category,
+            "target_tool_call": {"name": target.name, "arguments": target.arguments},
+        },
+    }
 
 
 def _expect_list(value: Any, field_name: str) -> list[Any]:

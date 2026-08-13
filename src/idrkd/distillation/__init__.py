@@ -25,6 +25,8 @@ from idrkd.distillation.execution import (
 from idrkd.distillation.io import (
     build_preference_dataset_jsonl,
     build_sft_dataset_jsonl,
+    build_taskbench_preference_dataset_jsonl,
+    build_taskbench_sft_dataset_jsonl,
     load_teacher_traces,
     teacher_trace_from_dict,
     teacher_trace_to_dict,
@@ -76,6 +78,8 @@ __all__ = [
     "build_preference_dataset_jsonl",
     "build_preference_pair",
     "build_sft_dataset_jsonl",
+    "build_taskbench_preference_dataset_jsonl",
+    "build_taskbench_sft_dataset_jsonl",
     "load_teacher_traces",
     "run_laptop_smoke_distillation",
     "run_awq_quantization",

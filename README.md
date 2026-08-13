@@ -113,6 +113,8 @@ Build and smoke-run the distillation execution path:
 ```bash
 uv run python -m idrkd.distillation.cli build-sft --traces eval/distillation/seed_teacher_traces.jsonl --out /private/tmp/idrkd-sft.jsonl
 uv run python -m idrkd.distillation.cli build-dpo --traces eval/distillation/seed_teacher_traces.jsonl --out /private/tmp/idrkd-dpo.jsonl
+uv run python -m idrkd.distillation.cli build-taskbench-sft --include-synthetic-schemas --out /private/tmp/idrkd-taskbench-sft.jsonl
+uv run python -m idrkd.distillation.cli build-taskbench-dpo --include-synthetic-schemas --out /private/tmp/idrkd-taskbench-dpo.jsonl
 uv run python -m idrkd.distillation.cli train-sft --dataset /private/tmp/idrkd-sft.jsonl --out /private/tmp/idrkd-sft-out --base-model local/tiny-student --dry-run
 uv run python -m idrkd.distillation.cli train-dpo --dataset /private/tmp/idrkd-dpo.jsonl --out /private/tmp/idrkd-dpo-out --base-model local/tiny-student --dry-run
 ```
@@ -131,8 +133,11 @@ projection names:
 
 ```bash
 rm -rf models/adapters/phi4-mini-sft-tooljson-smoke
+uv run python -m idrkd.distillation.cli build-taskbench-sft \
+  --include-synthetic-schemas \
+  --out artifacts/datasets/idrkd-taskbench-tooljson-v2.jsonl
 uv run python -m idrkd.distillation.cli train-sft \
-  --dataset artifacts/datasets/idrkd-sft-tooljson-v2.jsonl \
+  --dataset artifacts/datasets/idrkd-taskbench-tooljson-v2.jsonl \
   --out models/adapters/phi4-mini-sft-tooljson-smoke \
   --base-model microsoft/Phi-4-mini-instruct \
   --max-steps 20 \
