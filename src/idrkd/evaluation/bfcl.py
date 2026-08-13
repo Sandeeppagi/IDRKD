@@ -41,22 +41,36 @@ class ToolCallMetrics:
 
 def score_function_calls(
     expected: list[FunctionCallPrediction],
-    predicted: list[FunctionCallPrediction],
+    predicted: list[FunctionCallPrediction | None],
 ) -> ToolCallMetrics:
-    remaining = predicted.copy()
+    """Score one prediction against the expected call from the same case.
+
+    Tool calls are deliberately not matched as an unordered bag. TaskBench
+    contains many repeated tool names, so bag matching can incorrectly credit a
+    prediction from one case against another case's oracle.
+    """
+
+    if len(expected) != len(predicted):
+        raise ValueError("expected and predicted must contain one entry per evaluation case")
+
     true_positives = 0
+    false_positives = 0
+    false_negatives = 0
     argument_matches = 0
-    for expected_call in expected:
-        match_index = next((index for index, call in enumerate(remaining) if call.name == expected_call.name), None)
-        if match_index is None:
+    for expected_call, predicted_call in zip(expected, predicted, strict=True):
+        if predicted_call is None:
+            false_negatives += 1
             continue
-        matched = remaining.pop(match_index)
+        if predicted_call.name != expected_call.name:
+            false_positives += 1
+            false_negatives += 1
+            continue
         true_positives += 1
-        if matched.arguments == expected_call.arguments:
+        if predicted_call.arguments == expected_call.arguments:
             argument_matches += 1
     return ToolCallMetrics(
         true_positives=true_positives,
-        false_positives=len(remaining),
-        false_negatives=len(expected) - true_positives,
+        false_positives=false_positives,
+        false_negatives=false_negatives,
         argument_matches=argument_matches,
     )

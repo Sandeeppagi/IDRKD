@@ -14,7 +14,6 @@ from typing import Any
 
 from idrkd.evaluation.bfcl import FunctionCallPrediction
 from idrkd.evaluation.model_agent import ToolCallPredictor
-from idrkd.evaluation.promotion import PromotionInputs, evaluate_promotion
 from idrkd.evaluation.synthetic_schemas import (
     build_synthetic_schema_registry,
     build_synthetic_schema_tasks,
@@ -117,10 +116,12 @@ def build_measurement_bundle(job: MeasurementJob = MeasurementJob()) -> dict[str
 
     manifest = {
         "created_at": datetime.now(UTC).isoformat(),
-        "measurement_type": "deterministic-local-replay",
+        "measurement_type": "deterministic-harness-self-test",
+        "eligible_for_empirical_claims": False,
         "notes": (
             "Student and teacher agent modes use deterministic oracle predictors to "
-            "exercise the model-agent execution path without requiring a live model endpoint."
+            "exercise the model-agent execution path without requiring a live model endpoint. "
+            "These runs must not be reported as model, baseline, or comparative evidence."
         ),
         "seeds": list(job.seeds),
         "include_synthetic_schemas": job.include_synthetic_schemas,
@@ -174,17 +175,11 @@ def _run_and_write(
         for case in summary.cases
         if case.raw_model_output is not None
     ]
-    promotion = evaluate_promotion(
-        PromotionInputs(
-            summary=summary,
-            faithfulness_score=0.8,
-            tenant_security_passed=True,
-            ttft_seconds=latency["ttft_seconds"],
-            latency_p95_seconds=latency["p95_seconds"],
-            previous_tool_f1=0.99,
-        )
-    )
-    promotion_payload = {"promoted": promotion.promoted, "reasons": list(promotion.reasons)}
+    promotion_payload = {
+        "promoted": False,
+        "eligible_for_empirical_claims": False,
+        "reasons": ["deterministic oracle replay is a harness self-test, not model evidence"],
+    }
 
     _write_json(run_dir / "summary.json", summary_payload)
     _write_json(run_dir / "raw-model-outputs.json", raw_outputs)
@@ -201,7 +196,8 @@ def _run_and_write(
         "argument_accuracy": summary.argument_accuracy,
         "latency": latency,
         "memory": memory,
-        "promoted": promotion.promoted,
+        "eligible_for_empirical_claims": False,
+        "promoted": False,
     }
 
 

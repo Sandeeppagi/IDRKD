@@ -21,7 +21,9 @@ def test_measurement_bundle_writes_three_seed_mode_outputs(tmp_path: Path) -> No
         assert summary["seed"] in {11, 23, 37}
         assert summary["latency"]["p95_seconds"] >= 0.0
         assert summary["memory"]["peak_traced_mb"] >= 0.0
-        assert promotion["promoted"] is True
+        assert promotion["promoted"] is False
+        assert promotion["eligible_for_empirical_claims"] is False
+        assert run["eligible_for_empirical_claims"] is False
         if run["mode"] == "registry-smoke":
             assert raw_outputs == []
         else:
@@ -29,3 +31,4 @@ def test_measurement_bundle_writes_three_seed_mode_outputs(tmp_path: Path) -> No
             assert raw_outputs[0]["raw_model_output"]
 
     assert (tmp_path / "manifest.json").is_file()
+    assert manifest["eligible_for_empirical_claims"] is False

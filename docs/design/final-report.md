@@ -115,7 +115,7 @@ WILP Division
 
 # Abstract
 
-Knowledge required to understand enterprise software is distributed among source-code repositories, Application Programming Interface (API) definitions, database schemas, operational documentation, and incident histories. Retrieval-Augmented Generation (RAG) systems based on flat textual chunks often perform poorly when tasks depend on structural relations, inconsistency identification, dependable tool execution, or knowledge freshness after change. This dissertation introduces the Intelligent Data Reconciliation and Knowledge Discovery (IDRKD) system, a six-pillar architecture integrating Tree-sitter-based ingestion; a Neo4j Knowledge Graph (KG); graph-vector retrieval combined through Reciprocal Rank Fusion (RRF); tools governed by the Model Context Protocol (MCP); Agent-to-Agent Protocol (A2A) delegation between LangGraph and AutoGen; Phi-4-mini distillation through Quantised Low-Rank Adaptation (QLoRA) and Direct Preference Optimisation (DPO); and selective re-indexing guided by drift. MCP-TaskBench measures semantic tool choice, JSON-RPC validity, schema compliance, and structured handling of errors. The QLoRA+DPO student obtained a Berkeley Function Calling Leaderboard (BFCL) F1 score of 0.82, compared with 0.86 for the teacher; its MCP-TaskBench aggregate was 0.89, compared with 0.93; and peak inference Video Random Access Memory (VRAM) was 4.7 GB. Benchmark evaluation produced Cohen's d = 0.81 and inter-annotator κ = 0.83. Relative to the monolithic baseline, the decomposed multi-agent pipeline increased Exact Match, task completion, and faithfulness by 7 percentage points, at the cost of a 2.7-second rise in median latency. Ablation experiments confirmed measurable contributions from graph retrieval, RRF, staged validation of traces, and selective re-indexing.
+Knowledge required to understand enterprise software is distributed among source-code repositories, Application Programming Interface definitions, database schemas, and operational documentation. This dissertation introduces Intelligent Data Reconciliation and Knowledge Discovery (IDRKD), a six-pillar reference architecture and research prototype combining Tree-sitter ingestion, a Neo4j Knowledge Graph, pgvector retrieval with Reciprocal Rank Fusion, typed Model Context Protocol-style tools, Agent-to-Agent SDK contracts, Phi-4-mini QLoRA/DPO training, AWQ publication, and drift-aware re-indexing. The promoted W4A16 model achieved tool F1 and exact argument accuracy of 1.00 on an internal 89-case prompt-group holdout. On an NVIDIA L40S through vLLM, 20 streaming samples produced p95 time to first token of 0.0332 seconds and p95 completion latency of 1.3201 seconds. Five live repository queries achieved minimum transformer-NLI faithfulness of 0.8744 and mean 0.9577. These measurements support internal structured tool-call competence, grounded-answer feasibility, and local quantised serving. Comparative teacher/baseline experiments, official BFCL, human agreement, peak VRAM, LangGraph–AutoGen decomposition, and component ablations were not completed and are reported as future evaluation rather than empirical findings.
 
 | Column 1 | Column 2 |
 | --- | --- |
@@ -357,7 +357,7 @@ From the review, four constrained research gaps are identified, and each is matc
 
 The project is positioned as an academic investigation rather than solely as an engineering build. Accordingly, its novelty is expressed through testable contributions rather than broad claims. Each contribution is linked to a research question and a quantitative acceptance criterion, so the dissertation can present favourable, unfavourable, or mixed evidence in a clear manner. For instance, if the decomposed multi-agent system fails to outperform the monolithic baseline, this would still provide controlled evidence about the conditions under which decomposition helps—or does not help—repository-scale Knowledge Graph (KG) reasoning.
 
-The research approach integrates design science, via construction of the artefact, with controlled experiments that compare it to fixed baselines. Versioned dataset snapshots, predetermined random seeds, and deterministic entity fingerprints are used throughout, ensuring that every reported measurement can be reproduced from archived artefacts.
+The research approach integrates design science, via construction of the artefact, with proposed controlled experiments against fixed baselines. Versioned snapshots, predetermined seeds, and deterministic fingerprints support reproducibility. Only experiments linked to committed machine-readable evidence are reported as completed; unexecuted baseline and ablation designs remain part of the methodology.
 
 ## 3.2 Methodology Flowchart
 
@@ -448,10 +448,11 @@ Table 3.2 summarises the five data-acquisition streams. At no point did the stud
 | Stream | Contents | Collection method |
 | --- | --- | --- |
 | MCP task suite | 360 instances across 6 categories, MCP-TaskBench task instances across defined categories | Hand-crafted seed tasks expanded through parameterised templates; each instance carries a machine-checkable oracle |
-| Teacher traces | 350 generated → 320 admitted (91.4%),Frontier-model reasoning traces for MCP tool use | Generated in a staging environment; every step re-executed and validated before inclusion (Chapter 5) |
-| Evaluation measurements | 3 runs, 3 seeds, Benchmark scores, latencies, memory footprints | Automated harnesses with fixed seeds; raw outputs archived with deterministic fingerprints |
+| Trace fixtures | 350 curated → 320 retained (91.4%) | Schema/tool replay admitted all 350; 30 were excluded by the configured cap |
+| Live release measurements | 89-case holdout, 440-case no-split conformance, 5 RAG cases, 20 streaming samples, security suites | Machine-readable artifacts bound into the promotion record |
+| Harness self-tests | 3 seeds across registry, student, and teacher labels | Deterministic oracle replay; explicitly ineligible for model claims |
 
-Automated harnesses with fixed seeds; raw outputs archived with deterministic fingerprints Privacy and ethical requirements were incorporated into the study design. Attribution and licensing are preserved for all publicly available open-source artifacts; synthetic schemas are used to prevent the inclusion of actual customer or enterprise records; and the local-inference requirement for the Small Language Model reflects the privacy rationale driving the work.
+Privacy and ethical requirements were incorporated into the study design. Attribution and licensing are preserved for public open-source artifacts; synthetic schemas avoid customer records; and local Small Language Model inference reflects the privacy rationale driving the work.
 
 ## 3.7 Assumptions and Constraints
 
@@ -566,15 +567,11 @@ The final phase performs grounded synthesis and bounded critique. The Phi-4-mini
 
 ### 4.3.4 P4 — MCP and A2A Orchestration
 
-Each tool invocation is routed through an MCP gateway that communicates via JSON-RPC 2.0. The tools provide JSON Schemas, requests are validated before dispatch, and both requests and responses are added to an immutable audit trail scoped by tenant and identity using JSON Web Tokens (JWTs). A2A enables coordination across frameworks: using the official a2a-sdk v1.0, LangGraph allocates reconciliation subtasks to the AutoGen agent over mutually authenticated Transport Layer Security (mTLS). This separation realises the complementary roles of MCP and A2A as described in [15] and [16].
+The target Pillar 4 design combines a JSON-RPC tool gateway with A2A cross-framework delegation. The prototype implements Pydantic/JSON Schema dispatch, tenant and scope checks, metrics, structured audit events, official A2A SDK cards/messages/execution, shared-secret card integrity, and an mTLS context builder. Durable Postgres audit storage and live LangGraph-to-AutoGen delegation are not implemented.
 
-The Pillar 4 sequence starts at the gateway. Tool calls produced by the primary LangGraph pipeline are passed through a narrow FastAPI application that serves as the system’s central Model Context Protocol (MCP 1.x) gateway. All communication is limited to JSON-RPC 2.0, which guarantees that each request reaches the system through the same protocol-governed boundary.
+The executable sequence starts at the FastAPI gateway, where JSON-RPC-style tool requests are validated and dispatched through one registry. The RAG orchestrator can call the same typed backends but is not a LangGraph runtime. Scope and tenant claims are checked before applying the same Pydantic models used to publish tool schemas. Audit records are emitted through an adapter, but the reference deployment does not persist them in an immutable `mcp_audit` table.
 
-The gateway then carries out identity, tenancy, and security checks. It examines the incoming JSON-RPC header for a cryptographic JSON Web Token (JWT) and verifies the currently active principal—whether a user or an agent—against the precise tool-scope claims required for the target method. This blocks unauthorised privilege escalation. Next, it validates the request payload using Pydantic models; because the same Pydantic model both publishes the JSON Schema provided to clients and validates incoming requests, the approach prevents schema drift. After validation, both requests and responses are recorded in an immutable Postgres transaction table, mcp_audit, along with tenant ID, caller ID, latency, and status parameters.
-
-When a tool call involves reconciling conflicting data variants, the routing node sends the task to the Agent-to- Agent Protocol bridge. The bridge applies the official Linux Foundation a2a-sdk v1.0 to convert LangGraph state-machine specifications into structured inputs that external agent frameworks can interpret. The request moves across process boundaries via a mutually authenticated Transport Layer Security (mTLS) connection, which stops spoofing and active impersonation by a foreign agent.
-
-The delegated work is then handled by the dedicated AutoGen 0.4+ Reconciliation Agent. This agent takes the delegated parameters and invokes its own local tools, including detect_conflicts, resolve_conflict, and write_audit, to compare conflicting entity definitions using deterministic policies such as Lamport vector clocks or confidence scoring. After selecting a winning variant, the agent formats the result as JSON, sends it back over the secure mTLS channel, has the A2A Bridge normalise it into an MCP-compatible form, and returns it safely to the main LangGraph pipeline.
+The A2A server/client tests demonstrate SDK-level task round trips and controlled failure for unknown tools. Connecting this bridge to an external AutoGen reconciliation service over deployed mTLS is future work. The distinction preserves the complementary protocol roles proposed in [15] and [16] without claiming a cross-framework experiment that has not run.
 
 ---
 
@@ -701,8 +698,8 @@ Two design choices are especially important. A conflict is represented as a node
 | Evaluation benchmarks | Berkeley Function Calling Leaderboard (BFCL), MCP-TaskBench, multi-hop Knowledge Graph question answering, repository-level QA, faithfulness and latency metrics. |
 | Security controls | JWT-scoped tool access, tenant identifiers, structured audit logging, prompt-injection containment; no proprietary repository data. |
 | Deployment target | Docker Compose or single-node Kubernetes-style reference stack suitable for dissertation evaluation. |
-| Evaluation execution profile | Single-node Docker Compose reference stack; student inference executed locally, while the teacher was accessed as a hosted service. This difference is treated as a validity limitation in Section 6.7. |
-| Hardware and run manifest | Each archived run records CPU model, system memory, storage, operating-system version, GPU model and driver, container-image digests, and model/adapter hashes. Peak student inference memory was 4.7 GB VRAM. |
+| Evaluation execution profile | Live student inference on a single NVIDIA L40S; no hosted-teacher comparison is included in the evidence package. |
+| Hardware and run manifest | The release records Python, vLLM, PyTorch, CUDA, GPU identity, model manifest, checkpoint Git LFS hashes, and evidence hashes. CPU, driver, container digest, and peak VRAM are not recorded. |
 
 ---
 
@@ -813,7 +810,7 @@ For every disagreement, the conflict node retains both assertions along with the
 
 # 5. IMPLEMENTATION
 
-This chapter describes how each of the six pillars was implemented. Executable source code is intentionally omitted to meet the submission requirements; whenever exact algorithmic behavior must be communicated, equivalent pseudocode is provided. All algorithms presented correspond to capabilities implemented in, and exercised by, the prototype.
+This chapter maps the six-pillar design to the research prototype. To avoid conflating architecture with evidence, capabilities are identified as implemented, partially implemented, or design targets. Pseudocode describes the intended complete behavior; where the executable prototype is narrower, that boundary is stated explicitly. Chapter 6 reports only measurements backed by committed machine-readable artifacts.
 
 ## 5.1 Implementation Phases
 
@@ -821,23 +818,23 @@ This chapter describes how each of the six pillars was implemented. Executable s
 
 | Phase | Timeline | Work delivered | Status |
 | --- | --- | --- | --- |
-| 1. Foundation and ingestion MVP | Weeks 1–2 | Docker Compose stack; Tree-sitter ingestion for Python/JavaScript; writes to Neo4j and pgvector; raw artefact archival for replay. | Done |
-| 2. Graph and retrieval MVP | Weeks 3–4 | Graph traversal tools, vector search, hybrid retrieval, Reciprocal Rank Fusion (RRF), initial query–answer flow. | Done |
-| 3. MCP tool gateway | Weeks 5–6 | MCP JSON-RPC 2.0 tools with schema validation, audit logging, structured error handling. | Done |
-| 4. MCP-TaskBench | Weeks 7–8 | Task categories, scoring scripts, protocol-conformance checks, pilot tasks. | Done |
-| 5. SLM trace generation and fine-tuning | Weeks 9–11 | Teacher trace generation; staging validation; QLoRA fine-tuning; DPO alignment. | Done |
-| 6. A2A and reconciliation agent | Weeks 12–13 | LangGraph–AutoGen connection through A2A; conflict-resolution agent; mTLS and authentication. | Done |
-| 7. Drift detection and re-indexing | Weeks 14–15 | Entity drift scoring, community centroid drift, selective re-indexing workflow. | Done |
-| 8. Evaluation and ablations | Weeks 16–18 | Benchmark execution, baseline comparison, confidence intervals, error analysis. | Done |
-| 9. Final report and paper draft | Weeks 19–22 | Dissertation completion, reproducibility package, publication-oriented draft. | Done |
+| 1. Foundation and ingestion MVP | Weeks 1–2 | Docker Compose stack; Tree-sitter ingestion for Python/JavaScript; direct writes to Neo4j and pgvector. Kafka consumption, object archival, and cross-store repair remain design targets. | Partial |
+| 2. Graph and retrieval MVP | Weeks 3–4 | Parameterised graph traversal, vector search, Reciprocal Rank Fusion (RRF), reranking, and query–answer flow. | Implemented |
+| 3. MCP tool gateway | Weeks 5–6 | JSON-RPC 2.0-style tools with Pydantic schema validation, tenant checks, metrics, and structured errors. Durable audit persistence remains partial. | Partial |
+| 4. MCP-TaskBench | Weeks 7–8 | 440 internal cases, case-aligned scoring, deterministic train/holdout split, and live-model conformance execution. Independent authorship and human grading remain future work. | Implemented internally |
+| 5. SLM trace generation and fine-tuning | Weeks 9–11 | Curated trace fixtures, schema admission, QLoRA/DPO execution, llm-compressor AWQ, and vLLM release gates. Hosted-teacher provenance is not established by the committed fixtures. | Partial |
+| 6. A2A and reconciliation agent | Weeks 12–13 | Official A2A SDK bridge, agent cards, task executor, transport configuration, and deterministic reconciliation tools. A live LangGraph–AutoGen pairing is not implemented. | Partial |
+| 7. Drift detection and re-indexing | Weeks 14–15 | Entity/centroid drift scoring and Redis-backed two-hop re-index workers. Fair scheduling and full-rebuild policy automation remain design targets. | Partial |
+| 8. Evaluation and ablations | Weeks 16–18 | Live holdout, full conformance, RAG faithfulness, streaming, security, and release evidence. Comparative baselines, human annotation, confidence intervals, and ablations remain unexecuted. | Partial |
+| 9. Final report and paper draft | Weeks 19–22 | Evidence-aligned dissertation and reproducibility package. | In progress |
 
 ## 5.2 P1 — Structural Ingestion with Deterministic Fingerprints
 
-Repository-change events are ingested from Kafka by the ingestion worker, which applies Tree-sitter [55] to modified files and upserts the derived entities and edges. Deterministic content fingerprints ensure idempotence: when the stored value matches the newly computed value, the entity is skipped, making repeated processing safe while maintaining precise change detection. Algorithm 1 formalizes this workflow.
+The executable ingestion path accepts typed commit events, applies Tree-sitter [55] to modified files, and upserts derived entities, edges, and optional embeddings. A webhook-to-Kafka producer boundary and event serialization are implemented, while a production Kafka consumer, raw-object archival, and the multi-store repair sequence remain design work. Deterministic content fingerprints and Neo4j `MERGE` operations provide idempotent entity identity. Algorithm 1 therefore specifies the intended complete event-driven workflow rather than claiming that every step is deployed.
 
 Algorithm 1: Idempotent structural ingestion
 
-procedure INGEST(change_event): artifact ← fetch(change_event.uri); archive(artifact) // object store tree ← TreeSitter.parse(artifact) for each entity e extracted from tree: fp ← SHA256(canonicalise(e.content) ‖ e.kind ‖ e.path) if graph.fingerprint(e.id) = fp: continue // unchanged graph.upsert(e, fp); vectors.upsert(e.id, embed(e.text)) mark_affected(e.id) // for P6 drift for each relationship r extracted from tree: graph.upsert_edge(r.src, r.type, r.dst) emit(affected_set) // to drift topic
+procedure INGEST_TARGET(change_event): artifact ← fetch(change_event.uri); archive(artifact) // object-store step is not yet wired tree ← TreeSitter.parse(artifact) for each entity e extracted from tree: fp ← SHA256(canonicalise(e.content) ‖ e.kind ‖ e.path) graph.upsert(e, fp); vectors.upsert(e.id, embed(e.text)) for each relationship r extracted from tree: graph.upsert_edge(r.src, r.type, r.dst) emit(affected_set) // future Kafka drift topic
 
 ---
 
@@ -863,7 +860,7 @@ both cross-tenant disclosure and unbounded expansion rather than merely discoura
 
 ## 5.3 P3 — Hybrid Retrieval with Reciprocal Rank Fusion and Bounded Critic Loop
 
-During retrieval, the system combines candidates produced by graph traversal and vector search by applying RRF using its default k = 60 setting [22]. The subsequent critic verifies all drafted claims against the available evidence and carries out targeted retrieval for content that lacks support. MAX_ITERS limits this loop and thus determines its latency. The detailed procedures are given in Algorithms 2 and 3.
+During retrieval, the executable orchestrator combines graph and vector candidates with RRF and optional MiniLM reranking. A bounded loop repeats retrieval and synthesis when the whole-answer faithfulness score is below threshold. It does not yet perform intent-specific routing, sentence-level claim decomposition, or targeted query rewriting; those operations remain the complete design shown in Algorithms 2 and 3.
 
 Algorithm 2: Hybrid retrieval with Reciprocal Rank Fusion
 
@@ -875,9 +872,9 @@ procedure ANSWER(query): E ← RETRIEVE(query); draft ← synthesise(query, E) f
 
 ## 5.4 P4 — MCP Tool Gateway and MCP-TaskBench Scoring
 
-A JSON Schema is provided for every registered tool. Before dispatch, the gateway checks each JSON-RPC 2.0 request and, if validation or execution fails, returns a structured error. MCP-TaskBench scores each agent-task transcript against the five criteria listed in Table 5.2, and Algorithm 4 specifies the protocol-conformance score.
+A JSON Schema is provided for every registered tool. Before dispatch, the gateway validates each JSON-RPC request and returns a structured error on failure. The executable TaskBench harness measures case-aligned tool selection, exact arguments, schema validity, protocol execution, required result keys, and semantic availability separately. Human partial-credit and fault-recovery agreement are not yet measured; Algorithm 4 remains the target composite benchmark.
 
-The first MCP catalog covers both query execution and index maintenance. Semantic retrieval uses vector_search and rerank_candidates; structural analysis uses graph_query, bfs_impact, path_trace, and community_scope; decompose_query supports planning; score_faithfulness and flag_claims support verification; generate_response performs grounded synthesis; trigger_reindex manages freshness; and detect_conflicts together with resolve_conflict enables A2A reconciliation. Each tool retains a fixed identifier, typed inputs, documented error semantics, tenant-scoped permission checks, and—where used by MCP-TaskBench—a machine-verifiable oracle.
+The implemented MCP catalog contains `search_code`, `get_entity`, `graph_bfs`, `graph_path`, `get_community`, `enqueue_reindex`, `schema_diff`, `impact_analysis`, `reconcile`, `resolve_conflict`, `get_centroid_drift`, and `get_conflict`. Each tool has typed inputs, structured errors, and tenant-scoped checks. Internal TaskBench cases carry tool-call oracles; semantic result oracles are available only where fixture or live-repository expectations are explicitly supplied.
 
 **Table 5.2: MCP-TaskBench Scoring Dimensions**
 
@@ -902,7 +899,7 @@ procedure SCORE(agent, task): transcript ← run(agent, task, gateway=instrument
 
 ## 5.5 P5 — Verified Trace Distillation into Phi-4-mini
 
-No model training is performed until the staged-trace gate is applied. Every MCP call within each teacher trajectory is re-executed on the staging environment, and only traces whose full step sequence and final result satisfy the oracle are kept. For DPO, the accepted trajectories act as preferred examples, and the task-matched rejected variants act as dispreferred examples. Algorithm 5 defines this two-stage student-building process.
+The training code applies schema, tool-use, and faithfulness admission checks before dataset construction. The committed 350-record archive is a curated fixture corpus: all records passed schema replay and 30 were excluded by the 320-record cap, not by observed execution failure. TaskBench SFT/DPO datasets instead use a deterministic 80/20 prompt-group split and generated hard negatives. QLoRA, DPO, adapter merging, AWQ, and vLLM serving were executed, but the exact split-v2 adapter run summaries still need to be published for complete training provenance. Algorithm 5 describes the stronger hosted-teacher workflow that remains to be executed.
 
 Algorithm 5: Staged-trace validation and two-stage training
 
@@ -910,7 +907,7 @@ procedure BUILD_STUDENT(tasks): T ← ∅ // admitted traces for each task in ta
 
 ## 5.6 P4/P6 — A2A Delegation and Drift-Aware Selective Re-indexing
 
-When the orchestrator detects a reconciliation subproblem, it assigns that unit to the AutoGen reconciliation agent via A2A. The request carries task context, provenance, and restricted tool-scope tokens, ensuring that delegated execution remains governed by the originating control constraints. Meanwhile, drift processing consumes the entity-change stream produced by ingestion and applies the two-level rule described in Chapter 4. Algorithm 6 formalizes this procedure.
+The prototype implements A2A SDK cards, messages, task execution, HMAC card verification, and optional mTLS client configuration, but the RAG orchestrator does not yet delegate to a separate AutoGen service. Drift workers implement entity and community scoring plus bounded re-indexing through Redis queues. Kafka linkage, per-tenant fair scheduling, expiry-based staleness, and automated full rebuilds remain design targets. Algorithm 6 describes the intended integrated flow.
 
 Algorithm 6: Dual-layer drift scoring with selective re-indexing
 
@@ -924,7 +921,7 @@ Values for θ_e, θ_c, and neighbourhood radius r are selected using a held-out 
 
 ## 5.7 Deployment and Operational Considerations
 
-The reference environment adopts a single-node Docker Compose deployment that includes Kafka, ingestion workers, Neo4j, Postgres with pgvector, MinIO, the MCP gateway, LangGraph orchestration, the AutoGen reconciliation service, and a locally served SLM. Deployment units are defined to match pillar boundaries, so that an enterprise adaptation can replace or scale each unit independently. The reproducibility package also contains environment-specific configuration and archived snapshots, which makes it possible to reconstruct the exact software stack used in each experiment.
+The reference Docker Compose environment defines Kafka, Neo4j, Postgres with pgvector, Redis, MinIO, observability services, the MCP gateway, re-index workers, and optional local model serving. It does not define separate LangGraph, AutoGen, or Kafka ingestion-consumer services. The release package captures model/runtime evidence, while complete container digests and training-run provenance remain to be added.
 
 Implementation explicitly required observability, bounded execution, and replay. For every tool call, delegation, and re-index decision, the system produces structured records, which proved essential for debugging. The implementation sets limits for critic iterations, traversal depth, per-query tool calls, and A2A timeouts, thereby converting worst-case latency into an explicit system parameter. In addition, keeping raw artefacts, fingerprints, and audit histories enables previously generated answers to be regenerated and examined, supporting both engineering analysis and scientific reproducibility.
 
@@ -932,9 +929,9 @@ An important implementation finding emerged from schema evolution within the too
 
 ## 5.8 Detailed Runtime and Resilience Flows
 
-### 5.8.1 Event-Driven Ingestion and Logical Transaction A standard Git webhook captures repository changes, verifies the request signature, and publishes the resulting commit to Kafka. Parser workers then process events within repository partitions, retrieve only the modified files, and apply Tree-sitter to Python or JavaScript sources. Documentation and schema content are normalised, entities are extracted, and deterministic SHA-256 fingerprints are produced; entities that remain unchanged are excluded. The updated artefacts are stored in MinIO, pgvector, and Neo4j prior to sending an entity-changed message to the drift pipeline. Kafka’s retained log supports replay and recovery after interrupted processing [39].
+### 5.8.1 Event-Driven Ingestion and Logical Transaction The prototype exposes a typed Git-commit webhook and Kafka producer adapter, plus a direct ingestion pipeline that parses changed paths and writes Neo4j and pgvector. Webhook signature verification, a runnable Kafka consumer, MinIO archival, entity-change publication, and the repair dead-letter flow are not present in the executable stack. Kafka replay and the logical transaction sequence below are therefore resilience design targets rather than measured implementation behavior [39].
 
-Because Neo4j, Postgres, and the object store cannot be coordinated under a single distributed commit, IDRKD uses a logical transaction sequence. First, the raw artefact is stored under its content hash. Next, prepared updates are staged in Postgres. Then, Neo4j commits the entity and relationship modifications, and finally the Postgres transaction is completed. If the last commit fails, a repair message is emitted to a dead-letter topic. Since all writes are idempotent, replay can finish a partially successful transaction without producing duplicate entities.
+The proposed logical transaction stores raw content first, stages Postgres updates, commits Neo4j, and then completes Postgres, with repair messages for partial failure. The current prototype relies on idempotent Neo4j and pgvector upserts but does not implement this coordinator. It must not be treated as evidence of cross-store atomicity.
 
 ---
 
@@ -946,23 +943,21 @@ Because Neo4j, Postgres, and the object store cannot be coordinated under a sing
 
 For documentation and API text, extraction includes span-based Named Entity Recognition (NER), whereas JSON and comma-separated-value inputs undergo schema inference. SpanBERT is suitable for NER because its training objective models and predicts complete contiguous spans rather than treating tokens independently [53]. The outputs from Tree-sitter, NER, and schema inference are mapped to a single canonical entity vocabulary before fingerprints are generated, which allows code, documents, and schema evidence to coexist within the same graph.
 
-### 5.8.2 Query State Machine and Bounded Verification During query processing, LangGraph maintains a typed state (QueryState) that includes the request (query), tenant (tenant_id), inferred category (query_type), decomposed subtasks (sub_queries), vector and graph evidence (vector_ctx, graph_ctx), candidate answer (draft), claims, faithfulness assessments, the number of retrieval rounds (rounds), and a trace identifier (trace_id). The user query enters the state machine at classify_node (classify), which functions as the system’s planner. Conceptual questions are routed to retrieve_vec_node (retrieve_vec); structural and impact questions to retrieve_graph_node (retrieve_graph); conflict tasks to reconcile_node (reconcile) for cross-framework delegation; and multi-hop questions to decompose_node (decompose) before fanning out to parallel vector and graph retrieval. These distinct retrieval paths are combined at merge_node (merge). Reciprocal Rank Fusion (RRF) [22] merges the resulting database rankings, after which optional cross-encoder reranking is used to narrow the context before fanning into synthesize_node (synthesize) to produce a draft response.
+### 5.8.2 Query State Machine and Bounded Verification The executable orchestrator maintains a typed `QueryState` and runs a fixed sequence of router marker, vector retrieval, graph traversal, RRF, optional reranking, synthesis, and critique. A maximum of two rounds bounds execution. The router does not yet classify intent, decompose multi-hop requests, run retrieval branches concurrently, or delegate conflicts. The LangGraph node topology described in the design figures is a migration target, not the framework used by the measured release.
 
-The draft response is forwarded directly to critique_node (critique), where the critic breaks the draft into atomic, sentence-level claims and tests each one against the concatenated retrieved evidence. A DeBERTa-v3-based Natural Language Inference (NLI) classifier is used because its efficient encoder supports entailment decision-making effectively[50]. When a claim does not receive enough support (scoring below the entailment threshold τnli=0.7), it is rewritten as a targeted retrieval request. If the number of retrieval cycles remains within the allowed range (rounds < 2), the state machine takes a conditional reretrieve route to send the targeted request back to retrieve_vec_node (retrieve_vec) to obtain stronger evidence. The query execution procedure ends via an accept path to respond_node (respond) once every claim has been verified, or via a give_up path to respond if the re-
+The measured release uses `cross-encoder/nli-deberta-v3-large` to score the complete answer against concatenated evidence at threshold 0.78. When the score fails, the same query is retrieved again; sentence-level claims, targeted query rewriting, and unsupported-span annotation remain future improvements. The query execution procedure returns after acceptance or after the bounded second round.
 
 ---
 
 <!-- PDF page 49 -->
 
-retrieval loop is exhausted after two additional cycles; any remaining unsupported statements are then explicitly flagged in the final output to the user.
-
 <!-- Embedded image from source PDF page 49. -->
 
-**Figure 5.2: LangGraph State Machine for Query Resolution**
+**Figure 5.2: Target LangGraph State Machine for Query Resolution**
 
 BGE-M3 supplies the initial bi-encoder representations, pgvector HNSW performs approximate nearest-neighbour search, and an MS MARCO MiniLM cross-encoder reorders the merged candidates. The engineering schedule allots approximately 40 ms to query embedding, 60 ms to vector retrieval, 180 ms to reranking up to 40 candidates, 40 ms to an indexed single-hop Cypher operation, and at most 300 ms to a bounded three-hop traversal. These values act as diagnostic targets for detecting regressions and are treated as measurements only when they are observed during benchmark execution.
 
-### 5.8.3 A2A Delegation and Cross-Agent Governance Only reconciliation work is delegated by the LangGraph planner across the framework boundary. The planner detects the AutoGen capability, verifies the payload against its published schema, creates a short-lived restricted token, and forwards the task using mutual Transport Layer Security (mTLS). The request contains task and correlation identifiers, tenant context, source provenance, and allowed tool scopes. The AutoGen service may examine and resolve conflict nodes, but it is blocked from using unrelated tools. Its normalised output includes the resolution, evidence links, and an immutable audit reference. This realises MCP for tool interaction and A2A for coordination between agents as complementary mechanisms [15], [16].
+### 5.8.3 A2A Delegation and Cross-Agent Governance The prototype uses the official A2A SDK for cards, task envelopes, executor state transitions, and a test server/client round trip. It also supplies shared-secret card signing and an mTLS client-context builder. No LangGraph planner, AutoGen process, short-lived token issuer, or deployed mTLS exchange is connected to the measured RAG path. These components establish protocol contracts but do not yet demonstrate the cross-framework experiment proposed in C3 [15], [16].
 
 ---
 
@@ -970,7 +965,7 @@ BGE-M3 supplies the initial bi-encoder representations, pgvector HNSW performs a
 
 <!-- Embedded image from source PDF page 50. -->
 
-**Figure 5.3: A2A Delegation from LangGraph to the AutoGen Reconciliation Agent**
+**Figure 5.3: Target A2A Delegation from LangGraph to an AutoGen Reconciliation Agent**
 
 ### 5.8.4 Error Handling, Retry, and Back-Pressure Rules
 
@@ -1005,7 +1000,7 @@ fields are redacted; and model signatures are verified before loading. Credentia
 | Model artefacts | Substituted or corrupted weights/adapters | Signed artefacts, checksum validation, controlled registry |
 | Inference service | Long-context denial of service | Token limits, quotas, circuit breaker, bounded agent loops |
 
-### 5.9.2 Observability and SLO-Based Alerting OpenTelemetry offers a vendor-independent layer for logs, traces, and metrics [51]. A correlation identifier is set on the incoming query or webhook and is propagated through LangGraph states, MCP requests, database operations, A2A messages, model serving, and re-index tasks. This shared linkage allows protocol errors, stale-index conditions, and latency anomalies to be analysed within a single distributed trace.
+### 5.9.2 Observability and SLO-Based Alerting OpenTelemetry helpers and Prometheus collectors instrument selected ingestion, graph, MCP, and drift operations [51]. Correlation fields exist in commit and A2A envelopes, but end-to-end propagation across every store and model request has not been demonstrated. The alert conditions below remain operating targets until exporter and alert-rule evidence is archived.
 
 | Metric | Type | Labels | Operational use |
 | --- | --- | --- | --- |
@@ -1019,7 +1014,7 @@ fields are redacted; and model signatures are verified before loading. Credentia
 | _ _ kafka consumer lag | Gauge | topic, partition, group | Alert before freshness objectives are breached |
 | _ _ slm tokens per second | Gauge | model | Capacity and regression tracking |
 
-### 5.9.3 Evaluation Harness, CI/CD, and Reproducibility Evaluation is carried out as a standalone system component rather than an auxiliary script. For every versioned MCP-TaskBench case, the runner launches or connects to the pinned stack, logs the full MCP interaction, and saves a machine-readable result. Exact Match, F1, JSON-RPC validity, schema compliance, latency, and memory are all scored automatically, while people evaluate partial success and the quality of the explanations. Each run manifest also records the model and adapter hashes, container digests, dataset fingerprint, seed, protocol revision, and execution time.
+### 5.9.3 Evaluation Harness, CI/CD, and Reproducibility Evaluation is a standalone package that writes machine-readable TaskBench, RAG, streaming, security, and promotion artifacts. Tool calls are case-aligned and semantic backend outcomes are now reported separately from protocol success. Human grading, official BFCL execution, container digests, and protocol-revision fields are not present in the archived release. The three-seed deterministic bundle is explicitly a harness self-test using oracle predictors and is ineligible for empirical model claims. Continuous integration runs unit/evaluation tests, Ruff, and strict mypy; live GPU/database gates remain separately executed release procedures.
 
 | Environment | Purpose | Mandatory gate |
 | --- | --- | --- |
@@ -1052,7 +1047,7 @@ After adapter optimization, parameters are merged and quantized for local deploy
 
 **Figure 5.4: Distillation, Quantisation, and Gated Model Publication Pipeline**
 
-The baseline configuration used 4-bit NormalFloat quantisation with double quantisation, a LoRA rank of 16, alpha 32, dropout 0.05, and adapters applied to attention and feed-forward projections. Supervised fine-tuning ran for two epochs with an effective batch size of 32, a learning rate of 2 × 10^-4, and a maximum context length of 3,584 tokens. DPO was then trained for one epoch on accepted-versus-rejected trace pairs using a 5 × 10^-6 learning rate and beta 0.1. Section 6.3 reports the results obtained with these unchanged settings.
+The training implementation supports 4-bit QLoRA, LoRA rank 16, alpha 32, dropout 0.05, and Phi-specific fused projection targets. The promoted artifact was produced from a split-v2 DPO adapter and quantised with llm-compressor AWQ using W4A16 asymmetric groups of 128. The committed generic adapter summaries concern a separate 500-record run, so epoch, step, and learning-rate claims for the promoted split-v2 adapter are not reported as reproducible until its exact SFT/DPO summaries and datasets are published.
 
 | Gate | Metric | Threshold | Action if not met |
 | --- | --- | --- | --- |
@@ -1070,7 +1065,7 @@ The baseline configuration used 4-bit NormalFloat quantisation with double quant
 
 ## 5.11 Drift Operations and Re-index Scheduling
 
-### 5.11.1 Event Topics and Trigger Conditions Separate event topics separate ingestion, drift scoring, selective re-indexing, and repair, allowing each stage to scale on its own. The default entity cosine-drift threshold is 0.15, and the community-centroid threshold is 0.10. If either threshold is crossed, re-indexing is scheduled within two hops. Entities that have not been verified for 30 days are assigned reduced confidence, and full reconstruction is reserved for structural schema changes or when the stale proportion reaches 40%. These values are configurable default settings used in sensitivity tests, and they are not universal recommendations.
+### 5.11.1 Event Topics and Trigger Conditions The executable workers use entity cosine-drift threshold 0.15, community-centroid threshold 0.10, and bounded two-hop re-index requests. The event topics below, 30-day confidence reduction, and 40% full-rebuild trigger are proposed operating policies; they are not wired to a scheduler or sensitivity-test artifact.
 
 | Topic | Partition key | Purpose | Retention |
 | --- | --- | --- | --- |
@@ -1080,7 +1075,7 @@ The baseline configuration used 4-bit NormalFloat quantisation with double quant
 | reindex-requests | _ entity id | Two-hop selective re-index request and reason | 7 days |
 | repair-dlq | _ entity id | Idempotent repair for cross-store partial failure | 30 days |
 
-### 5.11.2 Fairness and Operational Limits Per-tenant queues and fairness controls stop a high-change repository from monopolising selective re-index capacity. Unless an operator changes the policy, a single tenant can use no more than 30% of concurrent re-index slots. Graph depth, the number of retrieval results, critic iterations, tool-call allowance, and the A2A timeout are all defined settings. As a result, worst-case resource consumption and latency can be examined and managed rather than arising implicitly
+### 5.11.2 Fairness and Operational Limits Redis queues and graph-depth limits bound individual re-index requests. A 30% per-tenant concurrency share and fair scheduler remain design requirements and are not enforced by the current FIFO queue. Critic rounds and traversal depth are bounded; a production A2A timeout is not exercised because cross-framework delegation is not connected.
 
 ---
 
@@ -1088,65 +1083,60 @@ The baseline configuration used 4-bit NormalFloat quantisation with double quant
 
 # 6. RESULTS AND DISCUSSION
 
-Tables 6.1–6.4 summarize the final results for the three research questions and the four component ablations. The interpretation follows the preregistered criteria reported in Table 3.1. Appendix C details the reproducibility package, including task-level results, random seeds, run manifests, protocol revisions, and hashes for all data snapshots.
+This chapter reports only results present in the committed release evidence. It distinguishes live-model measurements from deterministic harness self-tests and identifies preregistered questions that remain unanswered. Appendix C lists the available machine-readable artifacts and the evidence still required for the comparative claims.
 
 ## 6.1 Experimental Setup
 
-All experiments were conducted on the Docker Compose reference environment specified in Section 5.7. Prior to evaluation, the repository corpus, benchmark tasks, model configurations, and random seeds were fixed. The teacher, the distilled Phi-4-mini model, and the baseline agents called tools solely through the instrumented Model Context Protocol gateway, ensuring that conformance scores were derived from validated interactions. For each benchmark, three runs were performed using different seeds, and the reported analysis relies on stored aggregate results alongside bootstrap confidence intervals.
-
-Baseline Agent A and Baseline Agent B were set up as specified in Section 3.4.1. The teacher model, the distilled Phi-4-mini student, and the baseline agents all used tools via the instrumented Model Context Protocol (MCP) gateway, so that protocol-conformance metrics were computed from verified traffic across every configuration.
+The release artifact was evaluated on an NVIDIA L40S through vLLM 0.27.1 with PyTorch 2.13.0+cu129. The committed evidence contains one 89-case held-out tool-call run, one 440-case no-split conformance run, five live repository RAG cases, 20 streaming samples, and the security suite. A separate three-seed bundle uses deterministic oracle predictors solely to test harness replay; it is not model evidence and is excluded from the results below. No executed frontier-teacher or baseline-agent runs, human annotation set, bootstrap sample, or official BFCL result is committed.
 
 ## 6.2 RQ1 — MCP-TaskBench Discriminative Power (C1)
 
-Table 6.1 reports the overall MCP-TaskBench results for each agent and the five-component profile defined in Table 5.2. The preregistered definition of success requires Cohen’s d ≥ 0.3 between the highest and lowest quartiles, and Cohen’s κ ≥ 0.7 for agreement on the human-assessed task-success subset.
+Table 6.1 reports the live-model evidence that is currently reproducible. Because comparative agents and human annotations were not executed, Cohen's d and Cohen's κ cannot be calculated and C1 is not yet established.
 
-**Table 6.1: MCP-TaskBench Agent Comparison Results**
+**Table 6.1: Available MCP-TaskBench Evidence**
 
-| Agent | Task success | Tool selection | JSON-RPC validity | Schema conformance | Error handling | Aggregate |
-| --- | --- | --- | --- | --- | --- | --- |
-| Frontier teacher | 0.91 | 0.94 | 0.99 | 0.97 | 0.85 | 0.93 |
-| Distilled Phi-4-mini (ours) | 0.86 | 0.89 | 0.98 | 0.95 | 0.78 | 0.89 |
-| Baseline agent A | 0.72 | 0.75 | 0.92 | 0.88 | 0.61 | 0.78 |
-| Baseline agent B | 0.48 | 0.52 | 0.65 | 0.71 | 0.44 | 0.56 |
+| Run | Cases | Split | Tool F1 | Argument accuracy | Claim boundary |
+| --- | ---: | --- | ---: | ---: | --- |
+| Quantised Phi-4-mini holdout | 89 | prompt-group holdout, seed 17 | 1.00 | 1.00 | Held-out tool-call conformance |
+| Quantised Phi-4-mini full suite | 440 | all, includes training cases | 1.00 | 1.00 | Deployment regression/conformance only; not generalisation |
 
-A clear performance ranking was observed: the frontier teacher scored 0.93, the distilled Phi-4-mini model scored 0.89, baseline agent A scored 0.78, and baseline agent B scored 0.56. Benchmark discrimination met the preregistered requirement. The Cohen’s d value comparing the top and bottom quartiles was 0.81 [95% CI: 0.72- 0.90], exceeding the minimum threshold of ≥ 0.3. For human-scored task success, inter-annotator agreement reached κ = 0.83 [95% CI: 0.79-0.87], which also surpassed the ≥ 0.7 criterion. Across all models, JSON-RPC message validity was the highest-scoring dimension, while structured failure recovery was the lowest. Accordingly, C1 is supported on the evaluated tasks.
+The archived 440-case artifact was generated before protocol success and semantic outcome were separated. Inspection shows that 120 graph results reported `available=false` and 60 entity/conflict results reported `found=false`, despite the legacy aggregate pass rate of 1.00. Consequently, that artifact demonstrates model call formatting and exact argument reproduction, not end-to-end task completion. The corrected harness records `tool_call_pass_rate` and `semantic_outcome_rate` independently and treats unavailable/not-found outcomes as failed semantic results. C1 remains open until multiple real agents and human annotations are evaluated with this corrected harness.
 
 ## 6.3 RQ2 — Verified Distillation into Phi-4-mini (C2)
 
-Table 6.2 assesses the student model against the three preregistered C2 conditions: a BFCL F1 shortfall that does not exceed 8 points, an MCP-TaskBench aggregate within 10% of the teacher, and maximum inference VRAM of 6 GB or less.
+Table 6.2 summarises verified release evidence for the student. Official BFCL, a teacher gap, and peak GPU memory were not measured, so the complete C2 criterion cannot be claimed.
 
 ---
 
 <!-- PDF page 56 -->
 
-**Table 6.2: Small Language Model (SLM) Distillation Results**
+**Table 6.2: Verified Student Release Measurements**
 
-| Metric | Teacher | Student (QLoRA only) | Student (QLoRA + DPO) | Criterion |
-| --- | --- | --- | --- | --- |
-| BFCL F1 | 0.86 | 0.79 | 0.82 | ≥ teacher − 0.08 |
-| MCP-TaskBench aggregate | 0.93 | 0.87 | 0.89 | within 10% of teacher |
-| Median latency (ms) | 820 | 145 | 158 | reported |
-| 95th-percentile latency (ms) | 1150 | 220 | 245 | reported |
-| Peak inference VRAM (GB) | n/a (hosted) | 4.2 | 4.7 | ≤ 6 GB |
-| Traces admitted after staging validation (%) | — | 91.4% | 91.4% | reported |
-| Criterion met? | — | Partial (BFCL F1 only) | All three | — |
+| Metric | Measured value | Evidence boundary |
+| --- | ---: | --- |
+| Held-out internal tool F1 | 1.00 (89 cases) | Internal TaskBench, not official BFCL |
+| Full internal tool F1 | 1.00 (440 cases) | No-split conformance; training overlap expected |
+| Streaming p95 TTFT | 0.0332 s | 20 live vLLM samples |
+| Streaming p95 completion latency | 1.3201 s | 20 live vLLM samples |
+| AWQ format | W4A16 asymmetric, group 128 | llm-compressor compressed-tensors checkpoint |
+| Peak inference VRAM | Not measured | Criterion unresolved |
 
-The QLoRA with DPO model achieved BFCL F1 = 0.82, which is 0.04 below the teacher’s 0.86 and therefore within the allowed 0.08 gap. Its MCP-TaskBench aggregate was 0.89, about 4.3% below the teacher value of 0.93, and its peak inference memory was 4.7 GB. As a result, all C2 thresholds were satisfied. Compared with QLoRA alone, adding DPO increased BFCL F1 by 0.03 and MCP-TaskBench by 0.02, while median latency increased by 13 ms, 95th-percentile latency by 25 ms, and VRAM by 0.5 GB. The staging gate preserved 91.4% of the teacher traces and excluded 8.6% before training. Even though the student was substantially faster than the hosted teacher in the observed runs, differences in serving environments restrict any direct interpretation of that latency comparison.
+The release strongly supports local deployment feasibility and internal structured tool-call competence. It does not establish a DPO improvement because the SFT and DPO probes were equal on the 60-case diagnostic run, and no corrected paired full evaluation is committed. The 320/350 admission ratio was produced by an explicit cap after all 350 fixture traces passed schema replay; it must not be interpreted as rejection of 8.6% invalid teacher behavior. C2 is therefore partially supported only for local serving and internal conformance.
 
 ## 6.4 RQ3 — Decomposed Multi-Agent versus Monolithic Baseline (C3)
 
-Table 6.3 contains the paired results for multi-hop Knowledge Graph questions. The preregistered C3 requirement is an improvement of at least 5 percentage points in Exact Match (EM) or task completion, with a paired interval that does not include zero.
+The preregistered C3 requirement is an improvement of at least 5 percentage points in Exact Match or task completion, with a paired interval that excludes zero. The committed code has a fixed-sequence Python orchestrator and A2A SDK contracts, but no connected LangGraph–AutoGen pair or monolithic comparison run. C3 was therefore not tested.
 
-**Table 6.3: Multi-Agent versus Monolithic Baseline Results**
+**Table 6.3: C3 Evidence Status**
 
-| Metric | Monolithic baseline | Decomposed (LangGraph + AutoGen over A2A) | Paired Δ [95% CI] |
-| --- | --- | --- | --- |
-| Exact Match (EM) | 0.62 | 0.69 | +0.07 [0.04, 0.10] |
-| Task completion rate | 0.68 | 0.75 | +0.07 [0.05, 0.09] |
-| Faithfulness (RAGAS-style) | 0.72 | 0.79 | +0.07 [0.03, 0.11] |
-| End-to-end latency, median (s) | 4.5 | 7.2 | +2.7 [2.1, 3.3] |
+| Required artifact | Status |
+| --- | --- |
+| Fixed multi-hop case set with answer oracle | Not committed |
+| Monolithic live-agent outputs | Not executed |
+| Connected LangGraph–AutoGen/A2A outputs | Not implemented or executed |
+| Paired bootstrap interval | Not calculable |
 
-In comparison with the monolithic agent, the LangGraph-AutoGen decomposition increased Exact Match from 0.62 to 0.69, task completion from 0.68 to 0.75, and faithfulness from 0.72 to 0.79. Each of the three improvements is 0.07, and none of their 95% confidence intervals includes zero; therefore, C3 is supported for this task suite. Coordination also raised the median end-to-end latency from 4.5 seconds to 7.2 seconds, which is an additional 2.7 seconds, or roughly 60%. Taken together, the evidence supports using decomposition for challenging reconciliation and multi-hop scenarios rather than treating it as the default approach for every request.
+The A2A contract tests demonstrate protocol-level interoperability primitives, not a quality advantage from multi-agent decomposition. C3 remains an explicit future experiment.
 
 ---
 
@@ -1154,24 +1144,26 @@ In comparison with the monolithic agent, the LangGraph-AutoGen decomposition inc
 
 ## 6.5 Ablation Studies
 
-Table 6.4 summarizes four ablation experiments created to quantify the independent contribution of selected mechanisms. For each run, a single mechanism was removed, while all other conditions and the fixed task collection were kept unchanged.
+The implementation exposes some ablation switches, but no live paired ablation bundle is committed. Table 6.4 records the evidence needed before causal contribution claims can be made.
 
-**Table 6.4: Ablation Study Summary**
+**Table 6.4: Ablation Evidence Status**
 
-| Ablation | Mechanism removed | Primary metric affected | Result |
-| --- | --- | --- | --- |
-| A1 | Graph retrieval (vector-only RAG) | Multi-hop EM | 0.58 (vs. Decomposed EM of 0.69; a −11 pp drop, confirming graph traversal is critical for multi-hop reasoning) |
-| A2 | RRF fusion (concatenation instead) | Retrieval precision@k | 0.74 (vs. 0.85 in the full pipeline; a −0.11 drop, verifying that reciprocal-rank fusion improves top- 10 precision) |
-| A3 | Staged-trace validation (train on raw traces) | Student MCP-TaskBench aggregate | 0.78 (vs. 0.89 with validation; an 11 percentage-point absolute drop, approximately 12.4% relative, supporting the value of filtering invalid teacher traces) |
-| A4 | Selective re-indexing (full rebuild policy) | Re-index latency / freshness lag | 180s / 1.5h lag (vs. selective re-indexing latency of ~45s; a 4× slowdown, confirming drift-aware policies significantly reduce operational overhead) |
+| Ablation | Required comparison | Status |
+| --- | --- | --- |
+| A1 graph retrieval | Same live RAG cases with graph enabled/disabled | Not executed |
+| A2 RRF | Same retrieved candidates with RRF/concatenation and relevance oracle | Not executed |
+| A3 trace admission | Independently trained raw/admitted checkpoints | Not executed |
+| A4 selective re-indexing | Same change workload under selective/full rebuild | Not executed |
 
-When graph retrieval was omitted, multi-hop Exact Match dropped from 0.69 to 0.58. Replacing Reciprocal Rank Fusion with straightforward list concatenation reduced retrieval precision@k from 0.85 to 0.74. If unverified trajectories were used for training, the student MCP-TaskBench score fell from 0.89 to 0.78, corresponding to an 11-point absolute decline. Substituting selective maintenance with full rebuilds increased re-indexing time from approximately 45 seconds to 180 seconds and introduced a 1.5-hour freshness delay. Overall, these findings empirically support graph grounding, RRF, trace admission checks, and drift-aware selective re-indexing.
+These mechanisms are architecturally motivated and unit-tested, but their independent empirical effects are unknown. No ablation conclusion is drawn.
 
 ## 6.6 Qualitative Observations
 
-Three operational patterns are visible in the results. First, every evaluated agent recovered from failures less effectively than it generated valid messages and schema-conforming arguments, indicating that syntactic correctness by itself does not guarantee resilience. Second, DPO provides a small but consistent advantage over adaptation using QLoRA alone, with limited added latency and memory. Third, decomposition improves all measured answer-quality outcomes, but it also imposes substantial coordination overhead. The ablation results further show that graph retrieval, RRF, staged-trace validation, and selective re-indexing each contribute in a detectable way rather than merely increasing architectural complexity.
+Three observations are justified. First, the quantised model produced exact structured calls on the internal held-out set. Second, the legacy perfect full-suite pass rate concealed unavailable and not-found backend outcomes, confirming that syntax and task completion must be separate metrics. Third, five live RAG answers exceeded the NLI threshold, but the sample is too small and lacks entity-recall oracles. No comparative DPO, decomposition, or ablation effect is inferred.
 
-## 6.7 Discussion of Discrepancies and Threats to Validity The conclusions are still subject to multiple validity threats. Construct validity is limited because MCP-TaskBench cases were generated within the project; involving external task authors would offer stronger evidence. External validity is constrained by the use of open-source repositories and synthetic schemas, so numerical performance may differ in broader enterprise environments. Internal validity is influenced by dependence on a hosted teacher model whose underlying release could change, even though all calls were archived during a documented evaluation period. Moreover, the latency difference between the hosted teacher and local students is not controlled for infrastructure. Finally, the task-level score distributions and annotation records that underlie d = 0.81 and κ = 0.83 are included in the reproducibility package and meet the preregistered criteria, but independent replication remains necessary.
+## 6.7 Discussion of Discrepancies and Threats to Validity
+
+The strongest validity threat is benchmark dependence: internal TaskBench prompts and schemas were used for training, and the full no-split run intentionally overlaps that data. The 89-case prompt-group holdout reduces direct wording leakage but remains generated from the same templates and tool catalog. The model prompt includes user-provided scope identifiers, as required to form arguments, but no longer contains an explicit phrase-to-tool answer map. External BFCL and independently authored tasks are needed for generalisation claims. The five RAG cases use public repositories and transformer NLI but omit expected entity identifiers, so retrieval recall is unknown. Training provenance is incomplete for the promoted split-v2 adapter, and no human annotation, comparative baseline, confidence interval, VRAM measurement, or ablation result is currently available. These are reported as missing evidence rather than silently replaced with assumed values.
 
 ---
 
@@ -1181,19 +1173,19 @@ Three operational patterns are visible in the results. First, every evaluated ag
 
 ## 7.1 Conclusions
 
-This dissertation delivered a six-pillar reference design that jointly covers structural ingestion, Knowledge Graph construction, hybrid retrieval, orchestration via the Model Context Protocol and the Agent-to-Agent Protocol, verification through Small Language Model distillation, and drift-sensitive re-indexing. In addition, it provides MCP-TaskBench, a staging replay gate for training trajectories, and a controlled comparison of decomposed versus monolithic agent architectures.
+This dissertation delivered a six-pillar reference design and a substantial prototype covering structural parsing, Neo4j/pgvector persistence, hybrid retrieval, an MCP-style tool gateway, A2A SDK contracts, Small Language Model training and AWQ publication, and drift-sensitive re-indexing. It also provides an internal TaskBench harness and cryptographically bound release workflow. The implemented boundaries and unexecuted experiments are stated explicitly.
 
-Across the tested conditions, all three formal contributions satisfied their acceptance criteria. With respect to C1, MCP-TaskBench distinguished the agents, ranging from 0.93 for the frontier teacher down to 0.56 for the weakest baseline, and obtained Cohen's d = 0.81 [95% CI: 0.72-0.90] with inter-annotator κ = 0.83 [95% CI: 0.79-0.87]. For C2, the QLoRA+DPO student passed every gate, with BFCL F1 = 0.82, MCP-TaskBench = 0.89, and peak VRAM = 4.7 GB. For C3, decomposition increased Exact Match, task completion, and faithfulness by 7 percentage points while increasing median latency by 2.7 seconds. Component ablations also reinforced graph retrieval, RRF, validated traces, and selective re-indexing. Overall, IDRKD strengthened evidence-grounded reasoning and local tool competence, while also exposing a clear quality-versus-latency trade-off for multi-agent execution.
+The measured release supports a narrower conclusion. The quantised Phi-4-mini checkpoint achieved 1.00 tool F1 and argument accuracy on an 89-case internal prompt-group holdout, p95 time to first token of 0.0332 seconds, and p95 completion latency of 1.3201 seconds. Five live repository answers achieved minimum NLI faithfulness of 0.8744 and mean 0.9577, while the security suites passed. These results support internal tool-call competence and local serving feasibility. C1 discrimination, the complete C2 teacher/BFCL/VRAM criteria, and C3 multi-agent superiority remain unproven because their required comparative evidence was not executed.
 
 ## 7.2 Recommendations
 
-- When evaluating MCP agents, results should separately report semantic tool selection, JSON-RPC validity, schema conformance, and structured fault recovery, because fault recovery was consistently the weakest capability in this study. • Teacher trajectories should be validated through execution before tool-use distillation; eliminating this admission control reduced the student's MCP-TaskBench aggregate from 0.89 to 0.78. • Repository-level question-answering systems should retain both graph-based retrieval and Reciprocal Rank Fusion, since their removal led to declines of 0.11 in multi-hop Exact Match and retrieval precision.
+- Evaluation should report tool-call conformance, protocol execution, semantic backend outcome, and answer quality separately. Official BFCL and independently authored tasks should be added before claiming generalisation. Teacher traces should retain provider/version/request provenance and actual replay outcomes. Live RAG cases should include stable expected entity identifiers so retrieval recall can be measured.
 
-- Agent decomposition should be limited to complex reconciliation tasks or multi-hop workloads: it improved quality by 7 percentage points but increased median latency by about 60%. When index freshness is critical, selective drift-aware updates are preferable, because full reconstruction took four times as long in the ablation.
+- The proposed LangGraph–AutoGen path and each ablation should be implemented and evaluated as paired experiments before recommendations about decomposition, RRF contribution, admission filtering, or selective rebuilding are made. Split-v2 SFT/DPO run summaries, datasets, and adapter hashes should be published with the model provenance.
 
 ## 7.3 Limitations and Future Scope of Work
 
-The findings are restricted to project-developed MCP-TaskBench cases, public Python and JavaScript repositories, synthetic enterprise-like schemas, a single LangGraph-AutoGen setup, and pinned MCP/A2A revisions. Future work should include independent task design and annotation, add Java and additional enterprise languages, assess production-scale corpora, reduce Agent-to-Agent coordination overhead, and carry out adversarial testing against the MCP threat classes reported in [5]. The comparisons should also incorporate more expressive agent structures constructed dynamically. A paper-oriented manuscript is in preparation, although no peer-reviewed venue has been selected yet.
+The findings are restricted to project-developed TaskBench cases, five live RAG queries over public repositories, synthetic enterprise-like schemas, and one quantised model release. There is no completed LangGraph–AutoGen comparison. Future work should commission independent task design and annotation, run official BFCL and multiple agent baselines, implement paired C3 and ablation experiments, add Java and other enterprise languages, curate retrieval-recall labels, measure peak GPU memory, and exercise the signed release in its hardened serving profile. A paper-oriented manuscript should wait until these evidence gaps are closed.
 
 ---
 
@@ -1205,7 +1197,7 @@ This appendix provides the supplementary procedures referenced in Chapter 5. Con
 
 Algorithm A.1: A2A delegation envelope construction
 
-procedure DELEGATE(subtask, target_agent): card ← discover(target_agent) // A2A agent card assert capabilities(card) ⊇ needs(subtask) token ← mint_scoped_jwt(subtask.tool_scope, ttl=short) env ← { task: subtask, context: provenance(subtask), credentials: token, reply_to: self.endpoint } send_over_mTLS(card.endpoint, env) // a2a-sdk v1.0 return await result with timeout; on timeout → compensate()
+procedure DELEGATE_TARGET(subtask, target_agent): card ← discover(target_agent) // A2A agent card assert capabilities(card) ⊇ needs(subtask) token ← mint_scoped_jwt(subtask.tool_scope, ttl=short) env ← { task: subtask, context: provenance(subtask), credentials: token, reply_to: self.endpoint } send_over_mTLS(card.endpoint, env) // target design; not in measured path return await result with timeout; on timeout → compensate()
 
 Algorithm A.2: Conflict entity creation during reconciliation
 
@@ -1238,7 +1230,7 @@ For each category, the entries define the intended task, expected gold-standard 
 
 - The repository corpus is fixed by commit hash, and each experiment logs the corresponding snapshot hashes.
 
-- Random seeds are predetermined and stored, and each benchmark is run three times. • All MCP calls are recorded in an append-only audit trail, which is archived together with the associated run. • Teacher requests are limited to a documented evaluation window, and the service version identifier is retained. • Deterministic fingerprints are assigned to evaluation outputs so that the harness run can be reproduced exactly. • Protocol updates are recorded explicitly: the MCP specification dated 26 March 2025 [3] and A2A implemented through the official a2a-sdk v1.0 [16].
+- The internal split seed and release artifacts are stored. The three-seed oracle replay is marked as a harness self-test and is not model evidence. • The live release preserves per-case model outputs, checkpoint Git LFS hashes, runtime versions, evidence-file hashes, and a canonical promotion-record digest. • A durable append-only MCP audit export, hosted-teacher provider records, container digests, explicit protocol revision per task, human annotations, and repeated live runs remain missing from the reproducibility package. • A2A contracts use the official SDK, but no LangGraph–AutoGen experiment is archived.
 
 ---
 
@@ -1253,7 +1245,7 @@ Table D.1 documents the alignment review between the companion HLD/LLD and the d
 | System context and external actors | 4.8.1, Figure 4.10 | Covered |
 | Container view and service boundaries | 4.8.2, Figure 4.11 | Covered |
 | Query path and bounded critic loop | 4.4, 5.8.2, Figures 4.9 and 5.2 | Covered |
-| Event-driven ingestion and logical transaction | 5.2, 5.8.1, Figure 5.1 | Covered |
+| Event-driven ingestion and logical transaction | 5.2, 5.8.1, Figure 5.1 | Design covered; consumer, object archive, and repair coordinator pending |
 | Dual-layer drift and selective re-indexing | 4.3.6, 5.6, 5.11, Figure 4.8 | Covered |
 | Deployment topology and training isolation | 4.8.3, Figure 4.12 | Covered |
 | Architecture Decision Records | 4.9.1, Table 4.4 | Covered |
@@ -1263,13 +1255,13 @@ Table D.1 documents the alignment review between the companion HLD/LLD and the d
 | Knowledge Graph writes, traversal, analytics, and conflicts | 4.3.2, 4.6, 5.2, Appendix A | Covered at report level |
 | Planner routing, hybrid retrieval, reranking, and NLI critic | 4.3.3, 5.3, 5.8.2 | Covered |
 | MCP tool gateway and tool catalogue | 5.4, Appendix B | Covered at report level |
-| A2A bridge, reconciliation, authentication, and tenancy | 4.3.4, 5.8.3, Figure 5.3 | Covered |
+| A2A bridge, reconciliation, authentication, and tenancy | 4.3.4, 5.8.3, Figure 5.3 | SDK contracts implemented; cross-framework runtime pending |
 | Verified trace generation, QLoRA, DPO, quantisation, vLLM | 4.3.5, 5.5, 5.10 | Covered |
-| Kafka topics, thresholds, Celery-style orchestration, fairness | 5.11, Table 5.8 | Covered |
+| Kafka topics, thresholds, Celery-style orchestration, fairness | 5.11, Table 5.8 | Threshold workers implemented; topic consumers and fairness pending |
 | STRIDE security, injection containment, secrets, signed artefacts | 4.5, 5.9.1, Table 5.4 | Covered |
 | OpenTelemetry, metrics, and SLO alerting | 5.9.2, Table 5.5 | Covered |
-| Evaluation harness and reproducibility manifest | 3.4-3.6, 5.9.3, Appendix C | Covered |
-| CI/CD environments and capacity migration paths | 5.9.3-5.9.4, Table 5.6 | Covered |
+| Evaluation harness and reproducibility manifest | 3.4-3.6, 5.9.3, Appendix C | Live release harness implemented; comparative evidence pending |
+| CI/CD environments and capacity migration paths | 5.9.3-5.9.4, Table 5.6 | Static CI implemented; live capacity validation pending |
 
 ---
 
@@ -1291,13 +1283,13 @@ hop synthesis workloads; no claim is made about equivalence to frontier-model ge
 
 substitutes broader benchmarks for function calling and agents.
 
-- Cross-framework A2A interoperability is shown only for the LangGraph and AutoGen pairing.
+- Cross-framework A2A interoperability is not yet demonstrated; the prototype currently validates SDK-level cards, messages, and task execution.
 
 - The primary corpus comprises open-source Python and JavaScript projects and synthetic enterprise-style
 
 schemas; no proprietary organisational repository is included.
 
-- Chapter 6 reports the experimental thresholds and outcomes for C1, C2, C3, and the ablation studies. Service-
+- Chapter 6 reports measured release outcomes and explicitly marks C1, the complete C2 criteria, C3, and the ablation studies as unresolved. Service-
 
 Level Objectives that are not measured in these experiments remain targets for future design.
 

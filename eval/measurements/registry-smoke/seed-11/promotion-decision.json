@@ -1,4 +1,5 @@
 {
-  "promoted": true,
-  "reasons": []
+  "eligible_for_empirical_claims": false,
+  "promoted": false,
+  "reasons": ["deterministic oracle replay is a harness self-test, not model evidence"]
 }

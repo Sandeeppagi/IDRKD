@@ -71,11 +71,13 @@ idrkd-release run \
 
 The command writes `taskbench-all.json`, `live-rag.json`, `streaming-performance.json`,
 `security.json`, and `promotion-record.json`. The full TaskBench artifact always uses `split=all`
-and includes all 360 seed cases plus the 80 synthetic schema and conflict cases. The record is
-promoted only when:
+and includes all 360 seed cases plus the 80 synthetic schema and conflict cases. It is a live-model
+tool-call conformance regression with fixture execution and has `generalization_claim=false`. The
+89-case prompt-group holdout is the internal generalisation gate. Neither run is official BFCL.
+The record is promoted only when:
 
-- all expected 89 holdout cases pass, argument accuracy is 1.0, and tool F1 is at least 0.82;
-- all expected 440 full TaskBench cases execute without errors and tool F1 is at least 0.82;
+- all expected 89 holdout calls conform, argument accuracy is 1.0, and tool F1 is at least 0.82;
+- all expected 440 full TaskBench calls complete without harness/model errors and tool F1 is at least 0.82;
 - every live RAG case executes and its transformer-NLI score is at least 0.78;
 - both tenant and agent security suites pass;
 - every streaming sample succeeds, p95 TTFT is at most 1.2 seconds, and p95 completion latency is
@@ -103,7 +105,7 @@ idrkd-release taskbench \
 Verify the complete result before regenerating the promotion record:
 
 ```bash
-jq '{split, case_count, error_count, pass_rate, schema_valid_rate, tool_f1, argument_accuracy, by_category}' \
+jq '{split, evaluation_scope, generalization_claim, case_count, error_count, pass_rate, tool_call_pass_rate, semantic_outcome_rate, schema_valid_rate, tool_f1, argument_accuracy, by_category}' \
   /workspace/release-evidence/final-v5/taskbench-all.json
 ```
 

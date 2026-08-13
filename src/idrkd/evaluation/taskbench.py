@@ -21,6 +21,9 @@ from idrkd.mcp.tools import JsonRpcRequest, McpToolRegistry
 
 BenchmarkMode = Literal["registry-smoke", "student-agent", "teacher-agent", "ablation"]
 TaskBenchSplit = Literal["all", "train", "holdout"]
+TASKBENCH_SCHEMA_VERSION = 2
+MCP_PROTOCOL_REVISION = "2025-03-26"
+TOOL_CATALOG_REVISION = "idrkd-mcp-tools-v1"
 
 
 class McpTask(BaseModel):
@@ -39,7 +42,11 @@ class McpTask(BaseModel):
     expected_tool: str
     arguments: dict[str, Any]
     expected_result_keys: list[str] = Field(default_factory=list)
+    expected_result_values: dict[str, Any] = Field(default_factory=dict)
     should_succeed: bool = True
+    benchmark_schema_version: int = TASKBENCH_SCHEMA_VERSION
+    protocol_revision: str = MCP_PROTOCOL_REVISION
+    tool_catalog_revision: str = TOOL_CATALOG_REVISION
 
     def expected_call(self) -> FunctionCallPrediction:
         return FunctionCallPrediction(name=self.expected_tool, arguments=self.arguments)
@@ -49,10 +56,14 @@ class McpTask(BaseModel):
 class EvalCaseResult:
     task_id: str
     category: str
+    benchmark_schema_version: int
+    protocol_revision: str
+    tool_catalog_revision: str
     tool_correct: bool
     arguments_correct: bool
     schema_valid: bool
     execution_success: bool
+    outcome_valid: bool
     expected_result_keys_present: bool
     raw_model_output: str | None = None
     parsed_tool_call: dict[str, Any] | None = None
@@ -67,6 +78,7 @@ class EvalCaseResult:
             and self.arguments_correct
             and self.schema_valid
             and self.execution_success
+            and self.outcome_valid
             and self.expected_result_keys_present
         )
 
@@ -93,6 +105,24 @@ class EvalSummary:
             return 0.0
         return sum(1 for case in self.cases if case.schema_valid) / len(self.cases)
 
+    @property
+    def tool_call_pass_rate(self) -> float:
+        """Rate of case-aligned, schema-valid tool calls before backend outcome scoring."""
+
+        if not self.cases:
+            return 0.0
+        return sum(
+            1
+            for case in self.cases
+            if case.tool_correct and case.arguments_correct and case.schema_valid
+        ) / len(self.cases)
+
+    @property
+    def semantic_outcome_rate(self) -> float:
+        if not self.cases:
+            return 0.0
+        return sum(1 for case in self.cases if case.outcome_valid) / len(self.cases)
+
     def by_category(self) -> dict[str, float]:
         categories = sorted({case.category for case in self.cases})
         return {
@@ -109,6 +139,8 @@ class EvalSummary:
             "mode": self.mode,
             "ablations": list(self.ablations),
             "pass_rate": self.pass_rate,
+            "tool_call_pass_rate": self.tool_call_pass_rate,
+            "semantic_outcome_rate": self.semantic_outcome_rate,
             "schema_valid_rate": self.schema_valid_rate,
             "tool_precision": self.tool_precision,
             "tool_recall": self.tool_recall,
@@ -134,7 +166,7 @@ class TaskBenchRunner:
             raise ValueError(f"{mode} requires a model-agent predictor")
         cases: list[EvalCaseResult] = []
         expected_calls: list[FunctionCallPrediction] = []
-        predicted_calls: list[FunctionCallPrediction] = []
+        predicted_calls: list[FunctionCallPrediction | None] = []
         for task in tasks:
             expected_calls.append(task.expected_call())
             case = (
@@ -142,13 +174,16 @@ class TaskBenchRunner:
                 if mode == "registry-smoke"
                 else self._run_model_agent_case(task, predictor=predictor, ablations=ablations)
             )
-            if case.parsed_tool_call is not None:
-                predicted_calls.append(
+            predicted_calls.append(
+                (
                     FunctionCallPrediction(
                         name=case.parsed_tool_call["name"],
                         arguments=case.parsed_tool_call["arguments"],
                     )
+                    if case.parsed_tool_call is not None
+                    else None
                 )
+            )
             cases.append(case)
         metrics = score_function_calls(expected_calls, predicted_calls)
         return EvalSummary(
@@ -164,6 +199,7 @@ class TaskBenchRunner:
     def _run_registry_smoke_case(self, task: McpTask) -> EvalCaseResult:
         schema_valid = False
         execution_success = False
+        outcome_valid = False
         keys_present = False
         error = None
         result: dict[str, Any] | None = None
@@ -180,6 +216,7 @@ class TaskBenchRunner:
             execution_success = response.error is None if task.should_succeed else response.error is not None
             result = response.result or {}
             keys_present = all(key in result for key in task.expected_result_keys)
+            outcome_valid = execution_success and _result_satisfies_task(task, result)
             if response.error is not None:
                 error = response.error.message
         except Exception as exc:  # pragma: no cover - defensive harness boundary
@@ -187,10 +224,14 @@ class TaskBenchRunner:
         return EvalCaseResult(
             task_id=task.id,
             category=task.category,
+            benchmark_schema_version=task.benchmark_schema_version,
+            protocol_revision=task.protocol_revision,
+            tool_catalog_revision=task.tool_catalog_revision,
             tool_correct=True,
             arguments_correct=True,
             schema_valid=schema_valid,
             execution_success=execution_success,
+            outcome_valid=outcome_valid,
             expected_result_keys_present=keys_present,
             parsed_tool_call={
                 "name": task.expected_tool,
@@ -225,6 +266,10 @@ class TaskBenchRunner:
         execution_success = (
             prediction.execution_error is None if task.should_succeed else prediction.execution_error is not None
         )
+        outcome_valid = execution_success and _result_satisfies_task(
+            task,
+            prediction.execution_result or {},
+        )
         if prediction.execution_result is not None:
             keys_present = all(key in prediction.execution_result for key in task.expected_result_keys)
         if prediction.execution_error is not None:
@@ -232,10 +277,14 @@ class TaskBenchRunner:
         return EvalCaseResult(
             task_id=task.id,
             category=task.category,
+            benchmark_schema_version=task.benchmark_schema_version,
+            protocol_revision=task.protocol_revision,
+            tool_catalog_revision=task.tool_catalog_revision,
             tool_correct=parsed is not None and parsed.name == task.expected_tool,
             arguments_correct=parsed is not None and parsed.arguments == task.arguments,
             schema_valid=schema_valid,
             execution_success=execution_success,
+            outcome_valid=outcome_valid,
             expected_result_keys_present=keys_present,
             raw_model_output=prediction.raw_model_output,
             parsed_tool_call=(
@@ -321,6 +370,14 @@ def write_summary(path: Path, summary: EvalSummary) -> None:
 def _tool_exists_in_schema(result: dict[str, Any], tool_name: str) -> bool:
     tools = result.get("tools", [])
     return any(isinstance(tool, dict) and tool.get("name") == tool_name for tool in tools)
+
+
+def _result_satisfies_task(task: McpTask, result: dict[str, Any]) -> bool:
+    if not task.should_succeed:
+        return True
+    if result.get("available") is False or result.get("found") is False:
+        return False
+    return all(result.get(key) == value for key, value in task.expected_result_values.items())
 
 
 def _make_prompt_self_contained(task: McpTask) -> McpTask:

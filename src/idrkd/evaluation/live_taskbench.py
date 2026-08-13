@@ -66,6 +66,9 @@ def run_live_taskbench_benchmark(
     summary_data = summary.as_dict()
     return {
         "benchmark": "mcp-taskbench-live",
+        "evaluation_scope": "live-model-tool-call-conformance-with-fixture-execution",
+        "generalization_claim": False,
+        "execution_backend": "synthetic-fixture",
         "created_at": datetime.now(UTC).isoformat(),
         "split": "all",
         "model_id": model,

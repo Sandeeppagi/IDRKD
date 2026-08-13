@@ -53,6 +53,32 @@ def test_bfcl_style_function_call_scoring() -> None:
     assert metrics.argument_accuracy == 1.0
 
 
+def test_function_call_scoring_is_case_aligned_for_repeated_tools() -> None:
+    metrics = score_function_calls(
+        expected=[
+            FunctionCallPrediction("search_code", {"query": "customer"}),
+            FunctionCallPrediction("search_code", {"query": "billing"}),
+        ],
+        predicted=[
+            FunctionCallPrediction("search_code", {"query": "billing"}),
+            FunctionCallPrediction("search_code", {"query": "customer"}),
+        ],
+    )
+
+    assert metrics.true_positives == 2
+    assert metrics.argument_accuracy == 0.0
+
+
+def test_function_call_scoring_preserves_missing_case_predictions() -> None:
+    metrics = score_function_calls(
+        expected=[FunctionCallPrediction("search_code", {"query": "customer"})],
+        predicted=[None],
+    )
+
+    assert metrics.false_negatives == 1
+    assert metrics.f1 == 0.0
+
+
 def test_taskbench_runner_executes_seed_tasks_against_registry() -> None:
     registry = McpToolRegistry(principal_tenant_id="default")
     tasks = load_tasks_jsonl(Path("eval/taskbench/seed_tasks.jsonl"))
@@ -63,7 +89,15 @@ def test_taskbench_runner_executes_seed_tasks_against_registry() -> None:
     assert summary.tool_f1 == 1.0
     assert summary.argument_accuracy == 1.0
     assert summary.schema_valid_rate == 1.0
-    assert summary.pass_rate == 1.0
+    assert summary.tool_call_pass_rate == 1.0
+    assert summary.semantic_outcome_rate == 0.5
+    assert summary.pass_rate == 0.5
+    assert summary.cases[0].benchmark_schema_version == 2
+    assert summary.cases[0].protocol_revision == "2025-03-26"
+    assert summary.cases[0].tool_catalog_revision == "idrkd-mcp-tools-v1"
+    unavailable = next(case for case in summary.cases if case.task_id == "tb-graph-bfs-003")
+    assert unavailable.execution_success is True
+    assert unavailable.outcome_valid is False
     assert set(summary.by_category()) >= {
         "tool_selection",
         "schema_conformance",

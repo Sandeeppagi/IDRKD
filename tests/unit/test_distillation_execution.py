@@ -126,11 +126,12 @@ def test_taskbench_dataset_builders_match_evaluation_prompt_and_expected_call(tm
     )
 
     assert len(sft_records) == 360
-    assert "Available MCP tools as JSON schemas" in sft_records[0]["messages"][1]["content"]
-    assert "community members or Louvain/community assignment -> get_community" in sft_records[0]["messages"][1]["content"]
-    assert "blast radius or downstream impact -> impact_analysis" in sft_records[0]["messages"][1]["content"]
-    assert "do not choose get_entity merely because entity_id is present" in sft_records[0]["messages"][1]["content"]
-    assert "Do not invent default arguments" in sft_records[0]["messages"][1]["content"]
+    prompt = sft_records[0]["messages"][1]["content"]
+    assert "Available MCP tools as JSON schemas" in prompt
+    assert "Choose exactly one tool from its description and input schema" in prompt
+    assert "community members or Louvain/community assignment -> get_community" not in prompt
+    assert "blast radius or downstream impact -> impact_analysis" not in prompt
+    assert "do not invent defaults" in prompt
     assert json.loads(sft_records[0]["messages"][2]["content"]) == {
         "name": "search_code",
         "arguments": {

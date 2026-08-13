@@ -139,7 +139,10 @@ def build_promotion_record(
         if artifact.get("artifact_error"):
             reasons.append(f"{name} artifact error: {artifact['artifact_error']}")
     holdout_cases = len(holdout.get("cases", []))
-    holdout_pass_rate = float(holdout.get("pass_rate", 0.0))
+    holdout_tool_call_pass_rate = float(
+        holdout.get("tool_call_pass_rate", holdout.get("pass_rate", 0.0))
+    )
+    holdout_semantic_outcome_rate = holdout.get("semantic_outcome_rate")
     tool_f1 = float(holdout.get("tool_f1", 0.0))
     argument_accuracy = float(holdout.get("argument_accuracy", 0.0))
     faithfulness = float(rag.get("faithfulness_min", 0.0))
@@ -166,8 +169,10 @@ def build_promotion_record(
 
     if holdout_cases != expected_holdout_cases:
         reasons.append(f"holdout cases {holdout_cases} != {expected_holdout_cases}")
-    if holdout_pass_rate < 1.0:
-        reasons.append(f"holdout pass_rate {holdout_pass_rate:.3f} < 1.000")
+    if holdout_tool_call_pass_rate < 1.0:
+        reasons.append(
+            f"holdout tool_call_pass_rate {holdout_tool_call_pass_rate:.3f} < 1.000"
+        )
     if tool_f1 < criteria.min_tool_f1:
         reasons.append(f"tool_f1 {tool_f1:.3f} < {criteria.min_tool_f1:.3f}")
     if argument_accuracy < 1.0:
@@ -206,9 +211,11 @@ def build_promotion_record(
         "evaluation": {
             "holdout": {
                 "cases": holdout_cases,
-                "pass_rate": holdout_pass_rate,
+                "tool_call_pass_rate": holdout_tool_call_pass_rate,
+                "semantic_outcome_rate": holdout_semantic_outcome_rate,
                 "tool_f1": tool_f1,
                 "argument_accuracy": argument_accuracy,
+                "claim_scope": "held-out tool-call conformance",
             },
             "faithfulness": {
                 "cases": int(rag.get("case_count", 0)),
@@ -244,6 +251,15 @@ def build_promotion_record(
             "split": taskbench.get("split"),
             "cases": int(taskbench.get("case_count", len(taskbench.get("cases", [])))),
             "pass_rate": float(taskbench.get("pass_rate", 0.0)),
+            "tool_call_pass_rate": float(
+                taskbench.get("tool_call_pass_rate", taskbench.get("pass_rate", 0.0))
+            ),
+            "semantic_outcome_rate": taskbench.get("semantic_outcome_rate"),
+            "evaluation_scope": taskbench.get(
+                "evaluation_scope",
+                "legacy artifact without explicit scope",
+            ),
+            "generalization_claim": bool(taskbench.get("generalization_claim", False)),
             "schema_valid_rate": float(taskbench.get("schema_valid_rate", 0.0)),
             "tool_precision": float(taskbench.get("tool_precision", 0.0)),
             "tool_recall": float(taskbench.get("tool_recall", 0.0)),

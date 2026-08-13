@@ -158,6 +158,9 @@ def test_live_taskbench_runs_explicit_all_split(tmp_path: Path) -> None:
     assert artifact["case_count"] == 1
     assert artifact["error_count"] == 0
     assert artifact["pass_rate"] == 1.0
+    assert artifact["tool_call_pass_rate"] == 1.0
+    assert artifact["semantic_outcome_rate"] == 1.0
+    assert artifact["generalization_claim"] is False
     assert artifact["tool_f1"] == 1.0
 
 
@@ -250,8 +253,10 @@ def test_promotion_record_binds_evidence_and_promotes() -> None:
     assert record["record_digest"].startswith("sha256:")
     assert record["schema_version"] == 2
     assert record["evaluation"]["holdout"]["cases"] == 89
+    assert record["evaluation"]["holdout"]["claim_scope"] == "held-out tool-call conformance"
     assert record["evaluation"]["taskbench_all"]["cases"] == 440
     assert record["evaluation"]["taskbench_all"]["split"] == "all"
+    assert record["evaluation"]["taskbench_all"]["generalization_claim"] is False
 
 
 def test_promotion_record_rejects_incomplete_full_taskbench() -> None:
