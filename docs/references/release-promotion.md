@@ -17,9 +17,13 @@ This records the exact Python, vLLM, PyTorch, CUDA, and GPU versions used by the
 
 ## 2. Curate live repository cases
 
-Start from `eval/rag/live_repository_queries.example.jsonl`. Each line requires `id`, `query`,
-`tenant_id`, and `repo_id`. Add stable `expected_entity_ids` after inspecting the ingested graph;
-these produce retrieval recall evidence but do not replace the NLI faithfulness gate.
+The release suite is `eval/rag/live_repository_queries.jsonl`; the `.example.jsonl` copy documents
+the same schema. Each line requires `id`, `query`, `tenant_id`, `repo_id`, and at least one stable
+`expected_entity_ids` value derived from the pinned source snapshot. The release command rejects
+unlabelled cases before opening model or database connections. These IDs produce retrieval recall
+evidence but do not replace the NLI faithfulness gate. The independently reviewable symbol paths,
+qualified names, and full snapshot commits are recorded in
+`eval/rag/live_repository_oracles.json`.
 
 The repositories in the case file must already be ingested into Neo4j and pgvector under the same
 tenant and repository IDs. The vLLM OpenAI-compatible server must be listening before the run.
@@ -79,8 +83,9 @@ The record is promoted only when:
 - all expected 89 holdout calls conform, argument accuracy is 1.0, and tool F1 is at least 0.82;
 - all expected 440 full TaskBench calls complete without harness/model errors, tool F1 is at
   least 0.82, and semantic outcome rate is inspected separately from JSON-RPC transport success;
-- every live RAG case executes, at least one case has non-empty expected entity IDs for retrieval
-  recall, and its transformer-NLI score is at least 0.78;
+- every live RAG case executes, every case has non-empty expected entity IDs, recall@10 is
+  measurable for every case and averages at least 0.80, and every atomic answer claim receives a
+  transformer-NLI score of at least 0.78;
 - both tenant and agent security suites pass;
 - every streaming sample succeeds, p95 TTFT is at most 1.2 seconds, and p95 completion latency is
   at most 8 seconds;
@@ -89,6 +94,21 @@ The record is promoted only when:
 The record includes the path, size, and SHA-256 digest of every input evidence file. Its final
 `record_digest` is SHA-256 over the canonical promotion record before that digest field is added. A
 rejected run still writes all evidence and explicit rejection reasons.
+
+Historical RAG artifacts can be audited against newly curated oracles without rerunning the model:
+
+```bash
+idrkd-release rag-oracles \
+  --rag eval/releases/phi4-mini-llmc-awq-v1/live-rag.json \
+  --cases eval/rag/live_repository_queries.jsonl \
+  --retrieval-limit 10 \
+  --out eval/releases/phi4-mini-llmc-awq-v1/live-rag.json
+```
+
+This computes recall only from the rankings already stored in the artifact. It records
+`faithfulness_recomputed=false` and cannot turn legacy whole-answer scores into atomic-claim
+evidence. Regenerate the promotion record after the audit; the gate rejects legacy or low-recall
+evidence until a complete live run replaces it.
 
 ## 4. Run only the full TaskBench gate
 

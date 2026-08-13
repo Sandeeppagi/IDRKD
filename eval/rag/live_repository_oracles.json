@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "derivation": "Source-inspected symbols converted with the ingestion pipeline's deterministic entity-ID generation.",
+  "repositories": {
+    "repo-axios": {
+      "snapshot_commit": "ba98559a7f5a18e531b5762387e5957bd281af3d"
+    },
+    "repo-express": {
+      "snapshot_commit": "a3714473feb3d2908add734d340e7755fd85e0a3"
+    },
+    "repo-fastapi": {
+      "snapshot_commit": "a9134f62683a7df133cd901b748169879e53dac4"
+    },
+    "repo-httpx": {
+      "snapshot_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254"
+    },
+    "repo-telstra-messaging-api-sdk-python": {
+      "snapshot_commit": "a4204aec2419dd1eef70ccd6a459e8bdc6275c17"
+    }
+  },
+  "cases": {
+    "axios-dispatch": [
+      {
+        "entity_id": "ent_c69dba9172ccd89b3b25ff71",
+        "qualified_name": "lib.core.Axios.Axios.request",
+        "path": "lib/core/Axios.js"
+      },
+      {
+        "entity_id": "ent_1f5674c0de45359b05b4264f",
+        "qualified_name": "lib.core.Axios.Axios._request",
+        "path": "lib/core/Axios.js"
+      },
+      {
+        "entity_id": "ent_041aa9424f1c663e87996f98",
+        "qualified_name": "lib.core.dispatchRequest.dispatchRequest",
+        "path": "lib/core/dispatchRequest.js"
+      },
+      {
+        "entity_id": "ent_31964dc0a058db5018816cf9",
+        "qualified_name": "lib.adapters.adapters.getAdapter",
+        "path": "lib/adapters/adapters.js"
+      }
+    ],
+    "express-routing": [
+      {
+        "entity_id": "ent_943461452c210ceaf59aa3d3",
+        "qualified_name": "lib.express.createApplication",
+        "path": "lib/express.js"
+      },
+      {
+        "entity_id": "ent_821516e661544edadcf86b64",
+        "qualified_name": "lib/application.js",
+        "path": "lib/application.js"
+      }
+    ],
+    "fastapi-dependencies": [
+      {
+        "entity_id": "ent_f008a79ca1b651fe6b725384",
+        "qualified_name": "fastapi.dependencies.utils.solve_dependencies",
+        "path": "fastapi/dependencies/utils.py"
+      },
+      {
+        "entity_id": "ent_0716186c77a32692d2a81418",
+        "qualified_name": "fastapi.routing.get_request_handler",
+        "path": "fastapi/routing.py"
+      },
+      {
+        "entity_id": "ent_2314fe47211115c173ae2d2d",
+        "qualified_name": "fastapi.routing.run_endpoint_function",
+        "path": "fastapi/routing.py"
+      }
+    ],
+    "httpx-client-flow": [
+      {
+        "entity_id": "ent_12b92d9ad6c31950d41a2c58",
+        "qualified_name": "httpx._client.BaseClient.build_request",
+        "path": "httpx/_client.py"
+      },
+      {
+        "entity_id": "ent_9beb8d733c7515e7ae92eb93",
+        "qualified_name": "httpx._client.Client.send",
+        "path": "httpx/_client.py"
+      },
+      {
+        "entity_id": "ent_2e4706e81f675a2531bc717a",
+        "qualified_name": "httpx._client.Client._send_single_request",
+        "path": "httpx/_client.py"
+      }
+    ],
+    "telstra-message-send": [
+      {
+        "entity_id": "ent_5e71ce354cf05c5cb0213bf8",
+        "qualified_name": "telstra.messaging.message.send",
+        "path": "telstra/messaging/message.py"
+      }
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-08-13T20:21:49.538644+00:00",
+  "created_at": "2026-08-13T23:27:29.286119+00:00",
   "criteria": {
     "expected_holdout_cases": 89,
     "expected_taskbench_cases": 440,
@@ -7,29 +7,44 @@
     "max_tool_f1_regression": 0.02,
     "max_ttft_p95_seconds": 1.2,
     "min_faithfulness": 0.78,
-    "min_tool_f1": 0.82
+    "min_retrieval_recall": 0.8,
+    "min_tool_f1": 0.82,
+    "retrieval_k": 10
   },
   "decision": {
-    "reasons": [],
-    "status": "promoted"
+    "reasons": [
+      "live RAG recall@10 0.283 < 0.800",
+      "live RAG did not use atomic claim scoring",
+      "live RAG atomic-claim coverage 0/5 is incomplete"
+    ],
+    "status": "rejected"
   },
   "evaluation": {
     "faithfulness": {
+      "atomic_claim_case_count": 0,
+      "atomic_claim_scoring": false,
       "cases": 5,
       "critic": {
         "backend": "transformers-nli",
         "model": "cross-encoder/nli-deberta-v3-large",
         "threshold": 0.78
       },
+      "expected_entity_case_count": 5,
+      "faithfulness_aggregation": "legacy-whole-answer-score",
       "mean": 0.9576820015907288,
       "minimum": 0.874405026435852,
       "pass_rate": 1.0,
-      "retrieval_recall_mean": null
+      "retrieval_k": 10,
+      "retrieval_recall_at_k_mean": 0.2833333333333333,
+      "retrieval_recall_case_count": 5,
+      "retrieval_recall_mean": 0.2833333333333333
     },
     "holdout": {
       "argument_accuracy": 1.0,
       "cases": 89,
-      "pass_rate": 1.0,
+      "claim_scope": "held-out tool-call conformance",
+      "semantic_outcome_rate": null,
+      "tool_call_pass_rate": 1.0,
       "tool_f1": 1.0
     },
     "performance": {
@@ -57,9 +72,13 @@
       },
       "cases": 440,
       "error_count": 0,
+      "evaluation_scope": "legacy artifact without explicit scope",
+      "generalization_claim": false,
       "pass_rate": 1.0,
       "schema_valid_rate": 1.0,
+      "semantic_outcome_rate": null,
       "split": "all",
+      "tool_call_pass_rate": 1.0,
       "tool_f1": 1.0,
       "tool_precision": 1.0,
       "tool_recall": 1.0
@@ -73,8 +92,8 @@
     },
     "live_rag": {
       "path": "eval/releases/phi4-mini-llmc-awq-v1/live-rag.json",
-      "sha256": "bd6162f5aed0b2331a737c29bd48be4754a1933d0f0099fef98b923514038b24",
-      "size_bytes": 95745
+      "sha256": "a6469f05fb18f7a922d68871520b3d6d0fdaafbfd525482d50de448711fa0d14",
+      "size_bytes": 97095
     },
     "performance": {
       "path": "eval/releases/phi4-mini-llmc-awq-v1/streaming-performance.json",
@@ -167,7 +186,7 @@
       "zero_point": true
     }
   },
-  "record_digest": "sha256:95ece831f095d83c971e37f1d7c7334e2dabd2f38e82d9f3ce802b4f203b779d",
+  "record_digest": "sha256:a86ad3f9fbdab212075822afec0ddff07e723fe7edb6d69d60d01efdce521448",
   "runtime": {
     "created_at": "2026-08-13T17:51:38.749239+00:00",
     "cuda_available": true,

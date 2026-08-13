@@ -7,7 +7,12 @@ import subprocess
 import pytest
 
 from idrkd.evaluation.bfcl import FunctionCallPrediction
-from idrkd.evaluation.live_rag import LiveRagCase, load_live_rag_cases, run_live_rag_benchmark
+from idrkd.evaluation.live_rag import (
+    LiveRagCase,
+    annotate_live_rag_retrieval,
+    load_live_rag_cases,
+    run_live_rag_benchmark,
+)
 from idrkd.evaluation.live_taskbench import run_live_taskbench_benchmark
 from idrkd.evaluation.release_cli import DEFAULT_NEO4J_URI, _environment_value
 from idrkd.evaluation.release_record import build_promotion_record, evidence_file
@@ -24,6 +29,7 @@ class _FakePipeline:
             "rounds": 1,
             "trace": ["router", "vector_retriever", "graph_traversal", "synthesis", "critic"],
             "faithfulness_score": 0.91,
+            "faithfulness_claim_scores": [0.91],
             "vector_hits": [],
             "graph_hits": [],
             "reranked_hits": [
@@ -92,8 +98,12 @@ def test_live_rag_cases_validate_and_benchmark_retrieval_recall(tmp_path: Path) 
     assert artifact["error_count"] == 0
     assert artifact["faithfulness_min"] == pytest.approx(0.91)
     assert artifact["retrieval_recall_mean"] == pytest.approx(1.0)
+    assert artifact["retrieval_recall_at_k_mean"] == pytest.approx(1.0)
     assert artifact["retrieval_recall_case_count"] == 1
     assert artifact["expected_entity_case_count"] == 1
+    assert artifact["retrieval_k"] == 10
+    assert artifact["atomic_claim_scoring"] is True
+    assert artifact["atomic_claim_case_count"] == 1
     assert artifact["cases"][0]["trace"][-1] == "critic"
 
 
@@ -116,6 +126,42 @@ def test_streaming_measurement_uses_first_content_delta() -> None:
     assert payload["stream"] is True
     assert result["output"] == "Customer API"
     assert 0 <= result["ttft_seconds"] <= result["latency_seconds"]
+
+
+def test_live_rag_oracle_audit_preserves_historical_faithfulness() -> None:
+    artifact = {
+        "faithfulness_min": 0.91,
+        "cases": [
+            {
+                "case_id": "case-a",
+                "query": "old wording",
+                "tenant_id": "tenant-a",
+                "repo_id": "repo-a",
+                "faithfulness_score": 0.91,
+                "reranked_hits": [{"entity_id": "entity-a"}, {"entity_id": "other"}],
+            }
+        ],
+    }
+    cases = [
+        LiveRagCase(
+            case_id="case-a",
+            query="new wording",
+            tenant_id="tenant-a",
+            repo_id="repo-a",
+            expected_entity_ids=("entity-a", "entity-b"),
+        )
+    ]
+
+    audited = annotate_live_rag_retrieval(artifact, cases, limit=10)
+
+    assert audited["faithfulness_min"] == 0.91
+    assert audited["retrieval_recall_at_k_mean"] == 0.5
+    assert audited["retrieval_recall_case_count"] == 1
+    assert audited["expected_entity_case_count"] == 1
+    assert audited["atomic_claim_scoring"] is False
+    assert audited["faithfulness_aggregation"] == "legacy-whole-answer-score"
+    assert audited["retrieval_oracle_annotation"]["faithfulness_recomputed"] is False
+    assert audited["cases"][0]["oracle_query"] == "new wording"
 
 
 def test_live_taskbench_runs_explicit_all_split(tmp_path: Path) -> None:
@@ -240,8 +286,14 @@ def test_promotion_record_binds_evidence_and_promotes() -> None:
             "faithfulness_min": 0.81,
             "faithfulness_mean": 0.9,
             "faithfulness_pass_rate": 1.0,
-            "retrieval_recall_case_count": 1,
-            "expected_entity_case_count": 1,
+            "faithfulness_aggregation": "minimum-atomic-claim-score",
+            "atomic_claim_scoring": True,
+            "atomic_claim_case_count": 5,
+            "retrieval_k": 10,
+            "retrieval_recall_at_k_mean": 0.84,
+            "retrieval_recall_mean": 0.84,
+            "retrieval_recall_case_count": 5,
+            "expected_entity_case_count": 5,
             "critic": {"backend": "transformers-nli", "model": "deberta"},
         },
         performance={
@@ -261,6 +313,8 @@ def test_promotion_record_binds_evidence_and_promotes() -> None:
     assert record["evaluation"]["taskbench_all"]["cases"] == 440
     assert record["evaluation"]["taskbench_all"]["split"] == "all"
     assert record["evaluation"]["taskbench_all"]["generalization_claim"] is False
+    assert record["evaluation"]["faithfulness"]["retrieval_recall_at_k_mean"] == 0.84
+    assert record["criteria"]["min_retrieval_recall"] == 0.8
 
 
 def test_promotion_record_rejects_incomplete_full_taskbench() -> None:
@@ -320,16 +374,22 @@ def test_promotion_record_rejects_non_nli_and_streaming_errors() -> None:
     assert "streaming measurement errors: 1" in record["decision"]["reasons"]
 
 
-def test_promotion_record_rejects_live_rag_without_recall_cases() -> None:
+def test_promotion_record_rejects_live_rag_without_complete_recall_coverage() -> None:
     record = build_promotion_record(
         provenance={"manifest_digest": "digest", "lfs_objects": [{}]},
         runtime={"vllm": "0.27.1", "torch": "2.13.0"},
         holdout={"cases": [{}] * 89, "tool_f1": 1.0, "argument_accuracy": 1.0},
         rag={
+            "case_count": 5,
             "error_count": 0,
             "faithfulness_min": 0.9,
             "critic": {"backend": "transformers-nli"},
-            "retrieval_recall_case_count": 0,
+            "atomic_claim_scoring": True,
+            "atomic_claim_case_count": 5,
+            "retrieval_k": 10,
+            "retrieval_recall_at_k_mean": 1.0,
+            "expected_entity_case_count": 1,
+            "retrieval_recall_case_count": 1,
         },
         performance={
             "error_count": 0,
@@ -340,12 +400,86 @@ def test_promotion_record_rejects_live_rag_without_recall_cases() -> None:
     )
 
     assert record["decision"]["status"] == "rejected"
-    assert "live RAG has no recall-measurable cases" in record["decision"]["reasons"]
+    assert "live RAG expected-entity coverage 1/5 is incomplete" in record["decision"]["reasons"]
+    assert "live RAG recall coverage 1/5 is incomplete" in record["decision"]["reasons"]
+
+
+def test_promotion_record_rejects_low_retrieval_recall() -> None:
+    record = build_promotion_record(
+        provenance={"manifest_digest": "digest", "lfs_objects": [{}]},
+        runtime={"vllm": "0.27.1", "torch": "2.13.0"},
+        holdout={
+            "cases": [{}] * 89,
+            "pass_rate": 1.0,
+            "tool_f1": 1.0,
+            "argument_accuracy": 1.0,
+        },
+        rag={
+            "case_count": 5,
+            "error_count": 0,
+            "faithfulness_min": 0.9,
+            "critic": {"backend": "transformers-nli"},
+            "atomic_claim_scoring": True,
+            "atomic_claim_case_count": 5,
+            "retrieval_k": 10,
+            "retrieval_recall_at_k_mean": 0.79,
+            "expected_entity_case_count": 5,
+            "retrieval_recall_case_count": 5,
+        },
+        performance={
+            "error_count": 0,
+            "ttft": {"p95_seconds": 0.1},
+            "latency": {"p95_seconds": 0.2},
+        },
+        security={"passed": True},
+    )
+
+    assert record["decision"]["status"] == "rejected"
+    assert "live RAG recall@10 0.790 < 0.800" in record["decision"]["reasons"]
 
 
 def test_live_rag_case_rejects_missing_scope() -> None:
     with pytest.raises(ValueError, match="tenant_id"):
         LiveRagCase.from_dict({"id": "x", "query": "q", "repo_id": "r"}, line_number=1)
+
+
+def test_release_live_rag_cases_require_retrieval_oracles(tmp_path: Path) -> None:
+    cases_path = tmp_path / "cases.jsonl"
+    cases_path.write_text(
+        json.dumps(
+            {
+                "id": "case-a",
+                "query": "How does billing work?",
+                "tenant_id": "tenant-a",
+                "repo_id": "repo-a",
+                "expected_entity_ids": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="case-a"):
+        load_live_rag_cases(cases_path, require_expected_entities=True)
+
+
+def test_committed_live_rag_suite_is_fully_oracled() -> None:
+    repo_root = Path(__file__).parents[2]
+
+    cases = load_live_rag_cases(
+        repo_root / "eval/rag/live_repository_queries.jsonl",
+        require_expected_entities=True,
+    )
+    provenance = json.loads(
+        (repo_root / "eval/rag/live_repository_oracles.json").read_text(encoding="utf-8")
+    )
+
+    assert len(cases) == 5
+    assert all(case.expected_entity_ids for case in cases)
+    assert {case.case_id: set(case.expected_entity_ids) for case in cases} == {
+        case_id: {entity["entity_id"] for entity in entities}
+        for case_id, entities in provenance["cases"].items()
+    }
 
 
 def test_evidence_file_hashes_complete_artifact(tmp_path: Path) -> None:

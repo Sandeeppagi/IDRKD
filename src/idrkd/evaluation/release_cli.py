@@ -15,6 +15,7 @@ from idrkd.evaluation.live_rag import (
     Neo4jEvidenceSource,
     ScopedNeo4jGraphSearch,
     ScopedPostgresVectorSearch,
+    annotate_live_rag_retrieval,
     load_live_rag_cases,
     run_live_rag_benchmark,
 )
@@ -118,7 +119,7 @@ def _run_rag(args: argparse.Namespace) -> dict[str, Any]:
     factory = _LivePipelineFactory(args)
     try:
         result = run_live_rag_benchmark(
-            load_live_rag_cases(args.rag_cases),
+            load_live_rag_cases(args.rag_cases, require_expected_entities=True),
             factory,
             critic_model=args.critic_model,
             embedding_model=args.embedding_model,
@@ -284,6 +285,15 @@ def build_parser() -> argparse.ArgumentParser:
     _add_rag_args(rag)
     rag.add_argument("--out", type=Path, required=True)
 
+    rag_oracles = subparsers.add_parser(
+        "rag-oracles",
+        help="Audit recorded RAG rankings against curated retrieval oracles.",
+    )
+    rag_oracles.add_argument("--rag", type=Path, required=True)
+    rag_oracles.add_argument("--cases", type=Path, required=True)
+    rag_oracles.add_argument("--retrieval-limit", type=int, default=10)
+    rag_oracles.add_argument("--out", type=Path, required=True)
+
     taskbench = subparsers.add_parser(
         "taskbench",
         help="Run the full no-split MCP-TaskBench suite against a live model.",
@@ -354,6 +364,14 @@ def main() -> None:
         return
     if args.command == "rag":
         write_json(args.out, _run_rag(args))
+        return
+    if args.command == "rag-oracles":
+        artifact = annotate_live_rag_retrieval(
+            read_json_object(args.rag),
+            load_live_rag_cases(args.cases, require_expected_entities=True),
+            limit=args.retrieval_limit,
+        )
+        write_json(args.out, artifact)
         return
     if args.command == "taskbench":
         artifact = _run_taskbench(args)

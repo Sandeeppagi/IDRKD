@@ -146,7 +146,12 @@ def build_promotion_record(
     tool_f1 = float(holdout.get("tool_f1", 0.0))
     argument_accuracy = float(holdout.get("argument_accuracy", 0.0))
     faithfulness = float(rag.get("faithfulness_min", 0.0))
+    rag_case_count = int(rag.get("case_count", 0))
+    expected_entity_case_count = int(rag.get("expected_entity_case_count", 0))
     retrieval_recall_case_count = int(rag.get("retrieval_recall_case_count", 0))
+    retrieval_recall = rag.get("retrieval_recall_at_k_mean", rag.get("retrieval_recall_mean"))
+    retrieval_k = int(rag.get("retrieval_k", 0))
+    atomic_claim_case_count = int(rag.get("atomic_claim_case_count", 0))
     ttft_p95 = float(performance.get("ttft", {}).get("p95_seconds", 0.0))
     latency_p95 = float(performance.get("latency", {}).get("p95_seconds", 0.0))
 
@@ -184,8 +189,33 @@ def build_promotion_record(
         reasons.append("faithfulness critic was not transformers NLI")
     if int(rag.get("error_count", 0)) != 0:
         reasons.append(f"live RAG errors: {rag.get('error_count')}")
-    if retrieval_recall_case_count == 0:
-        reasons.append("live RAG has no recall-measurable cases")
+    if rag_case_count == 0:
+        reasons.append("live RAG has no cases")
+    if expected_entity_case_count != rag_case_count:
+        reasons.append(
+            "live RAG expected-entity coverage "
+            f"{expected_entity_case_count}/{rag_case_count} is incomplete"
+        )
+    if retrieval_recall_case_count != rag_case_count:
+        reasons.append(
+            f"live RAG recall coverage {retrieval_recall_case_count}/{rag_case_count} is incomplete"
+        )
+    if retrieval_k != criteria.retrieval_k:
+        reasons.append(f"live RAG retrieval_k {retrieval_k} != {criteria.retrieval_k}")
+    if retrieval_recall is None:
+        reasons.append("live RAG retrieval recall is missing")
+    elif float(retrieval_recall) < criteria.min_retrieval_recall:
+        reasons.append(
+            f"live RAG recall@{criteria.retrieval_k} {float(retrieval_recall):.3f} "
+            f"< {criteria.min_retrieval_recall:.3f}"
+        )
+    if not bool(rag.get("atomic_claim_scoring")):
+        reasons.append("live RAG did not use atomic claim scoring")
+    if atomic_claim_case_count != rag_case_count:
+        reasons.append(
+            "live RAG atomic-claim coverage "
+            f"{atomic_claim_case_count}/{rag_case_count} is incomplete"
+        )
     if not bool(security.get("passed")):
         reasons.append("tenant/security tests failed")
     if int(performance.get("error_count", 0)) != 0:
@@ -221,14 +251,19 @@ def build_promotion_record(
                 "claim_scope": "held-out tool-call conformance",
             },
             "faithfulness": {
-                "cases": int(rag.get("case_count", 0)),
+                "cases": rag_case_count,
                 "minimum": faithfulness,
                 "mean": float(rag.get("faithfulness_mean", 0.0)),
                 "pass_rate": float(rag.get("faithfulness_pass_rate", 0.0)),
                 "critic": rag.get("critic"),
+                "faithfulness_aggregation": rag.get("faithfulness_aggregation"),
+                "atomic_claim_scoring": bool(rag.get("atomic_claim_scoring")),
+                "atomic_claim_case_count": atomic_claim_case_count,
+                "retrieval_k": retrieval_k,
+                "retrieval_recall_at_k_mean": retrieval_recall,
                 "retrieval_recall_mean": rag.get("retrieval_recall_mean"),
                 "retrieval_recall_case_count": retrieval_recall_case_count,
-                "expected_entity_case_count": int(rag.get("expected_entity_case_count", 0)),
+                "expected_entity_case_count": expected_entity_case_count,
             },
             "performance": {
                 "samples": int(performance.get("sample_count", 0)),
@@ -245,6 +280,8 @@ def build_promotion_record(
             "expected_holdout_cases": expected_holdout_cases,
             "min_tool_f1": criteria.min_tool_f1,
             "min_faithfulness": criteria.min_faithfulness,
+            "min_retrieval_recall": criteria.min_retrieval_recall,
+            "retrieval_k": criteria.retrieval_k,
             "max_ttft_p95_seconds": criteria.max_ttft_seconds,
             "max_latency_p95_seconds": criteria.max_latency_p95_seconds,
             "max_tool_f1_regression": criteria.max_tool_f1_regression,

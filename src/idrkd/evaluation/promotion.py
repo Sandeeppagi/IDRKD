@@ -11,6 +11,8 @@ from idrkd.evaluation.taskbench import EvalSummary
 class PromotionCriteria:
     min_tool_f1: float = 0.82
     min_faithfulness: float = 0.78
+    min_retrieval_recall: float = 0.80
+    retrieval_k: int = 10
     max_ttft_seconds: float = 1.2
     max_latency_p95_seconds: float = 8.0
     max_tool_f1_regression: float = 0.02

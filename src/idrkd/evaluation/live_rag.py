@@ -6,6 +6,7 @@ It does not substitute the deterministic in-memory stores used by unit tests.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 import json
@@ -46,8 +47,12 @@ class LiveRagCase:
         if missing:
             raise ValueError(f"Live RAG case line {line_number} is missing: {', '.join(missing)}")
         expected = value.get("expected_entity_ids", [])
-        if not isinstance(expected, list) or not all(isinstance(item, str) for item in expected):
-            raise ValueError(f"Live RAG case line {line_number} expected_entity_ids must be a string list")
+        if not isinstance(expected, list) or not all(
+            isinstance(item, str) and item.strip() for item in expected
+        ):
+            raise ValueError(
+                f"Live RAG case line {line_number} expected_entity_ids must be a string list"
+            )
         return cls(
             case_id=str(value["id"]),
             query=str(value["query"]),
@@ -57,7 +62,11 @@ class LiveRagCase:
         )
 
 
-def load_live_rag_cases(path: Path) -> list[LiveRagCase]:
+def load_live_rag_cases(
+    path: Path,
+    *,
+    require_expected_entities: bool = False,
+) -> list[LiveRagCase]:
     cases: list[LiveRagCase] = []
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
@@ -70,7 +79,84 @@ def load_live_rag_cases(path: Path) -> list[LiveRagCase]:
         raise ValueError(f"Live RAG case file is empty: {path}")
     if len({case.case_id for case in cases}) != len(cases):
         raise ValueError("Live RAG case IDs must be unique")
+    if require_expected_entities:
+        missing = [case.case_id for case in cases if not case.expected_entity_ids]
+        if missing:
+            raise ValueError(
+                "Live RAG release cases require non-empty expected_entity_ids: "
+                + ", ".join(missing)
+            )
     return cases
+
+
+def annotate_live_rag_retrieval(
+    artifact: dict[str, Any],
+    cases: list[LiveRagCase],
+    *,
+    limit: int = 10,
+) -> dict[str, Any]:
+    """Attach curated retrieval oracles without rewriting historical model scores."""
+
+    if limit <= 0:
+        raise ValueError("Retrieval limit must be positive")
+    result = copy.deepcopy(artifact)
+    raw_results = result.get("cases")
+    if not isinstance(raw_results, list):
+        raise ValueError("Live RAG artifact cases must be a list")
+    oracles = {case.case_id: case for case in cases}
+    result_ids = {str(item.get("case_id", "")) for item in raw_results if isinstance(item, dict)}
+    if len(raw_results) != len(oracles) or result_ids != set(oracles):
+        raise ValueError("Live RAG artifact and oracle case IDs must match exactly")
+
+    recalls: list[float] = []
+    query_mismatch_count = 0
+    for item in raw_results:
+        if not isinstance(item, dict):
+            raise ValueError("Live RAG artifact case must be a JSON object")
+        oracle = oracles[str(item["case_id"])]
+        if item.get("tenant_id") != oracle.tenant_id or item.get("repo_id") != oracle.repo_id:
+            raise ValueError(f"Live RAG scope does not match oracle case: {oracle.case_id}")
+        if str(item.get("query", "")) != oracle.query:
+            item["oracle_query"] = oracle.query
+            query_mismatch_count += 1
+        expected = set(oracle.expected_entity_ids)
+        if not expected:
+            raise ValueError(f"Live RAG oracle case has no expected entities: {oracle.case_id}")
+        hits = item.get("reranked_hits", [])
+        retrieved = {
+            str(hit["entity_id"])
+            for hit in hits[:limit]
+            if isinstance(hit, dict) and hit.get("entity_id")
+        }
+        recall = len(expected & retrieved) / len(expected)
+        item["expected_entity_ids"] = list(oracle.expected_entity_ids)
+        item["retrieval_recall"] = recall
+        item["retrieval_recall_at_k"] = recall
+        recalls.append(recall)
+
+    atomic_claim_case_count = sum(
+        bool(item.get("faithfulness_claim_scores"))
+        for item in raw_results
+        if isinstance(item, dict)
+    )
+    result["retrieval_k"] = limit
+    result["retrieval_recall_at_k_mean"] = statistics.fmean(recalls) if recalls else None
+    result["retrieval_recall_mean"] = result["retrieval_recall_at_k_mean"]
+    result["retrieval_recall_case_count"] = len(recalls)
+    result["expected_entity_case_count"] = len(recalls)
+    result["atomic_claim_case_count"] = atomic_claim_case_count
+    result["atomic_claim_scoring"] = atomic_claim_case_count == len(raw_results)
+    result["faithfulness_aggregation"] = (
+        "minimum-atomic-claim-score"
+        if result["atomic_claim_scoring"]
+        else "legacy-whole-answer-score"
+    )
+    result["retrieval_oracle_annotation"] = {
+        "method": "post-hoc-against-recorded-reranked-hits",
+        "faithfulness_recomputed": False,
+        "query_mismatch_count": query_mismatch_count,
+    }
+    return result
 
 
 class EvidenceSource(Protocol):
@@ -274,6 +360,7 @@ def run_live_rag_benchmark(
                     **asdict(case),
                     **result,
                     "retrieval_recall": recall,
+                    "retrieval_recall_at_k": recall,
                     "latency_seconds": time.perf_counter() - started,
                     "error": None,
                 }
@@ -290,10 +377,17 @@ def run_live_rag_benchmark(
                 }
             )
     scores = [float(result["faithfulness_score"]) for result in results]
-    recalls = [float(result["retrieval_recall"]) for result in results if result.get("retrieval_recall") is not None]
+    recalls = [
+        float(result["retrieval_recall_at_k"])
+        for result in results
+        if result.get("retrieval_recall_at_k") is not None
+    ]
     recall_case_count = len(recalls)
     error_count = sum(result["error"] is not None for result in results)
     accepted_count = sum(bool(result["accepted"]) for result in results)
+    atomic_claim_case_count = sum(
+        bool(result.get("faithfulness_claim_scores")) for result in results
+    )
     return {
         "created_at": datetime.now(UTC).isoformat(),
         "benchmark": "live-rag-faithfulness",
@@ -311,6 +405,11 @@ def run_live_rag_benchmark(
         "faithfulness_mean": statistics.fmean(scores) if scores else 0.0,
         "faithfulness_min": min(scores, default=0.0),
         "faithfulness_pass_rate": accepted_count / len(results) if results else 0.0,
+        "faithfulness_aggregation": "minimum-atomic-claim-score",
+        "atomic_claim_scoring": atomic_claim_case_count == len(results),
+        "atomic_claim_case_count": atomic_claim_case_count,
+        "retrieval_k": limit,
+        "retrieval_recall_at_k_mean": statistics.fmean(recalls) if recalls else None,
         "retrieval_recall_mean": statistics.fmean(recalls) if recalls else None,
         "retrieval_recall_case_count": recall_case_count,
         "expected_entity_case_count": sum(
