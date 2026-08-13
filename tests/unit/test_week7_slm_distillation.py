@@ -62,17 +62,25 @@ def test_sft_record_preserves_messages_evidence_and_tool_trace() -> None:
 
     assert record["messages"][0]["role"] == "system"
     assert record["messages"][1]["content"] == "Find the customer API entrypoint"
-    assert record["messages"][2]["content"] == "Customer API is implemented by entity-a."
+    assert record["messages"][2]["content"] == '{"arguments":{"query":"customer API"},"name":"search_code"}'
     assert record["metadata"]["evidence_ids"] == ["entity-a"]
     assert record["metadata"]["tool_trace"] == [{"agent": "router", "tool_calls": ["search_code"]}]
+    assert record["metadata"]["teacher_answer"] == "Customer API is implemented by entity-a."
+    assert record["metadata"]["target_tool_call"] == {
+        "name": "search_code",
+        "arguments": {"query": "customer API"},
+    }
 
 
-def test_preference_pair_uses_teacher_trace_as_chosen_answer() -> None:
+def test_preference_pair_prefers_structured_tool_call() -> None:
     pair = build_preference_pair(trace=_trace(), rejected_answer="I am not sure.")
 
-    assert pair.chosen == "Customer API is implemented by entity-a."
-    assert pair.rejected == "I am not sure."
+    assert pair.chosen == '{"arguments":{"query":"customer API"},"name":"search_code"}'
+    assert pair.rejected == (
+        '{"arguments":{"_idrkd_wrong_argument":true,"query":"customer API"},"name":"search_code"}'
+    )
     assert pair.to_dpo_record()["metadata"]["rejected_source"] == "sft_naive"
+    assert pair.to_dpo_record()["metadata"]["rejected_answer_text"] == "I am not sure."
 
 
 def test_qlora_and_training_plan_match_pillar_5_lld_defaults() -> None:

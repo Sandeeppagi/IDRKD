@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import json
 from typing import Any
 
 
 SYSTEM_PROMPT = (
-    "You are the IDRKD student model. Answer with grounded reasoning and emit MCP tool "
-    "calls only when the task requires repository evidence."
+    "You are the IDRKD student model. Select exactly one MCP tool for the user task. "
+    'Return only JSON with keys: "name" and "arguments".'
 )
 
 
@@ -53,6 +54,9 @@ class TeacherTrace:
 def sft_record(trace: TeacherTrace) -> dict[str, Any]:
     """Convert a grounded teacher trace into a chat SFT record."""
 
+    target_call = first_tool_call(trace)
+    if target_call is None:
+        raise ValueError(f"Trace {trace.id} does not contain an MCP tool call")
     tool_trace = [
         {"agent": step.agent, "tool_calls": [call.name for call in step.tool_calls]}
         for step in trace.steps
@@ -62,7 +66,7 @@ def sft_record(trace: TeacherTrace) -> dict[str, Any]:
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": trace.prompt},
-            {"role": "assistant", "content": trace.answer},
+            {"role": "assistant", "content": tool_call_json(target_call)},
         ],
         "metadata": {
             "trace_id": trace.id,
@@ -72,8 +76,25 @@ def sft_record(trace: TeacherTrace) -> dict[str, Any]:
             "faithfulness_score": trace.faithfulness_score,
             "evidence_ids": list(trace.evidence_ids()),
             "tool_trace": tool_trace,
+            "teacher_answer": trace.answer,
+            "target_tool_call": {"name": target_call.name, "arguments": target_call.arguments},
         },
     }
+
+
+def first_tool_call(trace: TeacherTrace) -> ToolCall | None:
+    for step in trace.steps:
+        if step.tool_calls:
+            return step.tool_calls[0]
+    return None
+
+
+def tool_call_json(call: ToolCall) -> str:
+    return json.dumps(
+        {"name": call.name, "arguments": call.arguments},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
 
 
 def select_sft_traces(

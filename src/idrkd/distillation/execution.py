@@ -70,16 +70,26 @@ class DistillationSmokeResult:
         }
 
 
-def render_sft_text(record: dict[str, Any]) -> str:
+def render_sft_text(record: dict[str, Any], tokenizer: Any | None = None) -> str:
     messages = record.get("messages", [])
     if not isinstance(messages, list):
         raise ValueError("SFT record messages must be a list")
+    if tokenizer is not None and hasattr(tokenizer, "apply_chat_template"):
+        return str(
+            tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+        )
     chunks = []
     for message in messages:
         if not isinstance(message, dict):
             raise ValueError("SFT message must be an object")
-        chunks.append(f"<|{message['role']}|>\n{message['content']}")
-    return "\n".join(chunks) + "\n<|end|>"
+        role = str(message["role"])
+        content = str(message["content"])
+        chunks.append(f"<|{role}|>{content}<|end|>")
+    return "\n".join(chunks)
 
 
 def train_sft(
@@ -123,7 +133,9 @@ def train_sft(
         model = modules["prepare_model_for_kbit_training"](model)
     model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
 
-    dataset = modules["Dataset"].from_list([{"text": render_sft_text(record)} for record in records])
+    dataset = modules["Dataset"].from_list(
+        [{"text": render_sft_text(record, tokenizer)} for record in records]
+    )
     tokenized = _tokenize_text_dataset(dataset, tokenizer, config.max_seq_length)
     args = modules["TrainingArguments"](
         output_dir=str(config.output_dir),

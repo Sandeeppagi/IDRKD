@@ -32,7 +32,11 @@ def main() -> None:
     pref_dataset = subparsers.add_parser("build-dpo", help="Build DPO preference JSONL from traces.")
     pref_dataset.add_argument("--traces", type=Path, required=True)
     pref_dataset.add_argument("--out", type=Path, required=True)
-    pref_dataset.add_argument("--rejected-answer", default="I do not have enough grounded repository evidence to answer.")
+    pref_dataset.add_argument(
+        "--rejected-answer",
+        default=None,
+        help="Optional rejected JSON tool call. Prose values are kept only as metadata.",
+    )
     pref_dataset.add_argument("--min-faithfulness", type=float, default=0.78)
 
     train_sft_parser = subparsers.add_parser("train-sft", help="Run LoRA/QLoRA SFT training.")

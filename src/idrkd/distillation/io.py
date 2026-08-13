@@ -112,13 +112,13 @@ def build_preference_dataset_jsonl(
     *,
     traces_path: Path,
     out_path: Path,
-    rejected_answer: str = "I do not have enough grounded repository evidence to answer.",
+    rejected_answer: str | None = None,
     min_faithfulness: float = 0.78,
 ) -> list[dict[str, Any]]:
     traces = select_sft_traces(
         load_teacher_traces(traces_path),
         min_faithfulness=min_faithfulness,
-        require_tool_use=False,
+        require_tool_use=True,
     )
     records = [
         build_preference_pair(trace=trace, rejected_answer=rejected_answer).to_dpo_record()

@@ -12,7 +12,45 @@ from idrkd.distillation import (
     train_dpo,
     train_sft,
 )
+from idrkd.distillation.execution import render_sft_text
 from idrkd.distillation.io import write_jsonl_records
+
+
+def test_render_sft_text_uses_tokenizer_chat_template() -> None:
+    record = {
+        "messages": [
+            {"role": "system", "content": "Return JSON."},
+            {"role": "user", "content": "Retrieve customer record 42"},
+            {"role": "assistant", "content": '{"name":"get_customer","arguments":{"customer_id":42}}'},
+        ]
+    }
+    calls: dict[str, object] = {}
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages: list[dict[str, str]], **kwargs: object) -> str:
+            calls["messages"] = messages
+            calls["kwargs"] = kwargs
+            return "<chat-template-output>"
+
+    assert render_sft_text(record, FakeTokenizer()) == "<chat-template-output>"
+    assert calls["messages"] == record["messages"]
+    assert calls["kwargs"] == {"tokenize": False, "add_generation_prompt": False}
+
+
+def test_render_sft_text_fallback_terminates_each_message() -> None:
+    record = {
+        "messages": [
+            {"role": "system", "content": "Return JSON."},
+            {"role": "user", "content": "Retrieve customer record 42"},
+            {"role": "assistant", "content": '{"name":"get_customer","arguments":{"customer_id":42}}'},
+        ]
+    }
+
+    assert render_sft_text(record) == (
+        '<|system|>Return JSON.<|end|>\n'
+        '<|user|>Retrieve customer record 42<|end|>\n'
+        '<|assistant|>{"name":"get_customer","arguments":{"customer_id":42}}<|end|>'
+    )
 
 
 def test_teacher_trace_jsonl_round_trip_and_dataset_builders(tmp_path: Path) -> None:
@@ -28,10 +66,19 @@ def test_teacher_trace_jsonl_round_trip_and_dataset_builders(tmp_path: Path) -> 
 
     assert len(sft_records) >= 500
     assert sft_records[0]["messages"][0]["role"] == "system"
+    assert json.loads(sft_records[0]["messages"][2]["content"]) == {
+        "name": "search_code",
+        "arguments": {
+            "limit": 6,
+            "query": "RAG orchestrator implementation details",
+            "repo_id": "repo-seed",
+            "tenant_id": "tenant-seed",
+        },
+    }
     assert sft_records[0]["metadata"]["tool_trace"]
     assert len(dpo_records) >= 500
-    assert dpo_records[0]["chosen"]
-    assert dpo_records[0]["rejected"]
+    assert json.loads(dpo_records[0]["chosen"])["name"] == "search_code"
+    assert json.loads(dpo_records[0]["rejected"])["arguments"]["_idrkd_wrong_argument"] is True
 
 
 def test_sft_and_dpo_training_dry_run_writes_reproducible_summary(tmp_path: Path) -> None:
