@@ -254,6 +254,7 @@ def train_dpo(
             adapter_name="policy",
         )
         model.load_adapter(str(sft_adapter_path), adapter_name="reference", is_trainable=False)
+        model.set_adapter("policy")
     else:
         active_qlora = QLoRAConfig(
             base_model_id=config.base_model_id,
