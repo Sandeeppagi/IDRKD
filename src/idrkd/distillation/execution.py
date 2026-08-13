@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from idrkd.distillation.io import dataset_digest, read_jsonl_records
+from idrkd.distillation.traces import SYSTEM_PROMPT
 from idrkd.distillation.training import DpoConfig, QLoRAConfig
 
 
@@ -259,7 +260,7 @@ def train_dpo(
         )
         model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
 
-    dataset = modules["Dataset"].from_list(records)
+    dataset = modules["Dataset"].from_list(_render_dpo_records(records, tokenizer))
     args = modules["DPOConfig"](
         output_dir=str(config.output_dir),
         num_train_epochs=active_dpo.epochs,
@@ -373,6 +374,43 @@ def _tokenize_prompt_response_dataset(dataset: Any, tokenizer: Any, max_seq_leng
         }
 
     return dataset.map(tokenize, batched=True, remove_columns=["prompt_text", "response_text"])
+
+
+def _render_dpo_records(records: list[dict[str, Any]], tokenizer: Any | None = None) -> list[dict[str, Any]]:
+    rendered = []
+    for record in records:
+        prompt = str(record["prompt"])
+        chosen = str(record["chosen"])
+        rejected = str(record["rejected"])
+        prompt_text, chosen_text = render_sft_prompt_and_response(
+            _dpo_as_sft_record(prompt=prompt, response=chosen),
+            tokenizer,
+        )
+        rejected_prompt_text, rejected_text = render_sft_prompt_and_response(
+            _dpo_as_sft_record(prompt=prompt, response=rejected),
+            tokenizer,
+        )
+        if rejected_prompt_text != prompt_text:
+            raise ValueError("DPO chosen and rejected prompts rendered differently")
+        rendered_record = {
+            "prompt": prompt_text,
+            "chosen": chosen_text,
+            "rejected": rejected_text,
+        }
+        if "metadata" in record:
+            rendered_record["metadata"] = record["metadata"]
+        rendered.append(rendered_record)
+    return rendered
+
+
+def _dpo_as_sft_record(*, prompt: str, response: str) -> dict[str, Any]:
+    return {
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": response},
+        ]
+    }
 
 
 def _sft_data_collator(*, tokenizer: Any, torch: Any) -> Any:

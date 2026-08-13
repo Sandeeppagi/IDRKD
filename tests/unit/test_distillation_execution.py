@@ -15,6 +15,7 @@ from idrkd.distillation import (
     train_sft,
 )
 from idrkd.distillation.execution import render_sft_prompt_and_response, render_sft_text
+from idrkd.distillation.traces import SYSTEM_PROMPT
 from idrkd.distillation.io import write_jsonl_records
 
 
@@ -208,6 +209,13 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
         pad_token = None
         eos_token = "<eos>"
 
+        def apply_chat_template(self, messages: list[dict[str, str]], **kwargs: object) -> str:
+            assert kwargs["tokenize"] is False
+            rendered = "".join(f"<{message['role']}>{message['content']}</{message['role']}>" for message in messages)
+            if kwargs["add_generation_prompt"]:
+                return f"{rendered}<assistant>"
+            return rendered
+
         def save_pretrained(self, output_dir: str) -> None:
             Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -292,5 +300,12 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
     assert calls["adapter_path"] == str(sft_adapter)
     assert calls["is_trainable"] is True
     assert calls["get_peft_model_called"] is False
+    assert calls["records"] == [
+        {
+            "prompt": f"<system>{SYSTEM_PROMPT}</system><user>Where is reconcile defined?</user><assistant>",
+            "chosen": "Use search_code.</assistant>",
+            "rejected": "Unknown.</assistant>",
+        }
+    ]
     assert result.stage == "dpo"
     assert result.sft_adapter_path == str(sft_adapter)
