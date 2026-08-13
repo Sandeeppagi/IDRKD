@@ -2,6 +2,7 @@
 
 from idrkd.evaluation.bfcl import FunctionCallPrediction, ToolCallMetrics, score_function_calls
 from idrkd.evaluation.measurements import MeasurementJob, OracleToolCallPredictor, build_measurement_bundle
+from idrkd.evaluation.live_taskbench import run_live_taskbench_benchmark
 from idrkd.evaluation.model_agent import (
     ModelAgentPredictionResult,
     OpenAICompatibleToolCallPredictor,
@@ -59,5 +60,6 @@ __all__ = [
     "load_tasks_jsonl",
     "split_taskbench_tasks",
     "parse_tool_call",
+    "run_live_taskbench_benchmark",
     "score_function_calls",
 ]

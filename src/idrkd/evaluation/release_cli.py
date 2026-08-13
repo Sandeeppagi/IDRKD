@@ -17,6 +17,7 @@ from idrkd.evaluation.live_rag import (
     load_live_rag_cases,
     run_live_rag_benchmark,
 )
+from idrkd.evaluation.live_taskbench import run_live_taskbench_benchmark
 from idrkd.evaluation.release_record import (
     build_promotion_record,
     collect_model_provenance,
@@ -129,6 +130,19 @@ def _run_rag(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
+def _run_taskbench(args: argparse.Namespace) -> dict[str, Any]:
+    return run_live_taskbench_benchmark(
+        base_url=args.model_base_url,
+        model=args.model_id,
+        tasks_path=args.taskbench_tasks,
+        schemas_path=args.synthetic_schemas,
+        conflicts_path=args.synthetic_conflicts,
+        api_key=args.model_api_key,
+        timeout_seconds=args.model_timeout,
+        max_tokens=args.max_tokens,
+    )
+
+
 def _run_record(args: argparse.Namespace) -> dict[str, Any]:
     manifest_path = args.checkpoint / "idrkd-model-manifest.json"
     manifest = read_json_object_or_error(manifest_path)
@@ -140,22 +154,29 @@ def _run_record(args: argparse.Namespace) -> dict[str, Any]:
         )
     except Exception as exc:
         provenance = {"artifact_error": f"{type(exc).__name__}: {exc}"}
+    taskbench_path = getattr(args, "taskbench", None)
+    taskbench = read_json_object_or_error(taskbench_path) if taskbench_path else None
+    artifacts = {
+        "runtime": evidence_file(args.runtime),
+        "holdout": evidence_file(args.holdout),
+        "live_rag": evidence_file(args.rag),
+        "performance": evidence_file(args.performance),
+        "security": evidence_file(args.security),
+    }
+    if taskbench_path:
+        artifacts["taskbench_all"] = evidence_file(taskbench_path)
     return build_promotion_record(
         provenance=provenance,
         runtime=read_json_object_or_error(args.runtime),
         holdout=read_json_object_or_error(args.holdout),
+        taskbench=taskbench,
         rag=read_json_object_or_error(args.rag),
         performance=read_json_object_or_error(args.performance),
         security=read_json_object_or_error(args.security),
-        evidence_artifacts={
-            "runtime": evidence_file(args.runtime),
-            "holdout": evidence_file(args.holdout),
-            "live_rag": evidence_file(args.rag),
-            "performance": evidence_file(args.performance),
-            "security": evidence_file(args.security),
-        },
+        evidence_artifacts=artifacts,
         previous_tool_f1=args.previous_tool_f1,
         expected_holdout_cases=args.expected_holdout_cases,
+        expected_taskbench_cases=args.expected_taskbench_cases,
     )
 
 
@@ -196,16 +217,36 @@ def _add_rag_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--local-files-only", action="store_true")
 
 
+def _add_taskbench_data_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--taskbench-tasks",
+        type=Path,
+        default=Path("eval/taskbench/seed_tasks.jsonl"),
+    )
+    parser.add_argument(
+        "--synthetic-schemas",
+        type=Path,
+        default=Path("eval/synthetic_schemas/schemas.jsonl"),
+    )
+    parser.add_argument(
+        "--synthetic-conflicts",
+        type=Path,
+        default=Path("eval/synthetic_schemas/conflicts.jsonl"),
+    )
+
+
 def _add_record_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
     parser.add_argument("--runtime", type=Path, required=True)
     parser.add_argument("--holdout", type=Path, default=Path("eval/distillation/llmc-awq-holdout.json"))
+    parser.add_argument("--taskbench", type=Path)
     parser.add_argument("--rag", type=Path, required=True)
     parser.add_argument("--performance", type=Path, required=True)
     parser.add_argument("--security", type=Path, required=True)
     parser.add_argument("--previous-tool-f1", type=float)
     parser.add_argument("--expected-holdout-cases", type=int, default=89)
+    parser.add_argument("--expected-taskbench-cases", type=int, default=440)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -218,6 +259,14 @@ def build_parser() -> argparse.ArgumentParser:
     rag = subparsers.add_parser("rag", help="Run live pgvector/Neo4j/synthesis/NLI faithfulness.")
     _add_rag_args(rag)
     rag.add_argument("--out", type=Path, required=True)
+
+    taskbench = subparsers.add_parser(
+        "taskbench",
+        help="Run the full no-split MCP-TaskBench suite against a live model.",
+    )
+    _add_model_args(taskbench)
+    _add_taskbench_data_args(taskbench)
+    taskbench.add_argument("--out", type=Path, required=True)
 
     performance = subparsers.add_parser("performance", help="Measure true streaming TTFT and latency.")
     _add_model_args(performance)
@@ -243,6 +292,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--holdout", type=Path, default=Path("eval/distillation/llmc-awq-holdout.json"))
     run.add_argument("--previous-tool-f1", type=float)
     run.add_argument("--expected-holdout-cases", type=int, default=89)
+    run.add_argument("--expected-taskbench-cases", type=int, default=440)
+    _add_taskbench_data_args(run)
     run.add_argument("--performance-samples", type=int, default=20)
     run.add_argument("--performance-warmups", type=int, default=2)
     run.add_argument("--performance-evidence-limit", type=int, default=3)
@@ -257,6 +308,15 @@ def main() -> None:
         return
     if args.command == "rag":
         write_json(args.out, _run_rag(args))
+        return
+    if args.command == "taskbench":
+        artifact = _run_taskbench(args)
+        write_json(args.out, artifact)
+        print(
+            f"mode={artifact['mode']} split={artifact['split']} "
+            f"pass_rate={artifact['pass_rate']:.3f} "
+            f"tool_f1={artifact['tool_f1']:.3f} cases={artifact['case_count']}"
+        )
         return
     if args.command == "performance":
         artifact = run_streaming_benchmark(
@@ -280,10 +340,30 @@ def main() -> None:
         return
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    taskbench_path = args.out_dir / "taskbench-all.json"
     rag_path = args.out_dir / "live-rag.json"
     performance_path = args.out_dir / "streaming-performance.json"
     security_path = args.out_dir / "security.json"
     record_path = args.out_dir / "promotion-record.json"
+    try:
+        taskbench_artifact = _run_taskbench(args)
+    except Exception as exc:
+        taskbench_artifact = {
+            "benchmark": "mcp-taskbench-live",
+            "split": "all",
+            "artifact_error": f"{type(exc).__name__}: {exc}",
+            "case_count": 0,
+            "error_count": 1,
+            "pass_rate": 0.0,
+            "schema_valid_rate": 0.0,
+            "tool_precision": 0.0,
+            "tool_recall": 0.0,
+            "tool_f1": 0.0,
+            "argument_accuracy": 0.0,
+            "by_category": {},
+            "cases": [],
+        }
+    write_json(taskbench_path, taskbench_artifact)
     try:
         rag_artifact = _run_rag(args)
     except Exception as exc:
@@ -333,6 +413,7 @@ def main() -> None:
         }
     write_json(security_path, security_artifact)
     args.rag = rag_path
+    args.taskbench = taskbench_path
     args.performance = performance_path
     args.security = security_path
     record_artifact = _run_record(args)

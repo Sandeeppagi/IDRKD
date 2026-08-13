@@ -114,23 +114,28 @@ def build_promotion_record(
     provenance: dict[str, Any],
     runtime: dict[str, Any],
     holdout: dict[str, Any],
+    taskbench: dict[str, Any] | None = None,
     rag: dict[str, Any],
     performance: dict[str, Any],
     security: dict[str, Any],
     evidence_artifacts: dict[str, Any] | None = None,
     previous_tool_f1: float | None = None,
     expected_holdout_cases: int = 89,
+    expected_taskbench_cases: int = 440,
     criteria: PromotionCriteria = PromotionCriteria(),
 ) -> dict[str, Any]:
     reasons: list[str] = []
-    for name, artifact in (
+    artifacts = [
         ("provenance", provenance),
         ("runtime", runtime),
         ("holdout", holdout),
         ("live RAG", rag),
         ("performance", performance),
         ("security", security),
-    ):
+    ]
+    if taskbench is not None:
+        artifacts.append(("full TaskBench", taskbench))
+    for name, artifact in artifacts:
         if artifact.get("artifact_error"):
             reasons.append(f"{name} artifact error: {artifact['artifact_error']}")
     holdout_cases = len(holdout.get("cases", []))
@@ -140,6 +145,24 @@ def build_promotion_record(
     faithfulness = float(rag.get("faithfulness_min", 0.0))
     ttft_p95 = float(performance.get("ttft", {}).get("p95_seconds", 0.0))
     latency_p95 = float(performance.get("latency", {}).get("p95_seconds", 0.0))
+
+    if taskbench is not None:
+        taskbench_cases = int(taskbench.get("case_count", len(taskbench.get("cases", []))))
+        taskbench_tool_f1 = float(taskbench.get("tool_f1", 0.0))
+        taskbench_errors = int(taskbench.get("error_count", 0))
+        if taskbench.get("split") != "all":
+            reasons.append("full TaskBench split is not all")
+        if taskbench_cases != expected_taskbench_cases:
+            reasons.append(
+                f"full TaskBench cases {taskbench_cases} != {expected_taskbench_cases}"
+            )
+        if taskbench_errors != 0:
+            reasons.append(f"full TaskBench errors: {taskbench_errors}")
+        if taskbench_tool_f1 < criteria.min_tool_f1:
+            reasons.append(
+                f"full TaskBench tool_f1 {taskbench_tool_f1:.3f} "
+                f"< {criteria.min_tool_f1:.3f}"
+            )
 
     if holdout_cases != expected_holdout_cases:
         reasons.append(f"holdout cases {holdout_cases} != {expected_holdout_cases}")
@@ -175,7 +198,7 @@ def build_promotion_record(
         reasons.append("model provenance is incomplete")
 
     record: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2 if taskbench is not None else 1,
         "created_at": datetime.now(UTC).isoformat(),
         "model": provenance,
         "runtime": runtime,
@@ -216,6 +239,20 @@ def build_promotion_record(
         },
         "decision": {"status": "promoted" if not reasons else "rejected", "reasons": reasons},
     }
+    if taskbench is not None:
+        record["evaluation"]["taskbench_all"] = {
+            "split": taskbench.get("split"),
+            "cases": int(taskbench.get("case_count", len(taskbench.get("cases", [])))),
+            "pass_rate": float(taskbench.get("pass_rate", 0.0)),
+            "schema_valid_rate": float(taskbench.get("schema_valid_rate", 0.0)),
+            "tool_precision": float(taskbench.get("tool_precision", 0.0)),
+            "tool_recall": float(taskbench.get("tool_recall", 0.0)),
+            "tool_f1": float(taskbench.get("tool_f1", 0.0)),
+            "argument_accuracy": float(taskbench.get("argument_accuracy", 0.0)),
+            "error_count": int(taskbench.get("error_count", 0)),
+            "by_category": taskbench.get("by_category", {}),
+        }
+        record["criteria"]["expected_taskbench_cases"] = expected_taskbench_cases
     canonical = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
     record["record_digest"] = f"sha256:{hashlib.sha256(canonical).hexdigest()}"
     return record

@@ -69,10 +69,13 @@ idrkd-release run \
   --out-dir /workspace/release-evidence/final
 ```
 
-The command writes `live-rag.json`, `streaming-performance.json`, `security.json`, and
-`promotion-record.json`. The record is promoted only when:
+The command writes `taskbench-all.json`, `live-rag.json`, `streaming-performance.json`,
+`security.json`, and `promotion-record.json`. The full TaskBench artifact always uses `split=all`
+and includes all 360 seed cases plus the 80 synthetic schema and conflict cases. The record is
+promoted only when:
 
 - all expected 89 holdout cases pass, argument accuracy is 1.0, and tool F1 is at least 0.82;
+- all expected 440 full TaskBench cases execute without errors and tool F1 is at least 0.82;
 - every live RAG case executes and its transformer-NLI score is at least 0.78;
 - both tenant and agent security suites pass;
 - every streaming sample succeeds, p95 TTFT is at most 1.2 seconds, and p95 completion latency is
@@ -82,3 +85,43 @@ The command writes `live-rag.json`, `streaming-performance.json`, `security.json
 The record includes the path, size, and SHA-256 digest of every input evidence file. Its final
 `record_digest` is SHA-256 over the canonical promotion record before that digest field is added. A
 rejected run still writes all evidence and explicit rejection reasons.
+
+## 4. Run only the full TaskBench gate
+
+When the other release evidence is already valid, rerun only the deployment-level no-split suite:
+
+```bash
+cd /workspace/IDRKD
+source .venv/bin/activate
+
+idrkd-release taskbench \
+  --model-base-url http://127.0.0.1:8000/v1 \
+  --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --out /workspace/release-evidence/final-v5/taskbench-all.json
+```
+
+Verify the complete result before regenerating the promotion record:
+
+```bash
+jq '{split, case_count, error_count, pass_rate, schema_valid_rate, tool_f1, argument_accuracy, by_category}' \
+  /workspace/release-evidence/final-v5/taskbench-all.json
+```
+
+The expected `split` is `all` and the expected `case_count` is `440`.
+
+Bind the new artifact to an existing evidence set with the `record` command's `--taskbench`
+argument. This produces a schema-v2 promotion record and includes the TaskBench artifact's path,
+size, and SHA-256 digest:
+
+```bash
+idrkd-release record \
+  --repo-root /workspace/IDRKD \
+  --checkpoint artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --runtime /workspace/release-evidence/runtime.json \
+  --holdout eval/distillation/llmc-awq-holdout.json \
+  --taskbench /workspace/release-evidence/final-v5/taskbench-all.json \
+  --rag /workspace/release-evidence/final-v3/live-rag.json \
+  --performance /workspace/release-evidence/final-v4/streaming-performance.json \
+  --security /workspace/release-evidence/final-v3/security.json \
+  --out /workspace/release-evidence/final-v5/promotion-record.json
+```

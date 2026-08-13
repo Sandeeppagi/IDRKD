@@ -6,7 +6,9 @@ import subprocess
 
 import pytest
 
+from idrkd.evaluation.bfcl import FunctionCallPrediction
 from idrkd.evaluation.live_rag import LiveRagCase, load_live_rag_cases, run_live_rag_benchmark
+from idrkd.evaluation.live_taskbench import run_live_taskbench_benchmark
 from idrkd.evaluation.release_cli import DEFAULT_NEO4J_URI, _environment_value
 from idrkd.evaluation.release_record import build_promotion_record, evidence_file
 from idrkd.evaluation.security_runner import run_security_suite
@@ -47,6 +49,21 @@ class _SseResponse:
                 b"data: [DONE]\n",
             ]
         )
+
+
+class _SearchPredictor:
+    def predict_tool_call(self, *, prompt: str, tools: list[dict]):
+        del prompt, tools
+        prediction = FunctionCallPrediction(
+            "search_code",
+            {
+                "tenant_id": "default",
+                "repo_id": "repo-a",
+                "query": "customer lookup",
+                "limit": 3,
+            },
+        )
+        return '{"name":"search_code","arguments":{}}', prediction
 
 
 def test_live_rag_cases_validate_and_benchmark_retrieval_recall(tmp_path: Path) -> None:
@@ -97,6 +114,51 @@ def test_streaming_measurement_uses_first_content_delta() -> None:
     assert payload["stream"] is True
     assert result["output"] == "Customer API"
     assert 0 <= result["ttft_seconds"] <= result["latency_seconds"]
+
+
+def test_live_taskbench_runs_explicit_all_split(tmp_path: Path) -> None:
+    tasks = tmp_path / "tasks.jsonl"
+    schemas = tmp_path / "schemas.jsonl"
+    conflicts = tmp_path / "conflicts.jsonl"
+    tasks.write_text(
+        json.dumps(
+            {
+                "id": "search-1",
+                "category": "tool_selection",
+                "prompt": "Search for customer lookup.",
+                "expected_tool": "search_code",
+                "arguments": {
+                    "tenant_id": "default",
+                    "repo_id": "repo-a",
+                    "query": "customer lookup",
+                    "limit": 3,
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    schemas.write_text("", encoding="utf-8")
+    conflicts.write_text("", encoding="utf-8")
+
+    artifact = run_live_taskbench_benchmark(
+        base_url="http://model.test/v1",
+        model="student",
+        tasks_path=tasks,
+        schemas_path=schemas,
+        conflicts_path=conflicts,
+        predictor=_SearchPredictor(),
+    )
+
+    assert artifact["benchmark"] == "mcp-taskbench-live"
+    assert artifact["split"] == "all"
+    assert artifact["model_id"] == "student"
+    assert artifact["seed_case_count"] == 1
+    assert artifact["synthetic_case_count"] == 0
+    assert artifact["case_count"] == 1
+    assert artifact["error_count"] == 0
+    assert artifact["pass_rate"] == 1.0
+    assert artifact["tool_f1"] == 1.0
 
 
 def test_streaming_benchmark_reports_p95_distributions() -> None:
@@ -155,6 +217,18 @@ def test_promotion_record_binds_evidence_and_promotes() -> None:
         },
         runtime={"vllm": "0.27.1", "torch": "2.13.0+cu129"},
         holdout={"cases": [{}] * 89, "pass_rate": 1.0, "tool_f1": 1.0, "argument_accuracy": 1.0},
+        taskbench={
+            "split": "all",
+            "case_count": 440,
+            "error_count": 0,
+            "pass_rate": 1.0,
+            "schema_valid_rate": 1.0,
+            "tool_precision": 1.0,
+            "tool_recall": 1.0,
+            "tool_f1": 1.0,
+            "argument_accuracy": 1.0,
+            "by_category": {"tool_selection": 1.0},
+        },
         rag={
             "case_count": 5,
             "error_count": 0,
@@ -174,7 +248,42 @@ def test_promotion_record_binds_evidence_and_promotes() -> None:
 
     assert record["decision"] == {"status": "promoted", "reasons": []}
     assert record["record_digest"].startswith("sha256:")
+    assert record["schema_version"] == 2
     assert record["evaluation"]["holdout"]["cases"] == 89
+    assert record["evaluation"]["taskbench_all"]["cases"] == 440
+    assert record["evaluation"]["taskbench_all"]["split"] == "all"
+
+
+def test_promotion_record_rejects_incomplete_full_taskbench() -> None:
+    record = build_promotion_record(
+        provenance={"manifest_digest": "digest", "lfs_objects": [{}]},
+        runtime={"vllm": "0.27.1", "torch": "2.13.0"},
+        holdout={"cases": [{}] * 89, "pass_rate": 1.0, "tool_f1": 1.0, "argument_accuracy": 1.0},
+        taskbench={
+            "split": "holdout",
+            "case_count": 89,
+            "error_count": 2,
+            "tool_f1": 0.5,
+        },
+        rag={
+            "error_count": 0,
+            "faithfulness_min": 0.9,
+            "critic": {"backend": "transformers-nli"},
+        },
+        performance={
+            "error_count": 0,
+            "ttft": {"p95_seconds": 0.1},
+            "latency": {"p95_seconds": 0.2},
+        },
+        security={"passed": True},
+    )
+
+    reasons = record["decision"]["reasons"]
+    assert record["decision"]["status"] == "rejected"
+    assert "full TaskBench split is not all" in reasons
+    assert "full TaskBench cases 89 != 440" in reasons
+    assert "full TaskBench errors: 2" in reasons
+    assert "full TaskBench tool_f1 0.500 < 0.820" in reasons
 
 
 def test_promotion_record_rejects_non_nli_and_streaming_errors() -> None:
@@ -238,3 +347,21 @@ def test_release_rag_defaults_reranker_to_cpu() -> None:
 
     assert args.embedding_device == "cpu"
     assert args.reranker_device == "cpu"
+
+
+def test_release_taskbench_defaults_to_full_corpus() -> None:
+    from idrkd.evaluation.release_cli import build_parser
+
+    args = build_parser().parse_args(
+        [
+            "taskbench",
+            "--model-id",
+            "student",
+            "--out",
+            "taskbench.json",
+        ]
+    )
+
+    assert args.taskbench_tasks == Path("eval/taskbench/seed_tasks.jsonl")
+    assert args.synthetic_schemas == Path("eval/synthetic_schemas/schemas.jsonl")
+    assert args.synthetic_conflicts == Path("eval/synthetic_schemas/conflicts.jsonl")
