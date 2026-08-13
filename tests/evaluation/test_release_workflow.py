@@ -201,3 +201,22 @@ def test_release_cli_uses_default_for_blank_environment_value(monkeypatch) -> No
     monkeypatch.setenv("NEO4J_URI", "")
 
     assert _environment_value("NEO4J_URI", DEFAULT_NEO4J_URI) == "bolt://localhost:7687"
+
+
+def test_release_rag_defaults_reranker_to_cpu() -> None:
+    from idrkd.evaluation.release_cli import build_parser
+
+    args = build_parser().parse_args(
+        [
+            "rag",
+            "--model-id",
+            "student",
+            "--rag-cases",
+            "cases.jsonl",
+            "--out",
+            "rag.json",
+        ]
+    )
+
+    assert args.embedding_device == "cpu"
+    assert args.reranker_device == "cpu"

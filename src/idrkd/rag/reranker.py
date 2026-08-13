@@ -16,11 +16,18 @@ class MiniLmReranker:
         cls,
         model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
         *,
+        device: str | None = None,
         local_files_only: bool = False,
     ) -> MiniLmReranker:
         from sentence_transformers import CrossEncoder
 
-        return cls(CrossEncoder(model_name, local_files_only=local_files_only))
+        return cls(
+            CrossEncoder(
+                model_name,
+                device=device,
+                local_files_only=local_files_only,
+            )
+        )
 
     def rerank(self, query: str, hits: list[HybridHit], labels: dict[str, str]) -> list[HybridHit]:
         if self._model is not None:

@@ -41,8 +41,8 @@ idrkd-ingest-corpus \
 
 The command is idempotent and captures individual parser failures instead of discarding completed
 repositories. Use repeated `--repo-id` options to ingest or retry a subset. At release time the RAG
-command defaults query embeddings to CPU so vLLM can retain GPU memory; set
-`--embedding-device cuda` only when sufficient GPU memory remains.
+command defaults query embeddings and reranking to CPU so vLLM can retain GPU memory; set
+`--embedding-device cuda` or `--reranker-device cuda` only when sufficient GPU memory remains.
 
 ## 3. Run all release gates
 

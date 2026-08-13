@@ -66,6 +66,7 @@ class _LivePipelineFactory:
         )
         self._reranker = MiniLmReranker.from_sentence_transformers(
             args.reranker_model,
+            device=args.reranker_device,
             local_files_only=args.local_files_only,
         )
         self._critic = FaithfulnessCritic.from_transformers(
@@ -119,6 +120,7 @@ def _run_rag(args: argparse.Namespace) -> dict[str, Any]:
             critic_model=args.critic_model,
             embedding_model=args.embedding_model,
             reranker_model=args.reranker_model,
+            reranker_device=args.reranker_device,
             threshold=args.faithfulness_threshold,
             limit=args.retrieval_limit,
         )
@@ -187,6 +189,7 @@ def _add_rag_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--embedding-model", default="BAAI/bge-m3")
     parser.add_argument("--embedding-device", default="cpu")
     parser.add_argument("--reranker-model", default="cross-encoder/ms-marco-MiniLM-L-6-v2")
+    parser.add_argument("--reranker-device", default="cpu")
     parser.add_argument("--critic-model", default="cross-encoder/nli-deberta-v3-large")
     parser.add_argument("--faithfulness-threshold", type=float, default=0.78)
     parser.add_argument("--retrieval-limit", type=int, default=10)

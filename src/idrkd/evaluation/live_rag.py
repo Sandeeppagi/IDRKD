@@ -245,6 +245,7 @@ def run_live_rag_benchmark(
     critic_model: str,
     embedding_model: str = "BAAI/bge-m3",
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    reranker_device: str = "cpu",
     threshold: float = 0.78,
     limit: int = 10,
 ) -> dict[str, Any]:
@@ -288,6 +289,7 @@ def run_live_rag_benchmark(
             "graph": "neo4j-bfs",
             "embedding_model": embedding_model,
             "reranker_model": reranker_model,
+            "reranker_device": reranker_device,
         },
         "critic": {"backend": "transformers-nli", "model": critic_model, "threshold": threshold},
         "case_count": len(results),
