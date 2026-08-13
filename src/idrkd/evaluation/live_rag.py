@@ -217,9 +217,17 @@ class LiveRagPipeline:
                         }
                         for hit in state["reranked_hits"]
                     ],
-                    "evidence": [
+                    "synthesis_evidence": [
+                        labels.get(hit.entity_id, hit.entity_id)
+                        for hit in state["reranked_hits"][:3]
+                    ],
+                    "critic_evidence": [
                         labels.get(hit.entity_id, hit.entity_id)
                         for hit in state["reranked_hits"][:5]
+                    ],
+                    "evidence": [
+                        labels.get(hit.entity_id, hit.entity_id)
+                        for hit in state["reranked_hits"][:3]
                     ],
                 }
 

@@ -7,7 +7,7 @@ import json
 import statistics
 import time
 from typing import Any, Protocol
-from urllib import request
+from urllib import error, request
 
 from idrkd.distillation.serving import grounded_chat_messages
 
@@ -49,23 +49,28 @@ def stream_chat_completion(
     started = time.perf_counter()
     first_content_at: float | None = None
     chunks: list[str] = []
-    with open_request(http_request, timeout=timeout_seconds) as response:
-        for raw_line in response:
-            line = raw_line.decode("utf-8").strip()
-            if not line.startswith("data:"):
-                continue
-            data = line[5:].strip()
-            if data == "[DONE]":
-                break
-            event = json.loads(data)
-            choices = event.get("choices", [])
-            if not choices:
-                continue
-            content = choices[0].get("delta", {}).get("content")
-            if isinstance(content, str) and content:
-                if first_content_at is None:
-                    first_content_at = time.perf_counter()
-                chunks.append(content)
+    try:
+        with open_request(http_request, timeout=timeout_seconds) as response:
+            for raw_line in response:
+                line = raw_line.decode("utf-8").strip()
+                if not line.startswith("data:"):
+                    continue
+                data = line[5:].strip()
+                if data == "[DONE]":
+                    break
+                event = json.loads(data)
+                choices = event.get("choices", [])
+                if not choices:
+                    continue
+                content = choices[0].get("delta", {}).get("content")
+                if isinstance(content, str) and content:
+                    if first_content_at is None:
+                        first_content_at = time.perf_counter()
+                    chunks.append(content)
+    except error.HTTPError as exc:
+        response_body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = f": {response_body}" if response_body else ""
+        raise RuntimeError(f"Streaming endpoint returned HTTP {exc.code}{detail}") from exc
     completed = time.perf_counter()
     if first_content_at is None:
         raise RuntimeError("Streaming response completed without a content token")
@@ -85,18 +90,28 @@ def run_streaming_benchmark(
     warmups: int = 2,
     api_key: str = "idrkd-local",
     max_tokens: int = 256,
+    evidence_limit: int = 3,
     timeout_seconds: float = 60.0,
     opener: OpenRequest | None = None,
 ) -> dict[str, Any]:
     prompts = [
-        (str(case["query"]), [str(item) for item in case.get("evidence", [])])
+        (
+            str(case["query"]),
+            [
+                str(item)
+                for item in case.get("synthesis_evidence", case.get("evidence", []))
+            ][:evidence_limit],
+        )
         for case in rag_artifact.get("cases", [])
-        if case.get("error") is None and case.get("evidence")
+        if case.get("error") is None
+        and case.get("synthesis_evidence", case.get("evidence", []))
     ]
     if not prompts:
         raise ValueError("RAG artifact has no successful grounded prompts for streaming measurement")
-    if samples < 1 or warmups < 0:
-        raise ValueError("samples must be positive and warmups must be non-negative")
+    if samples < 1 or warmups < 0 or evidence_limit < 1:
+        raise ValueError(
+            "samples and evidence_limit must be positive and warmups must be non-negative"
+        )
 
     for index in range(warmups):
         query, evidence = prompts[index % len(prompts)]
@@ -146,6 +161,7 @@ def run_streaming_benchmark(
         "benchmark": "openai-sse-streaming",
         "model_id": model,
         "warmup_count": warmups,
+        "evidence_limit": evidence_limit,
         "sample_count": samples,
         "success_count": len(successful),
         "error_count": samples - len(successful),

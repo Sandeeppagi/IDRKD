@@ -100,7 +100,21 @@ def test_streaming_measurement_uses_first_content_delta() -> None:
 
 
 def test_streaming_benchmark_reports_p95_distributions() -> None:
-    rag = {"cases": [{"query": "query", "evidence": ["evidence"], "error": None}]}
+    requests = []
+
+    def opener(http_request, *, timeout):
+        requests.append((http_request, timeout))
+        return _SseResponse()
+
+    rag = {
+        "cases": [
+            {
+                "query": "query",
+                "evidence": ["one", "two", "three", "four", "five"],
+                "error": None,
+            }
+        ]
+    }
 
     artifact = run_streaming_benchmark(
         rag,
@@ -108,13 +122,17 @@ def test_streaming_benchmark_reports_p95_distributions() -> None:
         model="student",
         samples=3,
         warmups=1,
-        opener=lambda _request, *, timeout: _SseResponse(),
+        opener=opener,
     )
 
     assert artifact["success_count"] == 3
     assert artifact["error_count"] == 0
+    assert artifact["evidence_limit"] == 3
     assert artifact["ttft"]["p95_seconds"] >= 0
     assert artifact["latency"]["p95_seconds"] >= artifact["ttft"]["p95_seconds"]
+    payload = json.loads(requests[-1][0].data)
+    assert "- three" in payload["messages"][1]["content"]
+    assert "- four" not in payload["messages"][1]["content"]
 
 
 def test_security_runner_records_executed_command() -> None:

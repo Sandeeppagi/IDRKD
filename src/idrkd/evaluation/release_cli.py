@@ -224,6 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
     performance.add_argument("--rag", type=Path, required=True)
     performance.add_argument("--samples", type=int, default=20)
     performance.add_argument("--warmups", type=int, default=2)
+    performance.add_argument("--evidence-limit", type=int, default=3)
     performance.add_argument("--out", type=Path, required=True)
 
     security = subparsers.add_parser("security", help="Execute release security suites.")
@@ -244,6 +245,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--expected-holdout-cases", type=int, default=89)
     run.add_argument("--performance-samples", type=int, default=20)
     run.add_argument("--performance-warmups", type=int, default=2)
+    run.add_argument("--performance-evidence-limit", type=int, default=3)
     run.add_argument("--out-dir", type=Path, required=True)
     return parser
 
@@ -266,6 +268,7 @@ def main() -> None:
             api_key=args.model_api_key,
             max_tokens=args.max_tokens,
             timeout_seconds=args.model_timeout,
+            evidence_limit=args.evidence_limit,
         )
         write_json(args.out, artifact)
         return
@@ -306,6 +309,7 @@ def main() -> None:
             api_key=args.model_api_key,
             max_tokens=args.max_tokens,
             timeout_seconds=args.model_timeout,
+            evidence_limit=args.performance_evidence_limit,
         )
     except Exception as exc:
         performance_artifact = {
