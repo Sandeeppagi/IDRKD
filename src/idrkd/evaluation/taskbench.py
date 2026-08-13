@@ -63,6 +63,7 @@ class EvalCaseResult:
     arguments_correct: bool
     schema_valid: bool
     execution_success: bool
+    execution_outcome_success: bool
     outcome_valid: bool
     expected_result_keys_present: bool
     raw_model_output: str | None = None
@@ -78,6 +79,7 @@ class EvalCaseResult:
             and self.arguments_correct
             and self.schema_valid
             and self.execution_success
+            and self.execution_outcome_success
             and self.outcome_valid
             and self.expected_result_keys_present
         )
@@ -231,6 +233,7 @@ class TaskBenchRunner:
             arguments_correct=True,
             schema_valid=schema_valid,
             execution_success=execution_success,
+            execution_outcome_success=outcome_valid,
             outcome_valid=outcome_valid,
             expected_result_keys_present=keys_present,
             parsed_tool_call={
@@ -284,6 +287,7 @@ class TaskBenchRunner:
             arguments_correct=parsed is not None and parsed.arguments == task.arguments,
             schema_valid=schema_valid,
             execution_success=execution_success,
+            execution_outcome_success=outcome_valid,
             outcome_valid=outcome_valid,
             expected_result_keys_present=keys_present,
             raw_model_output=prediction.raw_model_output,
@@ -296,12 +300,17 @@ class TaskBenchRunner:
         )
 
 
-def load_tasks_jsonl(path: Path) -> list[McpTask]:
+def load_tasks_jsonl(path: Path, *, expose_expected_arguments: bool = False) -> list[McpTask]:
     tasks = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
             task = McpTask.model_validate_json(line)
-            tasks.append(_make_prompt_self_contained(task))
+            tasks.append(
+                _make_prompt_self_contained(
+                    task,
+                    expose_expected_arguments=expose_expected_arguments,
+                )
+            )
     return tasks
 
 
@@ -380,15 +389,37 @@ def _result_satisfies_task(task: McpTask, result: dict[str, Any]) -> bool:
     return all(result.get(key) == value for key, value in task.expected_result_values.items())
 
 
-def _make_prompt_self_contained(task: McpTask) -> McpTask:
+def _make_prompt_self_contained(
+    task: McpTask,
+    *,
+    expose_expected_arguments: bool = False,
+) -> McpTask:
     if "Task scope and identifiers as JSON:" in task.prompt:
         return task
+    if "Task tenant/repository scope as JSON:" in task.prompt:
+        return task
+    if expose_expected_arguments:
+        prompt_context = (
+            "Task scope and identifiers as JSON:\n"
+            f"{json.dumps(task.arguments, sort_keys=True)}"
+        )
+    else:
+        scope = {
+            key: task.arguments[key]
+            for key in ("tenant_id", "repo_id")
+            if key in task.arguments
+        }
+        if not scope:
+            return task
+        prompt_context = (
+            "Task tenant/repository scope as JSON:\n"
+            f"{json.dumps(scope, sort_keys=True)}"
+        )
     return task.model_copy(
         update={
             "prompt": (
                 f"{task.prompt}\n\n"
-                "Task scope and identifiers as JSON:\n"
-                f"{json.dumps(task.arguments, sort_keys=True)}"
+                f"{prompt_context}"
             )
         }
     )
@@ -396,4 +427,5 @@ def _make_prompt_self_contained(task: McpTask) -> McpTask:
 
 def _taskbench_prompt_group(task: McpTask) -> str:
     prompt, _, _ = task.prompt.partition("\n\nTask scope and identifiers as JSON:")
+    prompt, _, _ = prompt.partition("\n\nTask tenant/repository scope as JSON:")
     return prompt.strip()

@@ -92,6 +92,8 @@ def test_live_rag_cases_validate_and_benchmark_retrieval_recall(tmp_path: Path) 
     assert artifact["error_count"] == 0
     assert artifact["faithfulness_min"] == pytest.approx(0.91)
     assert artifact["retrieval_recall_mean"] == pytest.approx(1.0)
+    assert artifact["retrieval_recall_case_count"] == 1
+    assert artifact["expected_entity_case_count"] == 1
     assert artifact["cases"][0]["trace"][-1] == "critic"
 
 
@@ -238,6 +240,8 @@ def test_promotion_record_binds_evidence_and_promotes() -> None:
             "faithfulness_min": 0.81,
             "faithfulness_mean": 0.9,
             "faithfulness_pass_rate": 1.0,
+            "retrieval_recall_case_count": 1,
+            "expected_entity_case_count": 1,
             "critic": {"backend": "transformers-nli", "model": "deberta"},
         },
         performance={
@@ -273,6 +277,7 @@ def test_promotion_record_rejects_incomplete_full_taskbench() -> None:
         rag={
             "error_count": 0,
             "faithfulness_min": 0.9,
+            "retrieval_recall_case_count": 1,
             "critic": {"backend": "transformers-nli"},
         },
         performance={
@@ -299,6 +304,7 @@ def test_promotion_record_rejects_non_nli_and_streaming_errors() -> None:
         rag={
             "error_count": 0,
             "faithfulness_min": 0.9,
+            "retrieval_recall_case_count": 1,
             "critic": {"backend": "lexical"},
         },
         performance={
@@ -312,6 +318,29 @@ def test_promotion_record_rejects_non_nli_and_streaming_errors() -> None:
     assert record["decision"]["status"] == "rejected"
     assert "faithfulness critic was not transformers NLI" in record["decision"]["reasons"]
     assert "streaming measurement errors: 1" in record["decision"]["reasons"]
+
+
+def test_promotion_record_rejects_live_rag_without_recall_cases() -> None:
+    record = build_promotion_record(
+        provenance={"manifest_digest": "digest", "lfs_objects": [{}]},
+        runtime={"vllm": "0.27.1", "torch": "2.13.0"},
+        holdout={"cases": [{}] * 89, "tool_f1": 1.0, "argument_accuracy": 1.0},
+        rag={
+            "error_count": 0,
+            "faithfulness_min": 0.9,
+            "critic": {"backend": "transformers-nli"},
+            "retrieval_recall_case_count": 0,
+        },
+        performance={
+            "error_count": 0,
+            "ttft": {"p95_seconds": 0.1},
+            "latency": {"p95_seconds": 0.2},
+        },
+        security={"passed": True},
+    )
+
+    assert record["decision"]["status"] == "rejected"
+    assert "live RAG has no recall-measurable cases" in record["decision"]["reasons"]
 
 
 def test_live_rag_case_rejects_missing_scope() -> None:

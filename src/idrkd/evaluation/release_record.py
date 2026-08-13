@@ -146,6 +146,7 @@ def build_promotion_record(
     tool_f1 = float(holdout.get("tool_f1", 0.0))
     argument_accuracy = float(holdout.get("argument_accuracy", 0.0))
     faithfulness = float(rag.get("faithfulness_min", 0.0))
+    retrieval_recall_case_count = int(rag.get("retrieval_recall_case_count", 0))
     ttft_p95 = float(performance.get("ttft", {}).get("p95_seconds", 0.0))
     latency_p95 = float(performance.get("latency", {}).get("p95_seconds", 0.0))
 
@@ -183,6 +184,8 @@ def build_promotion_record(
         reasons.append("faithfulness critic was not transformers NLI")
     if int(rag.get("error_count", 0)) != 0:
         reasons.append(f"live RAG errors: {rag.get('error_count')}")
+    if retrieval_recall_case_count == 0:
+        reasons.append("live RAG has no recall-measurable cases")
     if not bool(security.get("passed")):
         reasons.append("tenant/security tests failed")
     if int(performance.get("error_count", 0)) != 0:
@@ -224,6 +227,8 @@ def build_promotion_record(
                 "pass_rate": float(rag.get("faithfulness_pass_rate", 0.0)),
                 "critic": rag.get("critic"),
                 "retrieval_recall_mean": rag.get("retrieval_recall_mean"),
+                "retrieval_recall_case_count": retrieval_recall_case_count,
+                "expected_entity_case_count": int(rag.get("expected_entity_case_count", 0)),
             },
             "performance": {
                 "samples": int(performance.get("sample_count", 0)),

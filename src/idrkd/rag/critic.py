@@ -11,6 +11,7 @@ from typing import Any, cast
 class FaithfulnessResult:
     score: float
     entailed: bool
+    claim_scores: tuple[float, ...] = ()
 
 
 class FaithfulnessCritic:
@@ -57,22 +58,48 @@ class FaithfulnessCritic:
         )
 
     def evaluate(self, answer: str, evidence_texts: list[str]) -> FaithfulnessResult:
+        claims = _atomic_claims(answer)
+        if not claims:
+            return FaithfulnessResult(score=0.0, entailed=False)
+
         if self._nli_pipeline is not None:
             evidence = " ".join(evidence_texts)
             nli = cast(Callable[..., Any], self._nli_pipeline)
-            result = nli({"text": evidence, "text_pair": answer}, truncation=True)
-            score = _entailment_score(result)
-            return FaithfulnessResult(score=score, entailed=score >= self.threshold)
+            scores = tuple(
+                _entailment_score(nli({"text": evidence, "text_pair": claim}, truncation=True))
+                for claim in claims
+            )
+            score = min(scores, default=0.0)
+            return FaithfulnessResult(
+                score=score,
+                entailed=bool(scores) and all(value >= self.threshold for value in scores),
+                claim_scores=scores,
+            )
 
-        answer_terms = {term.lower() for term in answer.replace(";", " ").split() if term.strip()}
-        if not answer_terms:
-            return FaithfulnessResult(score=0.0, entailed=False)
         evidence_terms: set[str] = set()
         for text in evidence_texts:
             evidence_terms.update(term.lower() for term in text.replace(".", " ").split() if term.strip())
-        supported = len(answer_terms & evidence_terms)
-        score = supported / len(answer_terms)
-        return FaithfulnessResult(score=score, entailed=score >= self.threshold)
+        scores = tuple(_lexical_support_score(claim, evidence_terms) for claim in claims)
+        score = min(scores, default=0.0)
+        return FaithfulnessResult(
+            score=score,
+            entailed=bool(scores) and all(value >= self.threshold for value in scores),
+            claim_scores=scores,
+        )
+
+
+def _atomic_claims(answer: str) -> tuple[str, ...]:
+    normalized = answer.replace("\n", " ").replace(";", ".")
+    claims = tuple(claim.strip() for claim in normalized.split(".") if claim.strip())
+    return claims or (answer.strip(),) if answer.strip() else ()
+
+
+def _lexical_support_score(claim: str, evidence_terms: set[str]) -> float:
+    claim_terms = {term.lower().strip(",():`\"'") for term in claim.split() if term.strip()}
+    claim_terms.discard("")
+    if not claim_terms:
+        return 0.0
+    return len(claim_terms & evidence_terms) / len(claim_terms)
 
 
 def _entailment_score(result: Any) -> float:

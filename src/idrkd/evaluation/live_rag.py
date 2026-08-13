@@ -206,7 +206,11 @@ class LiveRagPipeline:
                     "accepted": state["accepted"],
                     "rounds": state["rounds"],
                     "trace": list(state["trace"]),
+                    "retrieval_query": state["retrieval_query"],
                     "faithfulness_score": faithfulness.score if faithfulness else 0.0,
+                    "faithfulness_claim_scores": list(faithfulness.claim_scores)
+                    if faithfulness
+                    else [],
                     "vector_hits": [_search_hit_dict(hit) for hit in state["vector_hits"]],
                     "graph_hits": [_search_hit_dict(hit) for hit in state["graph_hits"]],
                     "reranked_hits": [
@@ -287,6 +291,7 @@ def run_live_rag_benchmark(
             )
     scores = [float(result["faithfulness_score"]) for result in results]
     recalls = [float(result["retrieval_recall"]) for result in results if result.get("retrieval_recall") is not None]
+    recall_case_count = len(recalls)
     error_count = sum(result["error"] is not None for result in results)
     accepted_count = sum(bool(result["accepted"]) for result in results)
     return {
@@ -307,5 +312,9 @@ def run_live_rag_benchmark(
         "faithfulness_min": min(scores, default=0.0),
         "faithfulness_pass_rate": accepted_count / len(results) if results else 0.0,
         "retrieval_recall_mean": statistics.fmean(recalls) if recalls else None,
+        "retrieval_recall_case_count": recall_case_count,
+        "expected_entity_case_count": sum(
+            bool(result.get("expected_entity_ids")) for result in results
+        ),
         "cases": results,
     }

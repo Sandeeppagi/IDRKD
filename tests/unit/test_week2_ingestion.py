@@ -1,5 +1,10 @@
 from dataclasses import dataclass
+import hashlib
+import hmac
+import json
 from pathlib import Path
+
+import httpx
 
 from idrkd.common.models import EntityKind, RelationType
 from idrkd.ingestion.document_extractor import SpanBertNerExtractor, parse_document_file
@@ -9,6 +14,7 @@ from idrkd.ingestion.kafka import commit_event_from_json, commit_event_to_json
 from idrkd.ingestion.pipeline import CommitIngestionPipeline
 from idrkd.ingestion.schema_extractor import parse_schema_file
 from idrkd.ingestion.slo import IngestionSlo, LamportClock, utc_now
+from idrkd.ingestion.webhook import create_app
 from idrkd.rag.embeddings import BgeM3EmbeddingAdapter
 from idrkd.rag.vector_store import VectorRecord
 
@@ -89,6 +95,42 @@ def test_commit_event_serialization_preserves_correlation_id() -> None:
 
     assert restored == event
     assert correlation_id == "corr-1"
+
+
+async def test_webhook_requires_valid_hmac_signature_when_secret_is_configured() -> None:
+    class Producer:
+        messages: list[tuple[str, bytes, bytes]]
+
+        def __init__(self) -> None:
+            self.messages = []
+
+        def send(self, topic: str, key: bytes, value: bytes) -> None:
+            self.messages.append((topic, key, value))
+
+    producer = Producer()
+    app = create_app(producer, webhook_secret="secret")
+    payload = {
+        "tenant_id": "tenant-a",
+        "repo_id": "repo-a",
+        "after": "abc123",
+        "changed_paths": ["src/example.py"],
+    }
+    body = json.dumps(payload).encode("utf-8")
+    signature = hmac.new(b"secret", body, hashlib.sha256).hexdigest()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        unsigned = await client.post("/webhooks/git/commit", content=body)
+        signed = await client.post(
+            "/webhooks/git/commit",
+            content=body,
+            headers={"x-hub-signature-256": f"sha256={signature}"},
+        )
+
+    assert unsigned.status_code == 401
+    assert signed.status_code == 200
+    assert signed.json()["status"] == "accepted"
+    assert len(producer.messages) == 1
 
 
 def test_slo_and_lamport_clock() -> None:

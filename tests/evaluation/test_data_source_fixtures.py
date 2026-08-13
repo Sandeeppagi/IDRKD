@@ -72,6 +72,7 @@ def test_mcp_task_suite_fixture_has_360_tasks_across_six_categories() -> None:
         "schema_conformance",
         "tool_selection",
     }
-    assert "Task scope and identifiers as JSON:" in tasks[0].prompt
+    assert "Task tenant/repository scope as JSON:" in tasks[0].prompt
     assert '"repo_id": "repo-a"' in tasks[0].prompt
     assert '"tenant_id": "default"' in tasks[0].prompt
+    assert '"query": "customer lookup"' not in tasks[0].prompt

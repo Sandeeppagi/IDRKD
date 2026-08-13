@@ -11,6 +11,11 @@ class _StudentModel:
         return evidence[0]
 
 
+class _UnsupportedStudentModel:
+    def generate(self, *, query: str, evidence: list[str]) -> str:
+        return "Order API deletes invoices."
+
+
 def _build_orchestrator() -> tuple[AgenticRagOrchestrator, dict[str, str]]:
     embeddings = BgeM3EmbeddingAdapter(dimensions=32)
     store = InMemoryVectorStore()
@@ -79,18 +84,30 @@ def test_orchestrator_can_synthesize_with_served_student_model() -> None:
 def test_orchestrator_bounds_re_retrieve_loop_at_max_rounds() -> None:
     embeddings = BgeM3EmbeddingAdapter(dimensions=32)
     store = InMemoryVectorStore()
-    graph = KeywordGraphSearch({})
+    store.upsert(
+        VectorRecord(
+            id="vec-a",
+            entity_id="entity-a",
+            text="customer API",
+            embedding=embeddings.embed("customer API"),
+            metadata={},
+        )
+    )
+    graph = KeywordGraphSearch({"entity-a": "Customer API handles billing."})
     orchestrator = AgenticRagOrchestrator(
         embeddings=embeddings,
         vector_store=store,
         graph_search=graph,
-        critic=FaithfulnessCritic(threshold=2.0),
+        critic=FaithfulnessCritic(threshold=0.78),
+        student_model=_UnsupportedStudentModel(),
     )
 
-    state = orchestrator.run("unmatched query", labels={})
+    state = orchestrator.run("customer API", labels={"entity-a": "Customer API handles billing."})
 
     assert state["rounds"] == MAX_ROUNDS
     assert state["accepted"] is False
+    assert state["retrieval_query"] != state["query"]
+    assert "evidence for" in state["retrieval_query"]
 
 
 def test_faithfulness_critic_scores_supported_answer_higher() -> None:
@@ -102,6 +119,19 @@ def test_faithfulness_critic_scores_supported_answer_higher() -> None:
     assert grounded.entailed is True
     assert ungrounded.entailed is False
     assert grounded.score > ungrounded.score
+
+
+def test_faithfulness_critic_scores_each_claim_independently() -> None:
+    critic = FaithfulnessCritic(threshold=0.78)
+
+    result = critic.evaluate(
+        "Customer API handles billing. Order API deletes invoices.",
+        ["Customer API handles billing."],
+    )
+
+    assert result.entailed is False
+    assert len(result.claim_scores) == 2
+    assert result.claim_scores[0] > result.claim_scores[1]
 
 
 def test_query_slo_gate_checks_latency_and_bounded_rounds() -> None:

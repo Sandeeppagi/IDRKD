@@ -77,8 +77,10 @@ tool-call conformance regression with fixture execution and has `generalization_
 The record is promoted only when:
 
 - all expected 89 holdout calls conform, argument accuracy is 1.0, and tool F1 is at least 0.82;
-- all expected 440 full TaskBench calls complete without harness/model errors and tool F1 is at least 0.82;
-- every live RAG case executes and its transformer-NLI score is at least 0.78;
+- all expected 440 full TaskBench calls complete without harness/model errors, tool F1 is at
+  least 0.82, and semantic outcome rate is inspected separately from JSON-RPC transport success;
+- every live RAG case executes, at least one case has non-empty expected entity IDs for retrieval
+  recall, and its transformer-NLI score is at least 0.78;
 - both tenant and agent security suites pass;
 - every streaming sample succeeds, p95 TTFT is at most 1.2 seconds, and p95 completion latency is
   at most 8 seconds;

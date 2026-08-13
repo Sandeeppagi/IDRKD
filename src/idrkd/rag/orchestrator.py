@@ -27,6 +27,7 @@ class VectorSearch(Protocol):
 
 class QueryState(TypedDict):
     query: str
+    retrieval_query: str
     rounds: int
     vector_hits: list[SearchHit]
     graph_hits: list[SearchHit]
@@ -41,6 +42,7 @@ class QueryState(TypedDict):
 def new_query_state(query: str) -> QueryState:
     return QueryState(
         query=query,
+        retrieval_query=query,
         rounds=0,
         vector_hits=[],
         graph_hits=[],
@@ -67,7 +69,10 @@ class VectorRetrieverAgent:
         self._vector_store = vector_store
 
     def retrieve(self, state: QueryState, *, limit: int = 10) -> QueryState:
-        state["vector_hits"] = self._vector_store.search(self._embeddings.embed(state["query"]), limit=limit)
+        state["vector_hits"] = self._vector_store.search(
+            self._embeddings.embed(state["retrieval_query"]),
+            limit=limit,
+        )
         state["trace"].append("vector_retriever")
         return state
 
@@ -77,7 +82,7 @@ class GraphTraversalAgent:
         self._graph_search = graph_search
 
     def traverse(self, state: QueryState, *, limit: int = 10) -> QueryState:
-        state["graph_hits"] = self._graph_search.bfs(state["query"], limit=limit)
+        state["graph_hits"] = self._graph_search.bfs(state["retrieval_query"], limit=limit)
         state["trace"].append("graph_traversal")
         return state
 
@@ -114,8 +119,24 @@ class CriticAgent:
         result = self._critic.evaluate(state["answer"], evidence)
         state["faithfulness"] = result
         state["accepted"] = result.entailed
+        if not result.entailed:
+            state["retrieval_query"] = _targeted_follow_up_query(state)
         state["trace"].append("critic")
         return state
+
+
+def _targeted_follow_up_query(state: QueryState) -> str:
+    faithfulness = state["faithfulness"]
+    if faithfulness is None or not faithfulness.claim_scores:
+        return state["query"]
+    claims = tuple(claim.strip() for claim in state["answer"].replace(";", ".").split(".") if claim.strip())
+    if len(claims) != len(faithfulness.claim_scores):
+        return state["query"]
+    weakest_index = min(
+        range(len(faithfulness.claim_scores)),
+        key=lambda index: faithfulness.claim_scores[index],
+    )
+    return f"{state['query']} evidence for {claims[weakest_index]}"
 
 
 class AgenticRagOrchestrator:

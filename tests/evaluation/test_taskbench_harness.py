@@ -97,6 +97,7 @@ def test_taskbench_runner_executes_seed_tasks_against_registry() -> None:
     assert summary.cases[0].tool_catalog_revision == "idrkd-mcp-tools-v1"
     unavailable = next(case for case in summary.cases if case.task_id == "tb-graph-bfs-003")
     assert unavailable.execution_success is True
+    assert unavailable.execution_outcome_success is False
     assert unavailable.outcome_valid is False
     assert set(summary.by_category()) >= {
         "tool_selection",
@@ -106,6 +107,19 @@ def test_taskbench_runner_executes_seed_tasks_against_registry() -> None:
         "drift_trigger",
         "a2a_delegation",
     }
+
+
+def test_taskbench_prompts_do_not_expose_expected_arguments_by_default() -> None:
+    task = load_tasks_jsonl(Path("eval/taskbench/seed_tasks.jsonl"))[0]
+    leaked_task = load_tasks_jsonl(
+        Path("eval/taskbench/seed_tasks.jsonl"),
+        expose_expected_arguments=True,
+    )[0]
+
+    assert '"tenant_id": "default"' in task.prompt
+    assert '"repo_id": "repo-a"' in task.prompt
+    assert '"query": "customer lookup"' not in task.prompt
+    assert '"query": "customer lookup"' in leaked_task.prompt
 
 
 def test_taskbench_split_is_disjoint_stratified_and_balances_conflict_tools() -> None:
