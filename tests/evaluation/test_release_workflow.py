@@ -7,6 +7,7 @@ import subprocess
 import pytest
 
 from idrkd.evaluation.live_rag import LiveRagCase, load_live_rag_cases, run_live_rag_benchmark
+from idrkd.evaluation.release_cli import DEFAULT_NEO4J_URI, _environment_value
 from idrkd.evaluation.release_record import build_promotion_record, evidence_file
 from idrkd.evaluation.security_runner import run_security_suite
 from idrkd.evaluation.streaming import run_streaming_benchmark, stream_chat_completion
@@ -194,3 +195,9 @@ def test_evidence_file_hashes_complete_artifact(tmp_path: Path) -> None:
 
     assert evidence["size_bytes"] == artifact.stat().st_size
     assert len(evidence["sha256"]) == 64
+
+
+def test_release_cli_uses_default_for_blank_environment_value(monkeypatch) -> None:
+    monkeypatch.setenv("NEO4J_URI", "")
+
+    assert _environment_value("NEO4J_URI", DEFAULT_NEO4J_URI) == "bolt://localhost:7687"

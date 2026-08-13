@@ -39,6 +39,15 @@ from idrkd.rag.vector_store import PostgresVectorStore
 DEFAULT_CHECKPOINT = Path(
     "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq"
 )
+DEFAULT_POSTGRES_DSN = "postgresql://idrkd:idrkd@localhost:5432/idrkd"
+DEFAULT_NEO4J_URI = "bolt://localhost:7687"
+DEFAULT_NEO4J_USER = "neo4j"
+DEFAULT_NEO4J_PASSWORD = "change-me"
+
+
+def _environment_value(name: str, default: str) -> str:
+    value = os.getenv(name, "").strip()
+    return value or default
 
 
 class _LivePipelineFactory:
@@ -158,10 +167,22 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
 def _add_rag_args(parser: argparse.ArgumentParser) -> None:
     _add_model_args(parser)
     parser.add_argument("--rag-cases", type=Path, required=True)
-    parser.add_argument("--postgres-dsn", default=os.getenv("POSTGRES_DSN"), required=os.getenv("POSTGRES_DSN") is None)
-    parser.add_argument("--neo4j-uri", default=os.getenv("NEO4J_URI", "bolt://127.0.0.1:7687"))
-    parser.add_argument("--neo4j-user", default=os.getenv("NEO4J_USER", "neo4j"))
-    parser.add_argument("--neo4j-password", default=os.getenv("NEO4J_PASSWORD"), required=os.getenv("NEO4J_PASSWORD") is None)
+    parser.add_argument(
+        "--postgres-dsn",
+        default=_environment_value("POSTGRES_DSN", DEFAULT_POSTGRES_DSN),
+    )
+    parser.add_argument(
+        "--neo4j-uri",
+        default=_environment_value("NEO4J_URI", DEFAULT_NEO4J_URI),
+    )
+    parser.add_argument(
+        "--neo4j-user",
+        default=_environment_value("NEO4J_USER", DEFAULT_NEO4J_USER),
+    )
+    parser.add_argument(
+        "--neo4j-password",
+        default=_environment_value("NEO4J_PASSWORD", DEFAULT_NEO4J_PASSWORD),
+    )
     parser.add_argument("--embedding-model", default="BAAI/bge-m3")
     parser.add_argument("--reranker-model", default="cross-encoder/ms-marco-MiniLM-L-6-v2")
     parser.add_argument("--critic-model", default="cross-encoder/nli-deberta-v3-large")

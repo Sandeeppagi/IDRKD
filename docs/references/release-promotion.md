@@ -37,10 +37,10 @@ idrkd-release run \
   --model-base-url http://127.0.0.1:8000/v1 \
   --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
   --rag-cases eval/rag/live_repository_queries.jsonl \
-  --postgres-dsn "$POSTGRES_DSN" \
-  --neo4j-uri "$NEO4J_URI" \
-  --neo4j-user "$NEO4J_USER" \
-  --neo4j-password "$NEO4J_PASSWORD" \
+  --postgres-dsn "${POSTGRES_DSN:-postgresql://idrkd:idrkd@localhost:5432/idrkd}" \
+  --neo4j-uri "${NEO4J_URI:-bolt://localhost:7687}" \
+  --neo4j-user "${NEO4J_USER:-neo4j}" \
+  --neo4j-password "${NEO4J_PASSWORD:-change-me}" \
   --runtime /workspace/release-evidence/runtime.json \
   --holdout eval/distillation/llmc-awq-holdout.json \
   --checkpoint artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq \
