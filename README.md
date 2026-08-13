@@ -124,6 +124,25 @@ and DPO:
 uv run python -m idrkd.distillation.cli local-smoke --base-model Qwen/Qwen2.5-0.5B-Instruct --max-steps 5 --max-seq-length 128 --device-map none
 ```
 
+For Phi-4-mini tool-call SFT smoke runs, start from a clean adapter directory
+after any LoRA target-module change. The project targets Phi's fused modules
+(`qkv_proj`, `o_proj`, `gate_up_proj`, `down_proj`), not Llama-style split
+projection names:
+
+```bash
+rm -rf models/adapters/phi4-mini-sft-tooljson-smoke
+uv run python -m idrkd.distillation.cli train-sft \
+  --dataset artifacts/datasets/idrkd-sft-tooljson-v2.jsonl \
+  --out models/adapters/phi4-mini-sft-tooljson-smoke \
+  --base-model microsoft/Phi-4-mini-instruct \
+  --max-steps 20 \
+  --max-seq-length 1024 \
+  --learning-rate 2e-4 \
+  --batch-size 1 \
+  --gradient-accumulation-steps 4 \
+  --use-4bit
+```
+
 Production AWQ quantization is intended for a Linux/CUDA builder. AutoAWQ is
 deprecated, so run Stage 12 from a separate pinned environment instead of
 installing it into the working IDRKD `.venv`.

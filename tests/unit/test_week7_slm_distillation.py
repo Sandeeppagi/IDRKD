@@ -87,10 +87,16 @@ def test_qlora_and_training_plan_match_pillar_5_lld_defaults() -> None:
     config = QLoRAConfig()
     plan = TrainingPlan()
 
-    assert config.base_model_id == "microsoft/Phi-4-mini-4k-instruct"
+    assert config.base_model_id == "microsoft/Phi-4-mini-instruct"
     assert config.quantization_kwargs()["bnb_4bit_quant_type"] == "nf4"
     assert config.peft_kwargs()["r"] == 64
     assert config.peft_kwargs()["lora_alpha"] == 128
+    assert config.peft_kwargs()["target_modules"] == [
+        "qkv_proj",
+        "o_proj",
+        "gate_up_proj",
+        "down_proj",
+    ]
     assert plan.stage_order() == (
         "teacher_trace_export",
         "qlora_sft",
@@ -116,7 +122,7 @@ def test_manifest_digest_signature_awq_and_vllm_command_are_deterministic() -> N
         model_id="idrkd-phi4-mini",
         adapter_path="models/adapters/phi4-mini-dpo",
         quantized_path="models/checkpoints/phi4-mini-awq",
-        base_model_id="microsoft/Phi-4-mini-4k-instruct",
+        base_model_id="microsoft/Phi-4-mini-instruct",
         quantization=AwqQuantizationConfig(bits=4),
         created_at=datetime(2026, 6, 27, tzinfo=UTC),
     )

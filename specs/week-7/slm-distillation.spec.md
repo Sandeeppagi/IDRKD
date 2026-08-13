@@ -15,8 +15,9 @@ on GPU training or downloaded model weights.
 - `src/idrkd/distillation/io.py`: JSONL trace IO, SFT dataset export, DPO
   preference dataset export, and SHA-256 dataset digests for reproducible runs.
 - `src/idrkd/distillation/training.py`: `QLoRAConfig` encodes the W7 Phi-4-mini
-  SFT contract (`microsoft/Phi-4-mini-4k-instruct`, 4-bit NF4, LoRA r=64,
-  alpha=128, 4k context). `TrainingPlan.stage_order()` preserves the LLD
+  SFT contract (`microsoft/Phi-4-mini-instruct`, 4-bit NF4, LoRA r=64,
+  alpha=128, 4k context, and Phi target modules `qkv_proj`, `o_proj`,
+  `gate_up_proj`, and `down_proj`). `TrainingPlan.stage_order()` preserves the LLD
   execution order: teacher traces, QLoRA SFT, BFCL eval, DPO, AWQ, vLLM.
 - `src/idrkd/distillation/execution.py`: runnable SFT and DPO trainers. Dry-run
   mode validates datasets and writes run summaries without loading weights;
@@ -74,7 +75,8 @@ on GPU training or downloaded model weights.
   that can be consumed by Hugging Face training.
 - DPO records mark teacher output as `chosen` and naive student output as
   `rejected`.
-- QLoRA defaults match the HLD/LLD Phi-4-mini 4-bit NF4, r=64, alpha=128 plan.
+- QLoRA defaults match the HLD/LLD Phi-4-mini 4-bit NF4, r=64, alpha=128 plan,
+  including Phi module names instead of Llama-style split projection names.
 - `train-sft` and `train-dpo` have both dry-run and real ML execution modes.
   Real mode uses optional ML dependencies and configured model IDs/local
   checkpoints; dry-run mode still writes dataset digests and run summaries.

@@ -7,13 +7,13 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class QLoRAConfig:
-    base_model_id: str = "microsoft/Phi-4-mini-4k-instruct"
+    base_model_id: str = "microsoft/Phi-4-mini-instruct"
     load_in_4bit: bool = True
     bnb_4bit_quant_type: str = "nf4"
     lora_rank: int = 64
     lora_alpha: int = 128
     lora_dropout: float = 0.05
-    target_modules: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
+    target_modules: tuple[str, ...] = ("qkv_proj", "o_proj", "gate_up_proj", "down_proj")
     max_seq_length: int = 4096
 
     def peft_kwargs(self) -> dict[str, object]:
