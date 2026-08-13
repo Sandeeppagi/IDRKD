@@ -92,6 +92,39 @@ def render_sft_text(record: dict[str, Any], tokenizer: Any | None = None) -> str
     return "\n".join(chunks)
 
 
+def render_sft_prompt_and_response(
+    record: dict[str, Any],
+    tokenizer: Any | None = None,
+) -> tuple[str, str]:
+    messages = record.get("messages", [])
+    if not isinstance(messages, list) or len(messages) < 2:
+        raise ValueError("SFT record messages must contain prompt and assistant response")
+    response = messages[-1]
+    if not isinstance(response, dict) or response.get("role") != "assistant":
+        raise ValueError("SFT record must end with an assistant message")
+    prompt_messages = messages[:-1]
+    if tokenizer is not None and hasattr(tokenizer, "apply_chat_template"):
+        prompt_text = str(
+            tokenizer.apply_chat_template(
+                prompt_messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        )
+        full_text = str(
+            tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+        )
+        if full_text.startswith(prompt_text):
+            return prompt_text, full_text[len(prompt_text) :]
+        return prompt_text, str(response["content"])
+    prompt_text = render_sft_text({"messages": prompt_messages})
+    return f"{prompt_text}\n<|assistant|>", f"{response['content']}<|end|>"
+
+
 def train_sft(
     config: DistillationRuntimeConfig,
     *,
@@ -134,9 +167,17 @@ def train_sft(
     model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
 
     dataset = modules["Dataset"].from_list(
-        [{"text": render_sft_text(record, tokenizer)} for record in records]
+        [
+            {
+                "prompt_text": prompt_text,
+                "response_text": response_text,
+            }
+            for prompt_text, response_text in (
+                render_sft_prompt_and_response(record, tokenizer) for record in records
+            )
+        ]
     )
-    tokenized = _tokenize_text_dataset(dataset, tokenizer, config.max_seq_length)
+    tokenized = _tokenize_prompt_response_dataset(dataset, tokenizer, config.max_seq_length)
     args = modules["TrainingArguments"](
         output_dir=str(config.output_dir),
         num_train_epochs=config.epochs,
@@ -153,7 +194,7 @@ def train_sft(
         model=model,
         args=args,
         train_dataset=tokenized,
-        data_collator=modules["DataCollatorForLanguageModeling"](tokenizer=tokenizer, mlm=False),
+        data_collator=_sft_data_collator(tokenizer=tokenizer, torch=modules["torch"]),
     )
     train_output = trainer.train()
     trainer.save_model(str(config.output_dir))
@@ -309,6 +350,55 @@ def _tokenize_text_dataset(dataset: Any, tokenizer: Any, max_seq_length: int) ->
     return dataset.map(tokenize, batched=True, remove_columns=["text"])
 
 
+def _tokenize_prompt_response_dataset(dataset: Any, tokenizer: Any, max_seq_length: int) -> Any:
+    def tokenize(batch: dict[str, list[str]]) -> dict[str, Any]:
+        input_ids = []
+        attention_mask = []
+        labels = []
+        for prompt_text, response_text in zip(batch["prompt_text"], batch["response_text"], strict=True):
+            prompt_ids = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
+            response_ids = tokenizer(response_text, add_special_tokens=False)["input_ids"]
+            ids = list(prompt_ids) + list(response_ids)
+            row_labels = [-100] * len(prompt_ids) + list(response_ids)
+            if len(ids) > max_seq_length:
+                ids = ids[-max_seq_length:]
+                row_labels = row_labels[-max_seq_length:]
+            input_ids.append(ids)
+            attention_mask.append([1] * len(ids))
+            labels.append(row_labels)
+        return {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "labels": labels,
+        }
+
+    return dataset.map(tokenize, batched=True, remove_columns=["prompt_text", "response_text"])
+
+
+def _sft_data_collator(*, tokenizer: Any, torch: Any) -> Any:
+    pad_token_id = tokenizer.pad_token_id
+    if pad_token_id is None:
+        pad_token_id = tokenizer.eos_token_id
+
+    def collate(features: list[dict[str, list[int]]]) -> dict[str, Any]:
+        max_length = max(len(feature["input_ids"]) for feature in features)
+        input_ids = []
+        attention_mask = []
+        labels = []
+        for feature in features:
+            pad_length = max_length - len(feature["input_ids"])
+            input_ids.append(feature["input_ids"] + [pad_token_id] * pad_length)
+            attention_mask.append(feature["attention_mask"] + [0] * pad_length)
+            labels.append(feature["labels"] + [-100] * pad_length)
+        return {
+            "input_ids": torch.tensor(input_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
+            "labels": torch.tensor(labels, dtype=torch.long),
+        }
+
+    return collate
+
+
 def _write_result(
     *,
     stage: str,
@@ -341,6 +431,7 @@ def _load_ml_modules() -> dict[str, Any]:
         transformers = importlib.import_module("transformers")
         datasets = importlib.import_module("datasets")
         peft = importlib.import_module("peft")
+        torch = importlib.import_module("torch")
         trl = importlib.import_module("trl")
     except ImportError as exc:  # pragma: no cover - depends on optional extra
         raise RuntimeError("Install ML dependencies with `uv sync --extra ml --group dev`.") from exc
@@ -350,6 +441,7 @@ def _load_ml_modules() -> dict[str, Any]:
         "AutoTokenizer": transformers.AutoTokenizer,
         "BitsAndBytesConfig": transformers.BitsAndBytesConfig,
         "DataCollatorForLanguageModeling": transformers.DataCollatorForLanguageModeling,
+        "torch": torch,
         "Trainer": transformers.Trainer,
         "TrainingArguments": transformers.TrainingArguments,
         "Dataset": datasets.Dataset,

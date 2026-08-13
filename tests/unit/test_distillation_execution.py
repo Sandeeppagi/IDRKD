@@ -14,7 +14,7 @@ from idrkd.distillation import (
     train_dpo,
     train_sft,
 )
-from idrkd.distillation.execution import render_sft_text
+from idrkd.distillation.execution import render_sft_prompt_and_response, render_sft_text
 from idrkd.distillation.io import write_jsonl_records
 
 
@@ -37,6 +37,30 @@ def test_render_sft_text_uses_tokenizer_chat_template() -> None:
     assert render_sft_text(record, FakeTokenizer()) == "<chat-template-output>"
     assert calls["messages"] == record["messages"]
     assert calls["kwargs"] == {"tokenize": False, "add_generation_prompt": False}
+
+
+def test_render_sft_prompt_and_response_uses_generation_prompt() -> None:
+    record = {
+        "messages": [
+            {"role": "system", "content": "Return JSON."},
+            {"role": "user", "content": "Retrieve customer record 42"},
+            {"role": "assistant", "content": '{"name":"get_customer","arguments":{"customer_id":42}}'},
+        ]
+    }
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages: list[dict[str, str]], **kwargs: object) -> str:
+            if kwargs["add_generation_prompt"]:
+                return "<system>Return JSON.</system><user>Retrieve customer record 42</user><assistant>"
+            return (
+                "<system>Return JSON.</system><user>Retrieve customer record 42</user>"
+                '<assistant>{"name":"get_customer","arguments":{"customer_id":42}}</assistant>'
+            )
+
+    prompt_text, response_text = render_sft_prompt_and_response(record, FakeTokenizer())
+
+    assert prompt_text.endswith("<assistant>")
+    assert response_text == '{"name":"get_customer","arguments":{"customer_id":42}}</assistant>'
 
 
 def test_render_sft_text_fallback_terminates_each_message() -> None:
