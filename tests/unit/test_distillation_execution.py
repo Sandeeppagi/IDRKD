@@ -311,12 +311,12 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
 
     assert calls["adapter_path"] == str(sft_adapter)
     assert calls["is_trainable"] is True
-    assert calls["adapter_name"] == "train"
+    assert calls["adapter_name"] == "policy"
     assert calls["reference_adapter_path"] == str(sft_adapter)
     assert calls["reference_adapter_name"] == "reference"
     assert calls["reference_is_trainable"] is False
     assert calls["get_peft_model_called"] is False
-    assert calls["trainer_kwargs"]["args"].kwargs["model_adapter_name"] == "train"
+    assert calls["trainer_kwargs"]["args"].kwargs["model_adapter_name"] == "policy"
     assert calls["trainer_kwargs"]["args"].kwargs["ref_adapter_name"] == "reference"
     assert calls["records"] == [
         {

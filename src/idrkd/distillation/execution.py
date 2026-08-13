@@ -251,7 +251,7 @@ def train_dpo(
             model,
             str(sft_adapter_path),
             is_trainable=True,
-            adapter_name="train",
+            adapter_name="policy",
         )
         model.load_adapter(str(sft_adapter_path), adapter_name="reference", is_trainable=False)
     else:
@@ -266,7 +266,7 @@ def train_dpo(
     dataset = modules["Dataset"].from_list(_render_dpo_records(records, tokenizer))
     dpo_config_kwargs: dict[str, Any] = {}
     if sft_adapter_path is not None:
-        dpo_config_kwargs["model_adapter_name"] = "train"
+        dpo_config_kwargs["model_adapter_name"] = "policy"
         dpo_config_kwargs["ref_adapter_name"] = "reference"
     args = modules["DPOConfig"](
         output_dir=str(config.output_dir),
