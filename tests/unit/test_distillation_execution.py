@@ -122,6 +122,8 @@ def test_taskbench_dataset_builders_match_evaluation_prompt_and_expected_call(tm
 
     assert len(sft_records) == 360
     assert "Available MCP tools as JSON schemas" in sft_records[0]["messages"][1]["content"]
+    assert "community members or Louvain/community assignment -> get_community" in sft_records[0]["messages"][1]["content"]
+    assert "Do not invent default arguments" in sft_records[0]["messages"][1]["content"]
     assert json.loads(sft_records[0]["messages"][2]["content"]) == {
         "name": "search_code",
         "arguments": {
