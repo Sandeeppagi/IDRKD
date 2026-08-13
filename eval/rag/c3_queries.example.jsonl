@@ -1,0 +1,1 @@
+{"id":"c3-example-001","query":"Which implementation should resolve conflict conf-example-001?","expected_answer":"Replace with a repository-specific expected answer before execution","tenant_id":"default","repo_id":"replace-with-repo-id","conflict_id":"conf-example-001","expected_entity_ids":["replace-with-entity-id"]}

@@ -74,7 +74,8 @@ Implemented foundation, June 26 MVP, Week 4 agentic RAG, and Week 5 MCP/A2A/secu
 - Real, read-only Cypher for BFS neighbourhood expand, shortestPath, and community subgraph, wired into the `graph_bfs`/`graph_path`/`get_community` MCP tools.
 - Security gates: a 5-layer prompt-injection containment chain (marker denylist, role-impersonation detection, read-only Cypher, Cypher-escape hardening, output-side quarantine/secret-leakage scan), plus an mTLS transport config contract for A2A calls.
 - STRIDE threat model covering 6 trust boundaries (`docs/design/threat-model.md`).
-- 5-agent LangGraph-style RAG orchestrator (Router, VectorRetriever, GraphTraversal, Synthesis, Critic) with a bounded, critic-gated re-retrieve loop.
+- A real LangGraph `StateGraph` with query classification/decomposition, parallel vector and graph retrieval branches, conditional A2A delegation to an AutoGen `BaseChatAgent`, reconciliation, and a bounded critic-gated retry loop. The prior fixed Python loop remains the monolithic C3 baseline.
+- A paired C3 evaluator that alternates execution order, preserves per-case raw outputs, and reports exact match, completion, faithfulness, latency deltas, and paired-bootstrap 95% confidence intervals. No empirical C3 result is claimed until a live artifact is generated and committed.
 - DeBERTa-v3-large NLI faithfulness critic with optional transformer pipeline gating synthesis output against an AlignScore-style threshold.
 - Query-path SLO gate (p50/p95 latency, bounded re-retrieve rounds) and HotpotQA-lite top-10 recall helper.
 - Pillar 5 SLM distillation LLD contracts: tenant-scoped teacher traces, SFT record shaping, Phi-4-mini QLoRA defaults, DPO preference pairs, BFCL/AlignScore/TTFT gates, AWQ artifact manifests, and vLLM serving config.
@@ -90,6 +91,22 @@ uv run pytest tests/unit
 uv run ruff check src tests/unit
 uv run mypy src
 ```
+
+Run the connected AutoGen A2A service and paired C3 experiment:
+
+```bash
+uv run idrkd-autogen-reconciler \
+  --public-endpoint http://127.0.0.1:8090/
+
+uv run idrkd-c3-eval \
+  --cases eval/rag/c3_queries.jsonl \
+  --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --autogen-a2a-url http://127.0.0.1:8090/ \
+  --out eval/c3/c3-live.json
+```
+
+`eval/rag/c3_queries.example.jsonl` is schema-only. Replace its placeholder answer,
+repository, and entity IDs with independently curated oracles before running C3.
 
 ## Development Setup
 

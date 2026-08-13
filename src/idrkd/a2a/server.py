@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from a2a.server.agent_execution import AgentExecutor
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
 from a2a.server.tasks import InMemoryTaskStore, TaskStore
@@ -16,7 +17,8 @@ from idrkd.mcp.tools import McpToolRegistry
 def build_a2a_app(
     agent_card: AgentCard,
     *,
-    registry: McpToolRegistry,
+    registry: McpToolRegistry | None = None,
+    agent_executor: AgentExecutor | None = None,
     task_store: TaskStore | None = None,
     task_state_store: A2ATaskStateStore | None = None,
     rpc_url: str = "/",
@@ -25,8 +27,12 @@ def build_a2a_app(
     """Assembles the agent-card discovery route and JSON-RPC task routes
     around `IdrkdAgentExecutor`. `enable_v0_3_compat=True` is the
     backward-compat layer for legacy 0.3 A2A clients/servers."""
+    if agent_executor is None:
+        if registry is None:
+            raise ValueError("registry is required when agent_executor is not provided")
+        agent_executor = IdrkdAgentExecutor(registry, task_state_store)
     handler = DefaultRequestHandler(
-        agent_executor=IdrkdAgentExecutor(registry, task_state_store),
+        agent_executor=agent_executor,
         task_store=task_store or InMemoryTaskStore(),
         agent_card=agent_card,
     )

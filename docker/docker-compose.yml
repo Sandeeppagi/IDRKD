@@ -113,6 +113,42 @@ services:
       timeout: 5s
       retries: 12
 
+  autogen-reconciler:
+    build:
+      context: ..
+      dockerfile: docker/idrkd.Dockerfile
+    command:
+      - idrkd-autogen-reconciler
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8090"
+      - --public-endpoint
+      - http://autogen-reconciler:8090/
+    ports:
+      - "8090:8090"
+    environment:
+      TENANT_ID: ${TENANT_ID:-tenant-live}
+      REPO_ID: ${REPO_ID:-week5-e2e}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: change-me
+      POSTGRES_DSN: postgresql://idrkd:idrkd@postgres:5432/idrkd
+      REDIS_URL: redis://redis:6379/0
+      IDRKD_A2A_SHARED_SECRET: ${IDRKD_A2A_SHARED_SECRET:-local-development}
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/.well-known/agent-card.json', timeout=2).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   reindex-worker:
     build:
       context: ..

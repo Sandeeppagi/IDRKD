@@ -569,9 +569,9 @@ The final phase performs grounded synthesis and bounded critique. The Phi-4-mini
 
 The target Pillar 4 design combines a JSON-RPC tool gateway with A2A cross-framework delegation. The prototype implements Pydantic/JSON Schema dispatch, tenant and scope checks, metrics, structured audit events, official A2A SDK cards/messages/execution, shared-secret card integrity, and an mTLS context builder. Durable Postgres audit storage and live LangGraph-to-AutoGen delegation are not implemented.
 
-The executable sequence starts at the FastAPI gateway, where JSON-RPC-style tool requests are validated and dispatched through one registry. The RAG orchestrator can call the same typed backends but is not a LangGraph runtime. Scope and tenant claims are checked before applying the same Pydantic models used to publish tool schemas. Audit records are emitted through an adapter, but the reference deployment does not persist them in an immutable `mcp_audit` table.
+The executable sequence starts at a LangGraph `StateGraph`, which classifies and decomposes each query, fans out vector and graph retrieval in parallel, synthesises evidence, conditionally delegates reconciliation over the A2A SDK to an AutoGen `BaseChatAgent`, and applies a bounded critic route. The AutoGen agent invokes the same tenant-scoped Pydantic/MCP reconciliation contract used by the gateway. Audit records are emitted through an adapter, but the reference deployment does not persist them in an immutable `mcp_audit` table.
 
-The A2A server/client tests demonstrate SDK-level task round trips and controlled failure for unknown tools. Connecting this bridge to an external AutoGen reconciliation service over deployed mTLS is future work. The distinction preserves the complementary protocol roles proposed in [15] and [16] without claiming a cross-framework experiment that has not run.
+The A2A server/client tests now exercise a complete LangGraph-to-A2A-to-AutoGen-to-MCP round trip, including artifact return and conditional reconciliation. The reference deployment exposes the AutoGen reconciler as a separate service. Deployed mTLS and a committed live C3 result remain future evidence; implementation alone is not treated as proof that decomposition improves quality.
 
 ---
 
@@ -823,7 +823,7 @@ This chapter maps the six-pillar design to the research prototype. To avoid conf
 | 3. MCP tool gateway | Weeks 5–6 | JSON-RPC 2.0-style tools with Pydantic schema validation, tenant checks, metrics, and structured errors. Durable audit persistence remains partial. | Partial |
 | 4. MCP-TaskBench | Weeks 7–8 | 440 internal cases, case-aligned scoring, deterministic train/holdout split, and live-model conformance execution. Independent authorship and human grading remain future work. | Implemented internally |
 | 5. SLM trace generation and fine-tuning | Weeks 9–11 | Curated trace fixtures, schema admission, QLoRA/DPO execution, llm-compressor AWQ, and vLLM release gates. Hosted-teacher provenance is not established by the committed fixtures. | Partial |
-| 6. A2A and reconciliation agent | Weeks 12–13 | Official A2A SDK bridge, agent cards, task executor, transport configuration, and deterministic reconciliation tools. A live LangGraph–AutoGen pairing is not implemented. | Partial |
+| 6. A2A and reconciliation agent | Weeks 12–13 | LangGraph state graph, official A2A SDK bridge, separate AutoGen reconciliation agent, tenant-scoped MCP dispatch, transport configuration, and paired C3 harness. A live C3 artifact and deployed mTLS exchange remain pending. | Implemented; evaluation pending |
 | 7. Drift detection and re-indexing | Weeks 14–15 | Entity/centroid drift scoring and Redis-backed two-hop re-index workers. Fair scheduling and full-rebuild policy automation remain design targets. | Partial |
 | 8. Evaluation and ablations | Weeks 16–18 | Live holdout, full conformance, RAG faithfulness, streaming, security, and release evidence. Comparative baselines, human annotation, confidence intervals, and ablations remain unexecuted. | Partial |
 | 9. Final report and paper draft | Weeks 19–22 | Evidence-aligned dissertation and reproducibility package. | In progress |
@@ -907,7 +907,7 @@ procedure BUILD_STUDENT(tasks): T ← ∅ // admitted traces for each task in ta
 
 ## 5.6 P4/P6 — A2A Delegation and Drift-Aware Selective Re-indexing
 
-The prototype implements A2A SDK cards, messages, task execution, HMAC card verification, and optional mTLS client configuration, but the RAG orchestrator does not yet delegate to a separate AutoGen service. Drift workers implement entity and community scoring plus bounded re-indexing through Redis queues. Kafka linkage, per-tenant fair scheduling, expiry-based staleness, and automated full rebuilds remain design targets. Algorithm 6 describes the intended integrated flow.
+The prototype implements A2A SDK cards, messages, task execution, HMAC card verification, optional mTLS client configuration, and a LangGraph route that delegates reconciliation to a separate AutoGen service. Drift workers implement entity and community scoring plus bounded re-indexing through Redis queues. Kafka linkage, per-tenant fair scheduling, expiry-based staleness, and automated full rebuilds remain design targets. Algorithm 6 describes the intended integrated flow.
 
 Algorithm 6: Dual-layer drift scoring with selective re-indexing
 
@@ -921,7 +921,7 @@ Values for θ_e, θ_c, and neighbourhood radius r are selected using a held-out 
 
 ## 5.7 Deployment and Operational Considerations
 
-The reference Docker Compose environment defines Kafka, Neo4j, Postgres with pgvector, Redis, MinIO, observability services, the MCP gateway, re-index workers, and optional local model serving. It does not define separate LangGraph, AutoGen, or Kafka ingestion-consumer services. The release package captures model/runtime evidence, while complete container digests and training-run provenance remain to be added.
+The reference Docker Compose environment defines Kafka, Neo4j, Postgres with pgvector, Redis, MinIO, observability services, the MCP gateway, a separate AutoGen A2A reconciliation service, re-index workers, and optional local model serving. LangGraph runs in the query/evaluation process rather than as a standalone service. A Kafka ingestion-consumer service is still absent. The release package captures model/runtime evidence, while complete container digests and training-run provenance remain to be added.
 
 Implementation explicitly required observability, bounded execution, and replay. For every tool call, delegation, and re-index decision, the system produces structured records, which proved essential for debugging. The implementation sets limits for critic iterations, traversal depth, per-query tool calls, and A2A timeouts, thereby converting worst-case latency into an explicit system parameter. In addition, keeping raw artefacts, fingerprints, and audit histories enables previously generated answers to be regenerated and examined, supporting both engineering analysis and scientific reproducibility.
 
@@ -957,7 +957,7 @@ The measured release uses `cross-encoder/nli-deberta-v3-large` to score the comp
 
 BGE-M3 supplies the initial bi-encoder representations, pgvector HNSW performs approximate nearest-neighbour search, and an MS MARCO MiniLM cross-encoder reorders the merged candidates. The engineering schedule allots approximately 40 ms to query embedding, 60 ms to vector retrieval, 180 ms to reranking up to 40 candidates, 40 ms to an indexed single-hop Cypher operation, and at most 300 ms to a bounded three-hop traversal. These values act as diagnostic targets for detecting regressions and are treated as measurements only when they are observed during benchmark execution.
 
-### 5.8.3 A2A Delegation and Cross-Agent Governance The prototype uses the official A2A SDK for cards, task envelopes, executor state transitions, and a test server/client round trip. It also supplies shared-secret card signing and an mTLS client-context builder. No LangGraph planner, AutoGen process, short-lived token issuer, or deployed mTLS exchange is connected to the measured RAG path. These components establish protocol contracts but do not yet demonstrate the cross-framework experiment proposed in C3 [15], [16].
+### 5.8.3 A2A Delegation and Cross-Agent Governance The prototype uses a compiled LangGraph `StateGraph` for classification, decomposition, parallel retrieval, synthesis, conditional delegation, reconciliation, and critic routing. Reconciliation crosses the official A2A SDK boundary to an AutoGen `BaseChatAgent`, which invokes the governed tenant-scoped MCP tool and returns a JSON artifact to LangGraph. Shared-secret card signing and an mTLS client-context builder are also supplied. A short-lived token issuer and deployed mTLS exchange remain absent. The paired C3 harness can execute this topology and the fixed-loop baseline on identical cases, but no live C3 artifact is committed yet [15], [16].
 
 ---
 
@@ -1125,7 +1125,7 @@ The release strongly supports local deployment feasibility and internal structur
 
 ## 6.4 RQ3 — Decomposed Multi-Agent versus Monolithic Baseline (C3)
 
-The preregistered C3 requirement is an improvement of at least 5 percentage points in Exact Match or task completion, with a paired interval that excludes zero. The committed code has a fixed-sequence Python orchestrator and A2A SDK contracts, but no connected LangGraph–AutoGen pair or monolithic comparison run. C3 was therefore not tested.
+The preregistered C3 requirement is an improvement of at least 5 percentage points in Exact Match or task completion, with a paired interval that excludes zero. The committed code now contains both the fixed-sequence Python baseline and a connected LangGraph–A2A–AutoGen topology, together with an alternating-order paired evaluator and deterministic 10,000-sample bootstrap. No live, oracle-labelled C3 run is committed, so C3 remains untested empirically.
 
 **Table 6.3: C3 Evidence Status**
 
@@ -1133,7 +1133,7 @@ The preregistered C3 requirement is an improvement of at least 5 percentage poin
 | --- | --- |
 | Fixed multi-hop case set with answer oracle | Not committed |
 | Monolithic live-agent outputs | Not executed |
-| Connected LangGraph–AutoGen/A2A outputs | Not implemented or executed |
+| Connected LangGraph–AutoGen/A2A outputs | Implemented and integration-tested; no live evaluation artifact committed |
 | Paired bootstrap interval | Not calculable |
 
 The A2A contract tests demonstrate protocol-level interoperability primitives, not a quality advantage from multi-agent decomposition. C3 remains an explicit future experiment.
@@ -1181,11 +1181,11 @@ The measured release supports a narrower conclusion. The quantised Phi-4-mini ch
 
 - Evaluation should report tool-call conformance, protocol execution, semantic backend outcome, and answer quality separately. Official BFCL and independently authored tasks should be added before claiming generalisation. Teacher traces should retain provider/version/request provenance and actual replay outcomes. Live RAG cases should include stable expected entity identifiers so retrieval recall can be measured.
 
-- The proposed LangGraph–AutoGen path and each ablation should be implemented and evaluated as paired experiments before recommendations about decomposition, RRF contribution, admission filtering, or selective rebuilding are made. Split-v2 SFT/DPO run summaries, datasets, and adapter hashes should be published with the model provenance.
+- The implemented LangGraph–AutoGen path and each ablation should be executed as paired live experiments before recommendations about decomposition, RRF contribution, admission filtering, or selective rebuilding are made. Split-v2 SFT/DPO run summaries, datasets, and adapter hashes should be published with the model provenance.
 
 ## 7.3 Limitations and Future Scope of Work
 
-The findings are restricted to project-developed TaskBench cases, five live RAG queries over public repositories, synthetic enterprise-like schemas, and one quantised model release. There is no completed LangGraph–AutoGen comparison. Future work should commission independent task design and annotation, run official BFCL and multiple agent baselines, implement paired C3 and ablation experiments, add Java and other enterprise languages, curate retrieval-recall labels, measure peak GPU memory, and exercise the signed release in its hardened serving profile. A paper-oriented manuscript should wait until these evidence gaps are closed.
+The findings are restricted to project-developed TaskBench cases, five live RAG queries over public repositories, synthetic enterprise-like schemas, and one quantised model release. The LangGraph–AutoGen comparison is runnable but has not produced committed live evidence. Future work should commission independent task design and annotation, run official BFCL and multiple agent baselines, execute paired C3 and ablation experiments, add Java and other enterprise languages, curate retrieval-recall labels, measure peak GPU memory, and exercise the signed release in its hardened serving profile. A paper-oriented manuscript should wait until these evidence gaps are closed.
 
 ---
 
@@ -1230,7 +1230,7 @@ For each category, the entries define the intended task, expected gold-standard 
 
 - The repository corpus is fixed by commit hash, and each experiment logs the corresponding snapshot hashes.
 
-- The internal split seed and release artifacts are stored. The three-seed oracle replay is marked as a harness self-test and is not model evidence. • The live release preserves per-case model outputs, checkpoint Git LFS hashes, runtime versions, evidence-file hashes, and a canonical promotion-record digest. • A durable append-only MCP audit export, hosted-teacher provider records, container digests, explicit protocol revision per task, human annotations, and repeated live runs remain missing from the reproducibility package. • A2A contracts use the official SDK, but no LangGraph–AutoGen experiment is archived.
+- The internal split seed and release artifacts are stored. The three-seed oracle replay is marked as a harness self-test and is not model evidence. • The live release preserves per-case model outputs, checkpoint Git LFS hashes, runtime versions, evidence-file hashes, and a canonical promotion-record digest. • A durable append-only MCP audit export, hosted-teacher provider records, container digests, explicit protocol revision per task, human annotations, and repeated live runs remain missing from the reproducibility package. • The official A2A SDK now connects LangGraph and AutoGen in code and integration tests, but no live C3 experiment is archived.
 
 ---
 
