@@ -58,6 +58,22 @@ class StudentModelClient(Protocol):
         ...
 
 
+def grounded_chat_messages(*, query: str, evidence: list[str]) -> list[dict[str, str]]:
+    prompt = (
+        "Answer the IDRKD query using only the provided repository evidence.\n\n"
+        f"Query: {query}\n"
+        "Evidence:\n"
+        + "\n".join(f"- {item}" for item in evidence)
+    )
+    return [
+        {
+            "role": "system",
+            "content": "You are the IDRKD student model. Stay grounded in the supplied evidence.",
+        },
+        {"role": "user", "content": prompt},
+    ]
+
+
 @dataclass(frozen=True)
 class OpenAICompatibleStudentClient:
     base_url: str
@@ -68,23 +84,11 @@ class OpenAICompatibleStudentClient:
     max_tokens: int = 256
 
     def generate(self, *, query: str, evidence: list[str]) -> str:
-        prompt = (
-            "Answer the IDRKD query using only the provided repository evidence.\n\n"
-            f"Query: {query}\n"
-            "Evidence:\n"
-            + "\n".join(f"- {item}" for item in evidence)
-        )
         payload = {
             "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are the IDRKD student model. Stay grounded in the supplied evidence.",
-                },
-                {"role": "user", "content": prompt},
-            ],
+            "messages": grounded_chat_messages(query=query, evidence=evidence),
         }
         body = json.dumps(payload).encode("utf-8")
         http_request = request.Request(

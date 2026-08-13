@@ -1,0 +1,5 @@
+{"id":"httpx-client-flow","query":"Explain where the synchronous HTTPX client builds and sends a request.","tenant_id":"default","repo_id":"repo-httpx","expected_entity_ids":[]}
+{"id":"telstra-message-send","query":"Explain the repository path used to send an outbound SMS message.","tenant_id":"default","repo_id":"repo-telstra-messaging-api-sdk-python","expected_entity_ids":[]}
+{"id":"fastapi-dependencies","query":"Explain how FastAPI resolves endpoint dependencies before calling a route.","tenant_id":"default","repo_id":"repo-fastapi","expected_entity_ids":[]}
+{"id":"express-routing","query":"Explain how Express matches a request to a route handler.","tenant_id":"default","repo_id":"repo-express","expected_entity_ids":[]}
+{"id":"axios-dispatch","query":"Explain how Axios dispatches a request through adapters and interceptors.","tenant_id":"default","repo_id":"repo-axios","expected_entity_ids":[]}

@@ -7,17 +7,22 @@ critic and capped by `QueryState["rounds"]`.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Protocol, TypedDict
 
 from idrkd.distillation.serving import StudentModelClient, student_model_client_from_env
 from idrkd.rag.critic import FaithfulnessCritic, FaithfulnessResult
 from idrkd.rag.embeddings import BgeM3EmbeddingAdapter
 from idrkd.rag.reranker import MiniLmReranker
 from idrkd.rag.retrieval import GraphSearch, HybridHit, reciprocal_rank_fusion
-from idrkd.rag.vector_store import InMemoryVectorStore, SearchHit
+from idrkd.rag.vector_store import SearchHit
 
 
 MAX_ROUNDS = 2
+
+
+class VectorSearch(Protocol):
+    def search(self, embedding: list[float], *, limit: int = 10) -> list[SearchHit]:
+        ...
 
 
 class QueryState(TypedDict):
@@ -57,7 +62,7 @@ class RouterAgent:
 
 
 class VectorRetrieverAgent:
-    def __init__(self, *, embeddings: BgeM3EmbeddingAdapter, vector_store: InMemoryVectorStore) -> None:
+    def __init__(self, *, embeddings: BgeM3EmbeddingAdapter, vector_store: VectorSearch) -> None:
         self._embeddings = embeddings
         self._vector_store = vector_store
 
@@ -120,7 +125,7 @@ class AgenticRagOrchestrator:
         self,
         *,
         embeddings: BgeM3EmbeddingAdapter,
-        vector_store: InMemoryVectorStore,
+        vector_store: VectorSearch,
         graph_search: GraphSearch,
         reranker: MiniLmReranker | None = None,
         critic: FaithfulnessCritic | None = None,

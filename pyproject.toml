@@ -53,6 +53,7 @@ idrkd-quantize-awq = "idrkd.distillation.quantize_cli:main"
 idrkd-drift-worker = "idrkd.drift.cli:main"
 idrkd-graphify = "idrkd.graph.graphify_importer:main"
 idrkd-mcp-smoke = "idrkd.mcp.live_smoke:main"
+idrkd-release = "idrkd.evaluation.release_cli:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
