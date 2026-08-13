@@ -194,6 +194,18 @@ def test_adapter_artifact_check_requires_peft_config_and_weights(tmp_path: Path)
     assert adapter_artifacts_written(output_dir) is True
 
 
+def test_supported_kwargs_filters_by_runtime_signature() -> None:
+    class OlderDPOConfig:
+        def __init__(self, *, output_dir: str, beta: float) -> None:
+            self.output_dir = output_dir
+            self.beta = beta
+
+    assert execution._supported_kwargs(
+        OlderDPOConfig,
+        {"output_dir": "out", "beta": 0.1, "model_adapter_name": "policy"},
+    ) == {"output_dir": "out", "beta": 0.1}
+
+
 def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypatch) -> None:
     dpo_path = tmp_path / "dpo.jsonl"
     write_jsonl_records(dpo_path, [{"prompt": "Where is reconcile defined?", "chosen": "Use search_code.", "rejected": "Unknown."}])
