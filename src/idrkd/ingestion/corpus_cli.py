@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import json
 import os
 from pathlib import Path
+import subprocess
 import time
 from typing import Any
 
@@ -44,6 +45,7 @@ class CorpusRepository:
     repo_id: str
     local_path: Path
     snapshot_ref: str
+    source_url: str
 
 
 def load_corpus_manifest(path: Path, *, repo_ids: set[str] | None = None) -> list[CorpusRepository]:
@@ -57,10 +59,13 @@ def load_corpus_manifest(path: Path, *, repo_ids: set[str] | None = None) -> lis
         repo_id = str(value.get("id", "")).strip()
         local_path = str(value.get("local_path", "")).strip()
         snapshot_ref = str(value.get("snapshot_ref", "")).strip()
-        if not repo_id or not local_path or not snapshot_ref:
-            raise ValueError(f"Corpus manifest line {line_number} is missing id, local_path, or snapshot_ref")
+        source_url = str(value.get("source_url", "")).strip()
+        if not repo_id or not local_path or not snapshot_ref or not source_url:
+            raise ValueError(
+                f"Corpus manifest line {line_number} is missing id, local_path, snapshot_ref, or source_url"
+            )
         if repo_ids is None or repo_id in repo_ids:
-            repositories.append(CorpusRepository(repo_id, Path(local_path), snapshot_ref))
+            repositories.append(CorpusRepository(repo_id, Path(local_path), snapshot_ref, source_url))
     if repo_ids:
         missing = repo_ids - {repository.repo_id for repository in repositories}
         if missing:
@@ -84,6 +89,29 @@ def discover_source_files(repo_root: Path, *, max_file_bytes: int) -> list[str]:
     return sorted(paths)
 
 
+def fetch_repository_snapshot(repository: CorpusRepository, *, project_root: Path) -> Path:
+    destination = (project_root / repository.local_path).resolve()
+    if destination.is_dir():
+        return destination
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--filter=blob:none",
+            "--no-checkout",
+            repository.source_url,
+            str(destination),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(destination), "checkout", "--detach", repository.snapshot_ref],
+        check=True,
+    )
+    return destination
+
+
 def ingest_corpus(args: argparse.Namespace) -> dict[str, Any]:
     repositories = load_corpus_manifest(
         args.manifest,
@@ -105,7 +133,19 @@ def ingest_corpus(args: argparse.Namespace) -> dict[str, Any]:
         for repository in repositories:
             repo_root = (args.project_root / repository.local_path).resolve()
             if not repo_root.is_dir():
-                raise FileNotFoundError(f"Repository snapshot does not exist: {repo_root}")
+                if args.fetch_missing:
+                    print(
+                        f"[{repository.repo_id}] fetching {repository.source_url} at {repository.snapshot_ref}",
+                        flush=True,
+                    )
+                    repo_root = fetch_repository_snapshot(
+                        repository,
+                        project_root=args.project_root,
+                    )
+                else:
+                    raise FileNotFoundError(
+                        f"Repository snapshot does not exist: {repo_root}; rerun with --fetch-missing"
+                    )
             paths = discover_source_files(repo_root, max_file_bytes=args.max_file_bytes)
             pipeline = CommitIngestionPipeline(
                 repo_root=repo_root,
@@ -199,6 +239,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-file-bytes", type=int, default=2_000_000)
     parser.add_argument("--progress-every", type=int, default=25)
     parser.add_argument("--local-files-only", action="store_true")
+    parser.add_argument(
+        "--fetch-missing",
+        action="store_true",
+        help="Clone missing public repositories and check out their pinned manifest revisions.",
+    )
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     return parser

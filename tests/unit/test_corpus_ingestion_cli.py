@@ -32,9 +32,23 @@ def test_embedding_adapter_batches_and_pads_model_vectors() -> None:
 def test_manifest_can_select_repository_ids(tmp_path: Path) -> None:
     manifest = tmp_path / "corpus.jsonl"
     manifest.write_text(
-        json.dumps({"id": "repo-a", "local_path": "data/a", "snapshot_ref": "abc"})
+        json.dumps(
+            {
+                "id": "repo-a",
+                "local_path": "data/a",
+                "snapshot_ref": "abc",
+                "source_url": "https://example.test/a.git",
+            }
+        )
         + "\n"
-        + json.dumps({"id": "repo-b", "local_path": "data/b", "snapshot_ref": "def"})
+        + json.dumps(
+            {
+                "id": "repo-b",
+                "local_path": "data/b",
+                "snapshot_ref": "def",
+                "source_url": "https://example.test/b.git",
+            }
+        )
         + "\n",
         encoding="utf-8",
     )
@@ -42,6 +56,7 @@ def test_manifest_can_select_repository_ids(tmp_path: Path) -> None:
     repositories = load_corpus_manifest(manifest, repo_ids={"repo-b"})
 
     assert [repository.repo_id for repository in repositories] == ["repo-b"]
+    assert repositories[0].source_url == "https://example.test/b.git"
     with pytest.raises(ValueError, match="repo-c"):
         load_corpus_manifest(manifest, repo_ids={"repo-c"})
 

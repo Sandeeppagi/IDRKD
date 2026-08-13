@@ -35,6 +35,7 @@ idrkd-ingest-corpus \
   --neo4j-user "${NEO4J_USER:-neo4j}" \
   --neo4j-password "${NEO4J_PASSWORD:-change-me}" \
   --embedding-device cuda \
+  --fetch-missing \
   --out /workspace/release-evidence/corpus-ingestion.json
 ```
 
