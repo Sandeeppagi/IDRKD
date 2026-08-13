@@ -1,0 +1,1347 @@
+{
+  "accepted_count": 5,
+  "backend": {
+    "embedding_model": "BAAI/bge-m3",
+    "graph": "neo4j-bfs",
+    "reranker_device": "cpu",
+    "reranker_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "vector": "postgres-pgvector"
+  },
+  "benchmark": "live-rag-faithfulness",
+  "case_count": 5,
+  "cases": [
+    {
+      "accepted": true,
+      "answer": "The synchronous HTTPX client builds and sends a request in the file located at `httpx/_client.py`. The relevant function for building a request is `httpx._client.BaseClient.build_request`, which is marked as synchronous (`\"async\": false`). This function takes several arguments, including `\"self\"`, `\"method\"`, `\"url\"`, `\"content\"`, `\"data\"`, `\"files\"`, `\"json\"`, `\"params\"`, `\"headers\"`, `\"cookies\"`, and `\"timeout\"`. These arguments are used to construct the HTTP request that will be sent. The request is then sent using the `httpx._client.AsyncClient.send` function, which is marked as asynchronous (`\"async\": true`). However, since the client is synchronous, it will wait for the request to complete before continuing. The `send` function takes several arguments, including `\"self\"`, `\"request\"`, `\"stream\"`, `\"auth\"`, and `\"follow_redirects\"`. These arguments are used to send the request and handle any redirects.",
+      "case_id": "httpx-client-flow",
+      "error": null,
+      "evidence": [
+        "Entity ent_12b92d9ad6c31950d41a2c58: function httpx._client.BaseClient.build_request; path=httpx/_client.py; properties={\"args\": [\"self\", \"method\", \"url\", \"content\", \"data\", \"files\", \"json\", \"params\", \"headers\", \"cookies\", \"timeout\", \"extensions\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_afe42e68ad2f439bdeabba3f: function httpx._client.BaseClient._build_request_auth; path=httpx/_client.py; properties={\"args\": [\"self\", \"request\", \"auth\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_1a3d3f8ef3cfdf41a366a68d: function httpx._client.AsyncClient.send; path=httpx/_client.py; properties={\"args\": [\"self\", \"request\", \"stream\", \"auth\", \"follow_redirects\"], \"async\": true, \"decorators\": []}",
+        "Entity ent_3ffe1d9fa1e6ace59a33d684: function httpx._client.AsyncClient.request; path=httpx/_client.py; properties={\"args\": [\"self\", \"method\", \"url\", \"content\", \"data\", \"files\", \"json\", \"params\", \"headers\", \"cookies\", \"auth\", \"follow_redirects\", \"timeout\", \"extensions\"], \"async\": true, \"decorators\": []}",
+        "Entity ent_81bf18111c76a09cee56d1d8: function httpx._client.BaseClient._build_auth; path=httpx/_client.py; properties={\"args\": [\"self\", \"auth\"], \"async\": false, \"decorators\": []}"
+      ],
+      "expected_entity_ids": [],
+      "faithfulness_score": 0.874405026435852,
+      "graph_hits": [
+        {
+          "entity_id": "ent_2d4c09005ac846c6262ffb93",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_3ee2a7d36eadc96e8bd3611b",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_a2b212964ae9c2e57db251f2",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_b417b3e51cb0cd41e4164049",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_03f2c83406eb1a130bdb3845",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_5a8de471e324cc5b56e42245",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        }
+      ],
+      "latency_seconds": 19.238168213050812,
+      "query": "Explain where the synchronous HTTPX client builds and sends a request.",
+      "repo_id": "repo-httpx",
+      "reranked_hits": [
+        {
+          "entity_id": "ent_12b92d9ad6c31950d41a2c58",
+          "score": 0.01639344262295082,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_afe42e68ad2f439bdeabba3f",
+          "score": 0.015873015873015872,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_1a3d3f8ef3cfdf41a366a68d",
+          "score": 0.016129032258064516,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_3ffe1d9fa1e6ace59a33d684",
+          "score": 0.015625,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_81bf18111c76a09cee56d1d8",
+          "score": 0.015384615384615385,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_a2b212964ae9c2e57db251f2",
+          "score": 0.015873015873015872,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_2d4c09005ac846c6262ffb93",
+          "score": 0.01639344262295082,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_b417b3e51cb0cd41e4164049",
+          "score": 0.015625,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_3ee2a7d36eadc96e8bd3611b",
+          "score": 0.016129032258064516,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_03f2c83406eb1a130bdb3845",
+          "score": 0.015384615384615385,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        }
+      ],
+      "retrieval_recall": null,
+      "rounds": 1,
+      "tenant_id": "default",
+      "trace": [
+        "router",
+        "vector_retriever",
+        "graph_traversal",
+        "synthesis",
+        "critic"
+      ],
+      "vector_hits": [
+        {
+          "entity_id": "ent_12b92d9ad6c31950d41a2c58",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "build_request",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.BaseClient.build_request"
+          },
+          "score": 0.6065421231439303,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_1a3d3f8ef3cfdf41a366a68d",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "send",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.AsyncClient.send"
+          },
+          "score": 0.5922899599248241,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_afe42e68ad2f439bdeabba3f",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "_build_request_auth",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.BaseClient._build_request_auth"
+          },
+          "score": 0.5803342557351935,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_3ffe1d9fa1e6ace59a33d684",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "request",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.AsyncClient.request"
+          },
+          "score": 0.5792875729717455,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_81bf18111c76a09cee56d1d8",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "_build_auth",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.BaseClient._build_auth"
+          },
+          "score": 0.5782799218034692,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_f09af5a5a0a6fcee10212d6b",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "_build_redirect_request",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.BaseClient._build_redirect_request"
+          },
+          "score": 0.5782326553145277,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_7d45a583eb54ec8e7d1fb679",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "__init__",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.AsyncClient.__init__"
+          },
+          "score": 0.5729453396103403,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_9bdebc21d32691a807b28582",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "stream",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.AsyncClient.stream"
+          },
+          "score": 0.5727427688530449,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_7182f0bd78f77f13588f997a",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "get",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.AsyncClient.get"
+          },
+          "score": 0.5667158365249795,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_4c39d3ebdf4bccb74fbd0a11",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "_send_handling_auth",
+            "path": "httpx/_client.py",
+            "qualified_name": "httpx._client.AsyncClient._send_handling_auth"
+          },
+          "score": 0.5665724098513869,
+          "source": "code_entity"
+        }
+      ]
+    },
+    {
+      "accepted": true,
+      "answer": "The repository path used to send an outbound SMS message is `tests/telstra/messaging/test_message.py`. This file contains a test function `test_send_invalid_param` that is part of a larger suite of tests for sending SMS messages. The test function is designed to check the behavior of sending SMS messages with invalid parameters, and it uses the pytest library to run multiple parameterized tests. Each parameterized test sends an SMS message with different sets of arguments, including invalid values for the \"to\" parameter, to ensure that the sending function handles errors correctly. The test function is not asynchronous (`\"async\": false`) and uses decorators (`\"decorators\": [\"pytest.mark.parametrize\"]`) to run the tests with different sets of arguments. The test function is part of a larger test suite that also includes tests for other aspects of sending SMS messages, such as handling OAuth errors and retrieving messages.",
+      "case_id": "telstra-message-send",
+      "error": null,
+      "evidence": [
+        "Entity ent_fa94342d4bc80d012d4799e5: function tests.telstra.messaging.test_message.test_send_invalid_param; path=tests/telstra/messaging/test_message.py; properties={\"args\": [\"kwargs\", \"expected_contents\"], \"async\": false, \"decorators\": [\"pytest.mark.parametrize(\\n    \\\"kwargs, expected_contents\\\",\\n    [\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"to\\\": None},\\n            [\\\"to\\\", \\\"received\\\", f'\\\"{None}\\\"', \\\"string\\\", \\\"list\\\", \\\"string\\\"],\\n            id=\\\"to not string and not list\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"to\\\": \\\"invalid\\\"},\\n            [\\\"to\\\", \\\"received\\\", '\\\"invalid\\\"'],\\n            id=\\\"to invalid string\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"to\\\": [\\\"invalid\\\"]},\\n            [\\\"to\\\", \\\"received\\\", '\\\"invalid\\\"'],\\n            id=\\\"to invalid list single\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"to\\\": [\\\"invalid\\\", \\\"+61412345678\\\"]},\\n            [\\\"to\\\", \\\"received\\\", '\\\"invalid\\\"'],\\n            id=\\\"to invalid list multiple first\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"to\\\": [\\\"+61412345678\\\", \\\"invalid\\\"]},\\n            [\\\"to\\\", \\\"received\\\", '\\\"invalid\\\"'],\\n            id=\\\"to invalid list multiple second\\\",\\n        ),\\n        pytest.param(\\n            {\\n                **VALID_SEND_KWARGS,\\n                \\\"message_content\\\": \\\"Hello! from SDK\\\",\\n                \\\"multimedia\\\": [],\\n            },\\n            [\\n                \\\"message_content\\\",\\n                \\\"received\\\",\\n                'a value of \\\"message_content\\\"',\\n                'or \\\"multimedia\\\"',\\n            ],\\n            id=\\\"message_content None multimedia None\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"message_content\\\": None, \\\"multimedia\\\": None},\\n            [\\n                \\\"message_content\\\",\\n                \\\"received\\\",\\n                'a value of \\\"message_content\\\"',\\n                'or \\\"multimedia\\\"',\\n            ],\\n            id=\\\"message_content None multimedia None\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"message_content\\\": 1},\\n            [\\\"message_content\\\", \\\"received\\\", f'\\\"{1}\\\"', \\\"string\\\"],\\n            id=\\\"message_content integer\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"multimedia\\\": 1},\\n            [\\\"multimedia\\\", \\\"received\\\", f'\\\"{1}\\\"', \\\"list\\\"],\\n            id=\\\"multimedia integer\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"retry_timeout\\\": \\\"1\\\"},\\n            [\\\"retry_timeout\\\", \\\"received\\\", '\\\"1\\\"', \\\"integer\\\"],\\n            id=\\\"retry_timeout string\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"retry_timeout\\\": True},\\n            [\\\"retry_timeout\\\", \\\"received\\\", f'\\\"{True}\\\"', \\\"integer\\\"],\\n            id=\\\"retry_timeout boolean\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"schedule_send\\\": \\\"2023-03-11T05:25:14.591Z\\\"},\\n            [\\\"schedule_send\\\", \\\"received\\\", '\\\"2023-03-11T05:25:14.591Z\\\"', \\\"string\\\"],\\n            id=\\\"schedule_send string\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"schedule_send\\\": True},\\n            [\\\"schedule_send\\\", \\\"received\\\", f'\\\"{True}\\\"', \\\"string\\\"],\\n            id=\\\"schedule_send boolean\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"delivery_notification\\\": \\\"1\\\"},\\n            [\\\"delivery_notification\\\", \\\"received\\\", '\\\"1\\\"', \\\"boolean\\\"],\\n            id=\\\"delivery_notification string\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"delivery_notification\\\": True},\\n            [\\\"delivery_notification\\\", \\\"received\\\", f'\\\"{True}\\\"', \\\"boolean\\\"],\\n            id=\\\"delivery_notification boolean\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"status_callback_url\\\": True},\\n            [\\\"status_callback_url\\\", \\\"received\\\", f'\\\"{True}\\\"', \\\"string\\\"],\\n            id=\\\"status_callback_url boolean\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"status_callback_url\\\": \\\"example.com\\\"},\\n            [\\\"status_callback_url\\\", \\\"received\\\", '\\\"example.com\\\"', \\\"https\\\"],\\n            id=\\\"status_callback_url not https\\\",\\n        ),\\n        pytest.param(\\n            {**VALID_SEND_KWARGS, \\\"tags\\\": [\\\"V3\\\", \\\"SDK\\\"]},\\n            [\\\"tags\\\", \\\"received\\\", f'\\\"{1}\\\"', \\\"list\\\"],\\n            id=\\\"tags list\\\",\\n        ),\\n    ],\\n)\", \"pytest.mark.message\"]}",
+        "Entity ent_cdf84ca40496f3051cc95645: class telstra.messaging.message.TMessage; path=telstra/messaging/message.py; properties={\"bases\": []}",
+        "Entity ent_3c7e5fd52921c7257bd00489: function tests.telstra.messaging.test_message.test_send_error_oauth; path=tests/telstra/messaging/test_message.py; properties={\"args\": [\"func\", \"mocked_oauth_get_token_error\"], \"async\": false, \"decorators\": [\"pytest.mark.parametrize(\\n    \\\"func\\\",\\n    [\\n        pytest.param(\\n            functools.partial(\\n                message.send,\\n                to=\\\"0412345678\\\",\\n                from_=\\\"0412345678\\\",\\n                message_content=\\\"Hello! from SDK\\\",\\n            ),\\n            id=\\\"send\\\",\\n        ),\\n        pytest.param(message.get_all, id=\\\"get_all\\\"),\\n        pytest.param(functools.partial(message.get, \\\"id 1\\\"), id=\\\"get\\\"),\\n    ],\\n)\", \"pytest.mark.message\"]}",
+        "Entity ent_3daec24ffbe63e2c7d74f8b5: function tests.telstra.messaging.test_message.test_send_param; path=tests/telstra/messaging/test_message.py; properties={\"args\": [\"name\", \"value\", \"expected_name\", \"expected_value\", \"monkeypatch\", \"_mocked_oauth_get_token\"], \"async\": false, \"decorators\": [\"pytest.mark.parametrize(\\\"name, value, expected_name, expected_value\\\", SEND_PARAM_TESTS)\", \"pytest.mark.message\"]}",
+        "Entity ent_3ade722f14a8fe1b27abd7e3: import telstra/messaging/utils/config.py:pathlib:Path; path=telstra/messaging/utils/config.py; properties={}"
+      ],
+      "expected_entity_ids": [],
+      "faithfulness_score": 0.9576870799064636,
+      "graph_hits": [
+        {
+          "entity_id": "ent_482eebf5dca37e9d3410b56e",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_fa94342d4bc80d012d4799e5",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_3c7e5fd52921c7257bd00489",
+          "metadata": {},
+          "score": 3.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_3daec24ffbe63e2c7d74f8b5",
+          "metadata": {},
+          "score": 3.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_5d0cc3079f0aaf959fc5aa57",
+          "metadata": {},
+          "score": 3.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_0b02a1ec0dfafa00316d3cd8",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        }
+      ],
+      "latency_seconds": 5.8436321769841015,
+      "query": "Explain the repository path used to send an outbound SMS message.",
+      "repo_id": "repo-telstra-messaging-api-sdk-python",
+      "reranked_hits": [
+        {
+          "entity_id": "ent_fa94342d4bc80d012d4799e5",
+          "score": 0.016129032258064516,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_cdf84ca40496f3051cc95645",
+          "score": 0.015625,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_3c7e5fd52921c7257bd00489",
+          "score": 0.015873015873015872,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_3daec24ffbe63e2c7d74f8b5",
+          "score": 0.015625,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_3ade722f14a8fe1b27abd7e3",
+          "score": 0.01639344262295082,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_97ebd68d49552eccfcf7e682",
+          "score": 0.015384615384615385,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_482eebf5dca37e9d3410b56e",
+          "score": 0.01639344262295082,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_a3e9912e375d8c1e81194cca",
+          "score": 0.016129032258064516,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_fe61fc0dd552381c1fb06134",
+          "score": 0.015873015873015872,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_5d0cc3079f0aaf959fc5aa57",
+          "score": 0.015384615384615385,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        }
+      ],
+      "retrieval_recall": null,
+      "rounds": 1,
+      "tenant_id": "default",
+      "trace": [
+        "router",
+        "vector_retriever",
+        "graph_traversal",
+        "synthesis",
+        "critic"
+      ],
+      "vector_hits": [
+        {
+          "entity_id": "ent_3ade722f14a8fe1b27abd7e3",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 21,
+            "name": "pathlib:Path",
+            "path": "telstra/messaging/utils/config.py",
+            "qualified_name": "telstra/messaging/utils/config.py:pathlib:Path"
+          },
+          "score": 0.5297345203319562,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_a3e9912e375d8c1e81194cca",
+          "metadata": {
+            "kind": "file",
+            "lamport_clock": 33,
+            "name": "__init__.py",
+            "path": "tests/telstra/messaging/__init__.py",
+            "qualified_name": "tests/telstra/messaging/__init__.py"
+          },
+          "score": 0.5187274526791256,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_fe61fc0dd552381c1fb06134",
+          "metadata": {
+            "kind": "file",
+            "lamport_clock": 40,
+            "name": "__init__.py",
+            "path": "tests/telstra/messaging/utils/__init__.py",
+            "qualified_name": "tests/telstra/messaging/utils/__init__.py"
+          },
+          "score": 0.5132230826153218,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_cdf84ca40496f3051cc95645",
+          "metadata": {
+            "kind": "class",
+            "lamport_clock": 15,
+            "name": "TMessage",
+            "path": "telstra/messaging/message.py",
+            "qualified_name": "telstra.messaging.message.TMessage"
+          },
+          "score": 0.5112375339098344,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_97ebd68d49552eccfcf7e682",
+          "metadata": {
+            "kind": "file",
+            "lamport_clock": 19,
+            "name": "__init__.py",
+            "path": "telstra/messaging/utils/__init__.py",
+            "qualified_name": "telstra/messaging/utils/__init__.py"
+          },
+          "score": 0.5101560646202608,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_23c9aad4ddcfd14c4cb31c30",
+          "metadata": {
+            "kind": "file",
+            "lamport_clock": 11,
+            "name": "__init__.py",
+            "path": "telstra/messaging/__init__.py",
+            "qualified_name": "telstra/messaging/__init__.py"
+          },
+          "score": 0.506350130978251,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_678c1c92ded05c910e87c830",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 15,
+            "name": ":callback_url as callback_url_util",
+            "path": "telstra/messaging/message.py",
+            "qualified_name": "telstra/messaging/message.py::callback_url as callback_url_util"
+          },
+          "score": 0.5012526810915885,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_0838924e4f166f122446e2f3",
+          "metadata": {
+            "kind": "class",
+            "lamport_clock": 15,
+            "name": "TMessages",
+            "path": "telstra/messaging/message.py",
+            "qualified_name": "telstra.messaging.message.TMessages"
+          },
+          "score": 0.4999968409536395,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_014feb384c64a5db03534f37",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 36,
+            "name": "urllib:request",
+            "path": "tests/telstra/messaging/test_message.py",
+            "qualified_name": "tests/telstra/messaging/test_message.py:urllib:request"
+          },
+          "score": 0.49716579897199953,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_3ce77b8c49cacc4a0712493b",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 27,
+            "name": ":exceptions,types",
+            "path": "telstra/messaging/utils/schedule_send.py",
+            "qualified_name": "telstra/messaging/utils/schedule_send.py::exceptions,types"
+          },
+          "score": 0.49597099423408864,
+          "source": "code_entity"
+        }
+      ]
+    },
+    {
+      "accepted": true,
+      "answer": "FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class. This method is responsible for solving dependencies, which are the required arguments that must be passed to the endpoint function. It takes into account the dependencies specified in the `APIRoute` class constructor, as well as any overrides provided in the route definition.\n\nThe `_solve_dependencies` method is an asynchronous context manager, which means it can be used with the `async with` statement to ensure that dependencies are resolved before the route is called. This allows FastAPI to handle dependencies efficiently and ensures that the endpoint function receives all the necessary arguments.\n\nIn summary, FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class, which takes into account the dependencies specified in the `APIRoute` class constructor and any overrides provided in the route definition.",
+      "case_id": "fastapi-dependencies",
+      "error": null,
+      "evidence": [
+        "Entity ent_93010bb024f509c05d0c3b7f: function fastapi.routing.APIRouter.add_api_route; path=fastapi/routing.py; properties={\"args\": [\"self\", \"path\", \"endpoint\", \"response_model\", \"status_code\", \"tags\", \"dependencies\", \"summary\", \"description\", \"response_description\", \"responses\", \"deprecated\", \"methods\", \"operation_id\", \"response_model_include\", \"response_model_exclude\", \"response_model_by_alias\", \"response_model_exclude_unset\", \"response_model_exclude_defaults\", \"response_model_exclude_none\", \"include_in_schema\", \"response_class\", \"name\", \"route_class_override\", \"callbacks\", \"openapi_extra\", \"generate_unique_id_function\", \"strict_content_type\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_d271cb0fe2b680028f9fbabd: function fastapi.routing._FrontendRouteGroup._solve_dependencies; path=fastapi/routing.py; properties={\"args\": [\"self\", \"scope\", \"receive\", \"send\", \"dependant\", \"dependency_overrides_provider\", \"embed_body_fields\"], \"async\": true, \"decorators\": [\"asynccontextmanager\"]}",
+        "Entity ent_1d956bd67889f1d574a443d0: function fastapi.routing.APIRoute.__init__; path=fastapi/routing.py; properties={\"args\": [\"self\", \"path\", \"endpoint\", \"response_model\", \"status_code\", \"tags\", \"dependencies\", \"summary\", \"description\", \"response_description\", \"responses\", \"deprecated\", \"name\", \"methods\", \"operation_id\", \"response_model_include\", \"response_model_exclude\", \"response_model_by_alias\", \"response_model_exclude_unset\", \"response_model_exclude_defaults\", \"response_model_exclude_none\", \"include_in_schema\", \"response_class\", \"dependency_overrides_provider\", \"callbacks\", \"openapi_extra\", \"generate_unique_id_function\", \"strict_content_type\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_e08d08b0b385b499873d9b52: function fastapi.routing.APIWebSocketRoute.__init__; path=fastapi/routing.py; properties={\"args\": [\"self\", \"path\", \"endpoint\", \"name\", \"dependencies\", \"dependency_overrides_provider\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_f008a79ca1b651fe6b725384: function fastapi.dependencies.utils.solve_dependencies; path=fastapi/dependencies/utils.py; properties={\"args\": [\"request\", \"dependant\", \"body\", \"background_tasks\", \"response\", \"dependency_overrides_provider\", \"dependency_cache\", \"async_exit_stack\", \"embed_body_fields\", \"_uses_scopes_cache\"], \"async\": true, \"decorators\": []}"
+      ],
+      "expected_entity_ids": [],
+      "faithfulness_score": 0.9925770163536072,
+      "graph_hits": [
+        {
+          "entity_id": "ent_1d956bd67889f1d574a443d0",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_bdaea33a8540a421a90e30c6",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_e08d08b0b385b499873d9b52",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_8e656cd9b73ec729bad29474",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_93010bb024f509c05d0c3b7f",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_d1b6d47ae9e3440cf4ef272b",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_662551b7606622e88f9dd232",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_39c96d9238677192182c936e",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        }
+      ],
+      "latency_seconds": 4.7591584080364555,
+      "query": "Explain how FastAPI resolves endpoint dependencies before calling a route.",
+      "repo_id": "repo-fastapi",
+      "reranked_hits": [
+        {
+          "entity_id": "ent_93010bb024f509c05d0c3b7f",
+          "score": 0.015384615384615385,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_d271cb0fe2b680028f9fbabd",
+          "score": 0.01639344262295082,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_1d956bd67889f1d574a443d0",
+          "score": 0.03177805800756621,
+          "sources": [
+            "code_entity",
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_e08d08b0b385b499873d9b52",
+          "score": 0.031746031746031744,
+          "sources": [
+            "code_entity",
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_f008a79ca1b651fe6b725384",
+          "score": 0.016129032258064516,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_755ea4c045fa7c00adf895fc",
+          "score": 0.015151515151515152,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_81fc44891f33d4a33ddb17ce",
+          "score": 0.015625,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_d1b6d47ae9e3440cf4ef272b",
+          "score": 0.015151515151515152,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_8e656cd9b73ec729bad29474",
+          "score": 0.015625,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_bdaea33a8540a421a90e30c6",
+          "score": 0.016129032258064516,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        }
+      ],
+      "retrieval_recall": null,
+      "rounds": 1,
+      "tenant_id": "default",
+      "trace": [
+        "router",
+        "vector_retriever",
+        "graph_traversal",
+        "synthesis",
+        "critic"
+      ],
+      "vector_hits": [
+        {
+          "entity_id": "ent_d271cb0fe2b680028f9fbabd",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "_solve_dependencies",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing._FrontendRouteGroup._solve_dependencies"
+          },
+          "score": 0.6849354693332047,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_f008a79ca1b651fe6b725384",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2142,
+            "name": "solve_dependencies",
+            "path": "fastapi/dependencies/utils.py",
+            "qualified_name": "fastapi.dependencies.utils.solve_dependencies"
+          },
+          "score": 0.6563610034096543,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_e08d08b0b385b499873d9b52",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "__init__",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing.APIWebSocketRoute.__init__"
+          },
+          "score": 0.6538332895586878,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_81fc44891f33d4a33ddb17ce",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "__init__",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing._FrontendRouteGroup.__init__"
+          },
+          "score": 0.6530240384922016,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_1d956bd67889f1d574a443d0",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "__init__",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing.APIRoute.__init__"
+          },
+          "score": 0.6461048126220703,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_755ea4c045fa7c00adf895fc",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "__init__",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing.APIRouter.__init__"
+          },
+          "score": 0.6451779219402133,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_6198e5992e31519b20032a1e",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "_frontend_dependency_endpoint",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing._frontend_dependency_endpoint"
+          },
+          "score": 0.6444340944290161,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_ceeb17d9f8f1a9c34c2b96b1",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 1818,
+            "name": "fastapi:Depends,FastAPI,Header,HTTPException",
+            "path": "docs_src/dependencies/tutorial012_an_py310.py",
+            "qualified_name": "docs_src/dependencies/tutorial012_an_py310.py:fastapi:Depends,FastAPI,Header,HTTPException"
+          },
+          "score": 0.6413620091702376,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_aa1751642c1ae920bbd70600",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 1819,
+            "name": "fastapi:Depends,FastAPI,Header,HTTPException",
+            "path": "docs_src/dependencies/tutorial012_py310.py",
+            "qualified_name": "docs_src/dependencies/tutorial012_py310.py:fastapi:Depends,FastAPI,Header,HTTPException"
+          },
+          "score": 0.6376082897186279,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_1abe097607c16f761143979d",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 2163,
+            "name": "_get_resolved_directory",
+            "path": "fastapi/routing.py",
+            "qualified_name": "fastapi.routing._FrontendStaticFiles._get_resolved_directory"
+          },
+          "score": 0.6352159976959229,
+          "source": "code_entity"
+        }
+      ]
+    },
+    {
+      "accepted": true,
+      "answer": "Express matches a request to a route handler by using a series of functions and properties defined in the provided repository evidence. The main function responsible for creating an Express application is `lib.express.createApplication`, which is located in the `lib/express.js` file. This function sets up the necessary properties for the application, such as arguments, async behavior, and decorators.\n\nWhen a request is made, Express looks for a matching route handler based on the URL and HTTP method of the request. It then invokes the appropriate function from the application, passing in any necessary arguments. In the provided evidence, the properties for the application are set to an empty array (`\"args\": []`), indicating that no additional arguments are required. The `async` property is set to false (`\"async\": false`), meaning that the application does not use asynchronous functions. Finally, the decorators property is also an empty array (`\"decorators\": []`), indicating that no decorators are used.\n\nIn summary, Express matches a request to a route handler by using the `lib.express.createApplication` function, which sets up the necessary properties for the application. When a request is made, Express looks for a matching route handler based on the URL and HTTP method, and invokes the appropriate function from",
+      "case_id": "express-routing",
+      "error": null,
+      "evidence": [
+        "Entity ent_943461452c210ceaf59aa3d3: function lib.express.createApplication; path=lib/express.js; properties={\"args\": [], \"async\": false, \"decorators\": []}",
+        "Entity ent_742b9601c0d350652356260b: function test.express.json.createApp; path=test/express.json.js; properties={\"args\": [\"options\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_3e251b37c387922a81b8b2dd: function test.express.raw.createApp; path=test/express.raw.js; properties={\"args\": [\"options\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_2e8a65b48e19e8861ddeaa7f: function test.express.urlencoded.createManyParams; path=test/express.urlencoded.js; properties={\"args\": [\"count\"], \"async\": false, \"decorators\": []}",
+        "Entity ent_0531c9193ca3b9abc8ad4fd7: schema package.json; path=package.json; properties={\"fields\": [\"author\", \"contributors\", \"dependencies\", \"dependencies.accepts\", \"dependencies.body-parser\", \"dependencies.content-disposition\", \"dependencies.content-type\", \"dependencies.cookie\", \"dependencies.cookie-signature\", \"dependencies.debug\", \"dependencies.depd\", \"dependencies.encodeurl\", \"dependencies.escape-html\", \"dependencies.etag\", \"dependencies.finalhandler\", \"dependencies.fresh\", \"dependencies.http-errors\", \"dependencies.merge-descriptors\", \"dependencies.mime-types\", \"dependencies.on-finished\", \"dependencies.once\", \"dependencies.parseurl\", \"dependencies.proxy-addr\", \"dependencies.qs\", \"dependencies.range-parser\", \"dependencies.router\", \"dependencies.send\", \"dependencies.serve-static\", \"dependencies.statuses\", \"dependencies.type-is\", \"dependencies.vary\", \"description\", \"devDependencies\", \"devDependencies.after\", \"devDependencies.connect-redis\", \"devDependencies.cookie-parser\", \"devDependencies.cookie-session\", \"devDependencies.ejs\", \"devDependencies.eslint\", \"devDependencies.express-session\", \"devDependencies.hbs\", \"devDependencies.marked\", \"devDependencies.method-override\", \"devDependencies.mocha\", \"devDependencies.morgan\", \"devDependencies.nyc\", \"devDependencies.pbkdf2-password\", \"devDependencies.supertest\", \"devDependencies.vhost\", \"engines\", \"engines.node\", \"files\", \"funding\", \"funding.type\", \"funding.url\", \"homepage\", \"keywords\", \"license\", \"name\", \"repository\", \"scripts\", \"scripts.lint\", \"scripts.lint:fix\", \"scripts.test\", \"scripts.test-ci\", \"scripts.test-cov\", \"scripts.test-tap\", \"version\"], \"format\": \"json\"}"
+      ],
+      "expected_entity_ids": [],
+      "faithfulness_score": 0.9737957715988159,
+      "graph_hits": [
+        {
+          "entity_id": "ent_d516a880843e11fdd454d020",
+          "metadata": {},
+          "score": 6.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_0531c9193ca3b9abc8ad4fd7",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_2e8a65b48e19e8861ddeaa7f",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_3639d4d7dc036826abb886dc",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_3e251b37c387922a81b8b2dd",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_46e5ab1e1598d520369454ff",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_602572a67d9ee3416a0fa801",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_bc2246558bb5270ce89e5979",
+          "metadata": {},
+          "score": 0.5,
+          "source": "neo4j_bfs"
+        }
+      ],
+      "latency_seconds": 3.31275218189694,
+      "query": "Explain how Express matches a request to a route handler.",
+      "repo_id": "repo-express",
+      "reranked_hits": [
+        {
+          "entity_id": "ent_943461452c210ceaf59aa3d3",
+          "score": 0.01639344262295082,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_742b9601c0d350652356260b",
+          "score": 0.015625,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_3e251b37c387922a81b8b2dd",
+          "score": 0.03125763125763126,
+          "sources": [
+            "code_entity",
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_2e8a65b48e19e8861ddeaa7f",
+          "score": 0.015873015873015872,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_0531c9193ca3b9abc8ad4fd7",
+          "score": 0.016129032258064516,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_b4a981d5f42abeef44b873a8",
+          "score": 0.015384615384615385,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_bc2246558bb5270ce89e5979",
+          "score": 0.028991596638655463,
+          "sources": [
+            "code_entity",
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_5852346ae9943f12c3247ff7",
+          "score": 0.016129032258064516,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_3639d4d7dc036826abb886dc",
+          "score": 0.015625,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_d516a880843e11fdd454d020",
+          "score": 0.01639344262295082,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        }
+      ],
+      "retrieval_recall": null,
+      "rounds": 1,
+      "tenant_id": "default",
+      "trace": [
+        "router",
+        "vector_retriever",
+        "graph_traversal",
+        "synthesis",
+        "critic"
+      ],
+      "vector_hits": [
+        {
+          "entity_id": "ent_943461452c210ceaf59aa3d3",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 54,
+            "name": "createApplication",
+            "path": "lib/express.js",
+            "qualified_name": "lib.express.createApplication"
+          },
+          "score": 0.5508577166965346,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_5852346ae9943f12c3247ff7",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 92,
+            "name": "supportsRegexp",
+            "path": "test/app.router.js",
+            "qualified_name": "test.app.router.supportsRegexp"
+          },
+          "score": 0.5390699184495269,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_3e251b37c387922a81b8b2dd",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 98,
+            "name": "createApp",
+            "path": "test/express.raw.js",
+            "qualified_name": "test.express.raw.createApp"
+          },
+          "score": 0.5375689543742574,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_742b9601c0d350652356260b",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 97,
+            "name": "createApp",
+            "path": "test/express.json.js",
+            "qualified_name": "test.express.json.createApp"
+          },
+          "score": 0.5280822763295882,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_b4a981d5f42abeef44b873a8",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 100,
+            "name": "createApp",
+            "path": "test/express.text.js",
+            "qualified_name": "test.express.text.createApp"
+          },
+          "score": 0.5280107259750404,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_44566b683edcfa8545a367b7",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 101,
+            "name": "createApp",
+            "path": "test/express.urlencoded.js",
+            "qualified_name": "test.express.urlencoded.createApp"
+          },
+          "score": 0.5242370054580575,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_efd7ef47801343972b2b57ab",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 99,
+            "name": "createApp",
+            "path": "test/express.static.js",
+            "qualified_name": "test.express.static.createApp"
+          },
+          "score": 0.5223682807464441,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_b3204379375ff656731b1bd0",
+          "metadata": {
+            "kind": "file",
+            "lamport_clock": 54,
+            "name": "express.js",
+            "path": "lib/express.js",
+            "qualified_name": "lib/express.js"
+          },
+          "score": 0.520718693733219,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_96d449368f67a9f4e69f7058",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 34,
+            "name": "loadUser",
+            "path": "examples/route-middleware/index.js",
+            "qualified_name": "examples.route-middleware.index.loadUser"
+          },
+          "score": 0.5173425920776831,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_bc2246558bb5270ce89e5979",
+          "metadata": {
+            "kind": "file",
+            "lamport_clock": 98,
+            "name": "express.raw.js",
+            "path": "test/express.raw.js",
+            "qualified_name": "test/express.raw.js"
+          },
+          "score": 0.5083205548429344,
+          "source": "code_entity"
+        }
+      ]
+    },
+    {
+      "accepted": true,
+      "answer": "Axios dispatches a request through adapters and interceptors by utilizing the provided adapters and interceptors in the Axios library. Axios uses the fetch adapter, which is imported from lib/adapters/fetch.js, to dispatch requests. This adapter is responsible for handling the HTTP request and response, and it uses AxiosHeaders.js, imported from ../core/AxiosHeaders.js, to manage the headers of the request.\n\nAdditionally, Axios uses the AxiosTransformStream adapter, imported from lib/adapters/http.js, which utilizes AxiosTransformStream.js, to handle the transformation of the request and response streams. This adapter is responsible for transforming the request and response streams, allowing Axios to handle different types of requests and responses.\n\nIn summary, Axios dispatches a request through adapters and interceptors by utilizing the fetch adapter and AxiosTransformStream adapter, which handle the HTTP request and response, and the transformation of the request and response streams, respectively.",
+      "case_id": "axios-dispatch",
+      "error": null,
+      "evidence": [
+        "Entity ent_c69dba9172ccd89b3b25ff71: function lib.core.Axios.Axios.request; path=lib/core/Axios.js; properties={\"args\": [\"configOrUrl\", \"config\"], \"async\": true, \"decorators\": []}",
+        "Entity ent_a376f9289451046b665a6560: import lib/adapters/fetch.js:../core/AxiosHeaders.js; path=lib/adapters/fetch.js; properties={}",
+        "Entity ent_69fbcc75b419eaa1c64ece43: import lib/adapters/http.js:../helpers/AxiosTransformStream.js; path=lib/adapters/http.js; properties={}",
+        "Entity ent_13dc1f24e1e87df7c5c8ba5f: import lib/core/Axios.js:./dispatchRequest.js; path=lib/core/Axios.js; properties={}",
+        "Entity ent_b0bc3a3c8a24641dd4eec5e3: document MIGRATION_GUIDE.md; path=MIGRATION_GUIDE.md; properties={\"named_entities\": [{\"confidence\": 0.55, \"end\": 23, \"label\": \"ORG\", \"start\": 2, \"text\": \"Axios Migration Guide\"}, {\"confidence\": 0.55, \"end\": 38, \"label\": \"TERM\", \"start\": 29, \"text\": \"Migrating\"}, {\"confidence\": 0.55, \"end\": 49, \"label\": \"TERM\", \"start\": 44, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 72, \"label\": \"TERM\", \"start\": 68, \"text\": \"This\"}, {\"confidence\": 0.55, \"end\": 114, \"label\": \"TERM\", \"start\": 109, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 253, \"label\": \"TERM\", \"start\": 248, \"text\": \"Table\"}, {\"confidence\": 0.55, \"end\": 265, \"label\": \"TERM\", \"start\": 257, \"text\": \"Contents\"}, {\"confidence\": 0.55, \"end\": 278, \"label\": \"TERM\", \"start\": 270, \"text\": \"Overview\"}, {\"confidence\": 0.55, \"end\": 310, \"label\": \"ORG\", \"start\": 294, \"text\": \"Breaking Changes\"}, {\"confidence\": 0.55, \"end\": 358, \"label\": \"ORG\", \"start\": 334, \"text\": \"Error Handling Migration\"}, {\"confidence\": 0.55, \"end\": 401, \"label\": \"ORG\", \"start\": 390, \"text\": \"API Changes\"}, {\"confidence\": 0.55, \"end\": 441, \"label\": \"ORG\", \"start\": 420, \"text\": \"Configuration Changes\"}, {\"confidence\": 0.55, \"end\": 490, \"label\": \"ORG\", \"start\": 470, \"text\": \"Migration Strategies\"}, {\"confidence\": 0.55, \"end\": 533, \"label\": \"ORG\", \"start\": 518, \"text\": \"Common Patterns\"}, {\"confidence\": 0.55, \"end\": 571, \"label\": \"TERM\", \"start\": 556, \"text\": \"Troubleshooting\"}, {\"confidence\": 0.55, \"end\": 603, \"label\": \"TERM\", \"start\": 594, \"text\": \"Resources\"}, {\"confidence\": 0.55, \"end\": 636, \"label\": \"TERM\", \"start\": 621, \"text\": \"Overview\\n\\nAxios\"}, {\"confidence\": 0.55, \"end\": 742, \"label\": \"TERM\", \"start\": 737, \"text\": \"While\"}, {\"confidence\": 0.55, \"end\": 902, \"label\": \"ORG\", \"start\": 883, \"text\": \"Key Changes Summary\"}, {\"confidence\": 0.55, \"end\": 910, \"label\": \"TERM\", \"start\": 906, \"text\": \"Area\"}, {\"confidence\": 0.55, \"end\": 925, \"label\": \"TERM\", \"start\": 917, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 940, \"label\": \"TERM\", \"start\": 932, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 949, \"label\": \"TERM\", \"start\": 943, \"text\": \"Impact\"}, {\"confidence\": 0.55, \"end\": 1016, \"label\": \"ORG\", \"start\": 1002, \"text\": \"Error Handling\"}, {\"confidence\": 0.55, \"end\": 1028, \"label\": \"TERM\", \"start\": 1019, \"text\": \"Selective\"}, {\"confidence\": 0.55, \"end\": 1050, \"label\": \"TERM\", \"start\": 1040, \"text\": \"Consistent\"}, {\"confidence\": 0.55, \"end\": 1066, \"label\": \"TERM\", \"start\": 1062, \"text\": \"High\"}, {\"confidence\": 0.55, \"end\": 1083, \"label\": \"ORG\", \"start\": 1071, \"text\": \"JSON Parsing\"}, {\"confidence\": 0.55, \"end\": 1093, \"label\": \"TERM\", \"start\": 1086, \"text\": \"Lenient\"}, {\"confidence\": 0.55, \"end\": 1102, \"label\": \"TERM\", \"start\": 1096, \"text\": \"Strict\"}, {\"confidence\": 0.55, \"end\": 1111, \"label\": \"TERM\", \"start\": 1105, \"text\": \"Medium\"}, {\"confidence\": 0.55, \"end\": 1131, \"label\": \"ORG\", \"start\": 1116, \"text\": \"Browser Support\"}, {\"confidence\": 0.55, \"end\": 1148, \"label\": \"TERM\", \"start\": 1142, \"text\": \"Modern\"}, {\"confidence\": 0.55, \"end\": 1163, \"label\": \"TERM\", \"start\": 1160, \"text\": \"Low\"}, {\"confidence\": 0.55, \"end\": 1170, \"label\": \"TERM\", \"start\": 1164, \"text\": \"Medium\"}, {\"confidence\": 0.55, \"end\": 1185, \"label\": \"TERM\", \"start\": 1175, \"text\": \"TypeScript\"}, {\"confidence\": 0.55, \"end\": 1195, \"label\": \"TERM\", \"start\": 1188, \"text\": \"Partial\"}, {\"confidence\": 0.55, \"end\": 1202, \"label\": \"TERM\", \"start\": 1198, \"text\": \"Full\"}, {\"confidence\": 0.55, \"end\": 1216, \"label\": \"TERM\", \"start\": 1213, \"text\": \"Low\"}, {\"confidence\": 0.55, \"end\": 1244, \"label\": \"ORG\", \"start\": 1224, \"text\": \"Migration Complexity\"}, {\"confidence\": 0.55, \"end\": 1256, \"label\": \"TERM\", \"start\": 1250, \"text\": \"Simple\"}, {\"confidence\": 0.55, \"end\": 1293, \"label\": \"TERM\", \"start\": 1287, \"text\": \"Medium\"}, {\"confidence\": 0.55, \"end\": 1330, \"label\": \"TERM\", \"start\": 1325, \"text\": \"Large\"}, {\"confidence\": 0.55, \"end\": 1404, \"label\": \"ORG\", \"start\": 1388, \"text\": \"Breaking Changes\"}, {\"confidence\": 0.55, \"end\": 1435, \"label\": \"ORG\", \"start\": 1413, \"text\": \"Error Handling Changes\"}, {\"confidence\": 0.55, \"end\": 1442, \"label\": \"TERM\", \"start\": 1439, \"text\": \"The\"}, {\"confidence\": 0.55, \"end\": 1475, \"label\": \"TERM\", \"start\": 1470, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 1527, \"label\": \"TERM\", \"start\": 1519, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 1550, \"label\": \"TERM\", \"start\": 1545, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 1561, \"label\": \"TERM\", \"start\": 1557, \"text\": \"Some\"}, {\"confidence\": 0.55, \"end\": 1566, \"label\": \"ORG\", \"start\": 1562, \"text\": \"HTTP\"}, {\"confidence\": 0.55, \"end\": 1652, \"label\": \"TERM\", \"start\": 1644, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 1713, \"label\": \"TERM\", \"start\": 1706, \"text\": \"Success\"}, {\"confidence\": 0.55, \"end\": 1751, \"label\": \"TERM\", \"start\": 1743, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 1889, \"label\": \"TERM\", \"start\": 1884, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 1954, \"label\": \"TERM\", \"start\": 1946, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 1977, \"label\": \"TERM\", \"start\": 1972, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 1987, \"label\": \"TERM\", \"start\": 1984, \"text\": \"All\"}, {\"confidence\": 0.55, \"end\": 1992, \"label\": \"ORG\", \"start\": 1988, \"text\": \"HTTP\"}, {\"confidence\": 0.55, \"end\": 2088, \"label\": \"TERM\", \"start\": 2081, \"text\": \"Success\"}, {\"confidence\": 0.55, \"end\": 2144, \"label\": \"TERM\", \"start\": 2140, \"text\": \"Must\"}, {\"confidence\": 0.55, \"end\": 2216, \"label\": \"TERM\", \"start\": 2209, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 2253, \"label\": \"TERM\", \"start\": 2245, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 2412, \"label\": \"TERM\", \"start\": 2408, \"text\": \"Must\"}, {\"confidence\": 0.55, \"end\": 2461, \"label\": \"TERM\", \"start\": 2454, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 2519, \"label\": \"TERM\", \"start\": 2513, \"text\": \"Impact\"}, {\"confidence\": 0.55, \"end\": 2532, \"label\": \"TERM\", \"start\": 2524, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 2597, \"label\": \"TERM\", \"start\": 2592, \"text\": \"Every\"}, {\"confidence\": 0.55, \"end\": 2601, \"label\": \"ORG\", \"start\": 2598, \"text\": \"API\"}, {\"confidence\": 0.55, \"end\": 2698, \"label\": \"TERM\", \"start\": 2687, \"text\": \"Centralized\"}, {\"confidence\": 0.55, \"end\": 2766, \"label\": \"ORG\", \"start\": 2746, \"text\": \"JSON Parsing Changes\"}, {\"confidence\": 0.55, \"end\": 2785, \"label\": \"TERM\", \"start\": 2777, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 2808, \"label\": \"TERM\", \"start\": 2803, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 2822, \"label\": \"TERM\", \"start\": 2815, \"text\": \"Lenient\"}, {\"confidence\": 0.55, \"end\": 2827, \"label\": \"ORG\", \"start\": 2823, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 2844, \"label\": \"TERM\", \"start\": 2839, \"text\": \"Would\"}, {\"confidence\": 0.55, \"end\": 2879, \"label\": \"ORG\", \"start\": 2875, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 2903, \"label\": \"TERM\", \"start\": 2898, \"text\": \"Might\"}, {\"confidence\": 0.55, \"end\": 2960, \"label\": \"TERM\", \"start\": 2952, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 2983, \"label\": \"TERM\", \"start\": 2978, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 2996, \"label\": \"TERM\", \"start\": 2990, \"text\": \"Strict\"}, {\"confidence\": 0.55, \"end\": 3001, \"label\": \"ORG\", \"start\": 2997, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 3019, \"label\": \"TERM\", \"start\": 3013, \"text\": \"Throws\"}, {\"confidence\": 0.55, \"end\": 3049, \"label\": \"ORG\", \"start\": 3045, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 3115, \"label\": \"TERM\", \"start\": 3109, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 3120, \"label\": \"ORG\", \"start\": 3116, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 3168, \"label\": \"TERM\", \"start\": 3161, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 3195, \"label\": \"ORG\", \"start\": 3169, \"text\": \"Response Transform Changes\"}, {\"confidence\": 0.55, \"end\": 3214, \"label\": \"TERM\", \"start\": 3206, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 3240, \"label\": \"TERM\", \"start\": 3232, \"text\": \"Implicit\"}, {\"confidence\": 0.55, \"end\": 3324, \"label\": \"TERM\", \"start\": 3320, \"text\": \"Less\"}, {\"confidence\": 0.55, \"end\": 3386, \"label\": \"TERM\", \"start\": 3378, \"text\": \"Behavior\"}, {\"confidence\": 0.55, \"end\": 3408, \"label\": \"TERM\", \"start\": 3404, \"text\": \"More\"}, {\"confidence\": 0.55, \"end\": 3502, \"label\": \"TERM\", \"start\": 3495, \"text\": \"Headers\"}, {\"confidence\": 0.55, \"end\": 3539, \"label\": \"TERM\", \"start\": 3535, \"text\": \"More\"}, {\"confidence\": 0.55, \"end\": 3614, \"label\": \"ORG\", \"start\": 3591, \"text\": \"Browser Support Changes\"}, {\"confidence\": 0.55, \"end\": 3636, \"label\": \"TERM\", \"start\": 3627, \"text\": \"Supported\"}, {\"confidence\": 0.55, \"end\": 3680, \"label\": \"TERM\", \"start\": 3672, \"text\": \"Requires\"}, {\"confidence\": 0.55, \"end\": 3709, \"label\": \"TERM\", \"start\": 3702, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 3731, \"label\": \"TERM\", \"start\": 3722, \"text\": \"Polyfills\"}, {\"confidence\": 0.55, \"end\": 3738, \"label\": \"TERM\", \"start\": 3735, \"text\": \"May\"}, {\"confidence\": 0.55, \"end\": 3808, \"label\": \"ORG\", \"start\": 3779, \"text\": \"Error Handling Migration\\n\\nThe\"}, {\"confidence\": 0.55, \"end\": 3879, \"label\": \"TERM\", \"start\": 3874, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 3889, \"label\": \"TERM\", \"start\": 3885, \"text\": \"Here\"}, {\"confidence\": 0.55, \"end\": 3926, \"label\": \"TERM\", \"start\": 3918, \"text\": \"Strategy\"}, {\"confidence\": 0.55, \"end\": 3956, \"label\": \"ORG\", \"start\": 3930, \"text\": \"Centralized Error Handling\"}, {\"confidence\": 0.55, \"end\": 3976, \"label\": \"ORG\", \"start\": 3962, \"text\": \"Error Boundary\"}, {\"confidence\": 0.55, \"end\": 4001, \"label\": \"TERM\", \"start\": 3995, \"text\": \"Create\"}, {\"confidence\": 0.55, \"end\": 4051, \"label\": \"TERM\", \"start\": 4036, \"text\": \"ApiErrorHandler\"}, {\"confidence\": 0.55, \"end\": 4235, \"label\": \"TERM\", \"start\": 4224, \"text\": \"Centralized\"}, {\"confidence\": 0.55, \"end\": 4313, \"label\": \"TERM\", \"start\": 4307, \"text\": \"Return\"}, {\"confidence\": 0.55, \"end\": 4434, \"label\": \"TERM\", \"start\": 4427, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 4588, \"label\": \"TERM\", \"start\": 4586, \"text\": \"Re\"}, {\"confidence\": 0.55, \"end\": 4634, \"label\": \"TERM\", \"start\": 4627, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 4704, \"label\": \"TERM\", \"start\": 4701, \"text\": \"Log\"}, {\"confidence\": 0.55, \"end\": 4740, \"label\": \"ORG\", \"start\": 4731, \"text\": \"API Error\"}, {\"confidence\": 0.55, \"end\": 4768, \"label\": \"TERM\", \"start\": 4764, \"text\": \"Show\"}, {\"confidence\": 0.55, \"end\": 4948, \"label\": \"TERM\", \"start\": 4942, \"text\": \"Server\"}, {\"confidence\": 0.55, \"end\": 5017, \"label\": \"TERM\", \"start\": 5011, \"text\": \"Define\"}, {\"confidence\": 0.55, \"end\": 5428, \"label\": \"TERM\", \"start\": 5420, \"text\": \"Redirect\"}, {\"confidence\": 0.55, \"end\": 5584, \"label\": \"TERM\", \"start\": 5580, \"text\": \"Show\"}, {\"confidence\": 0.55, \"end\": 5651, \"label\": \"TERM\", \"start\": 5644, \"text\": \"Replace\"}, {\"confidence\": 0.55, \"end\": 5702, \"label\": \"TERM\", \"start\": 5692, \"text\": \"Initialize\"}, {\"confidence\": 0.55, \"end\": 5752, \"label\": \"TERM\", \"start\": 5737, \"text\": \"ApiErrorHandler\"}, {\"confidence\": 0.55, \"end\": 5765, \"label\": \"TERM\", \"start\": 5760, \"text\": \"Usage\"}, {\"confidence\": 0.55, \"end\": 5915, \"label\": \"TERM\", \"start\": 5910, \"text\": \"Check\"}, {\"confidence\": 0.55, \"end\": 6123, \"label\": \"TERM\", \"start\": 6114, \"text\": \"Unhandled\"}, {\"confidence\": 0.55, \"end\": 6211, \"label\": \"TERM\", \"start\": 6201, \"text\": \"Unexpected\"}, {\"confidence\": 0.55, \"end\": 6256, \"label\": \"TERM\", \"start\": 6248, \"text\": \"Strategy\"}, {\"confidence\": 0.55, \"end\": 6284, \"label\": \"ORG\", \"start\": 6260, \"text\": \"Wrapper Function Pattern\"}, {\"confidence\": 0.55, \"end\": 6309, \"label\": \"TERM\", \"start\": 6303, \"text\": \"Create\"}, {\"confidence\": 0.55, \"end\": 6423, \"label\": \"TERM\", \"start\": 6420, \"text\": \"Add\"}, {\"confidence\": 0.55, \"end\": 6559, \"label\": \"TERM\", \"start\": 6553, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 6645, \"label\": \"TERM\", \"start\": 6639, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 6760, \"label\": \"TERM\", \"start\": 6754, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 6844, \"label\": \"TERM\", \"start\": 6838, \"text\": \"Always\"}, {\"confidence\": 0.55, \"end\": 6902, \"label\": \"TERM\", \"start\": 6895, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 6942, \"label\": \"TERM\", \"start\": 6935, \"text\": \"Wrapper\"}, {\"confidence\": 0.55, \"end\": 7176, \"label\": \"TERM\", \"start\": 7170, \"text\": \"Return\"}, {\"confidence\": 0.55, \"end\": 7510, \"label\": \"TERM\", \"start\": 7505, \"text\": \"Usage\"}, {\"confidence\": 0.55, \"end\": 7562, \"label\": \"TERM\", \"start\": 7559, \"text\": \"For\"}, {\"confidence\": 0.55, \"end\": 7746, \"label\": \"TERM\", \"start\": 7740, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 7780, \"label\": \"TERM\", \"start\": 7773, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 7834, \"label\": \"TERM\", \"start\": 7828, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 7867, \"label\": \"TERM\", \"start\": 7863, \"text\": \"Data\"}, {\"confidence\": 0.55, \"end\": 7904, \"label\": \"TERM\", \"start\": 7896, \"text\": \"Strategy\"}, {\"confidence\": 0.55, \"end\": 7928, \"label\": \"ORG\", \"start\": 7908, \"text\": \"Global Error Handler\"}, {\"confidence\": 0.55, \"end\": 7947, \"label\": \"ORG\", \"start\": 7934, \"text\": \"Custom Events\"}, {\"confidence\": 0.55, \"end\": 7969, \"label\": \"TERM\", \"start\": 7966, \"text\": \"Set\"}, {\"confidence\": 0.55, \"end\": 8031, \"label\": \"TERM\", \"start\": 8013, \"text\": \"GlobalErrorHandler\"}, {\"confidence\": 0.55, \"end\": 8051, \"label\": \"TERM\", \"start\": 8040, \"text\": \"EventTarget\"}, {\"confidence\": 0.55, \"end\": 8241, \"label\": \"TERM\", \"start\": 8237, \"text\": \"Emit\"}, {\"confidence\": 0.55, \"end\": 8317, \"label\": \"TERM\", \"start\": 8306, \"text\": \"CustomEvent\"}, {\"confidence\": 0.55, \"end\": 8378, \"label\": \"TERM\", \"start\": 8374, \"text\": \"Date\"}, {\"confidence\": 0.55, \"end\": 8414, \"label\": \"TERM\", \"start\": 8408, \"text\": \"Always\"}, {\"confidence\": 0.55, \"end\": 8474, \"label\": \"TERM\", \"start\": 8467, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 8561, \"label\": \"TERM\", \"start\": 8543, \"text\": \"GlobalErrorHandler\"}, {\"confidence\": 0.55, \"end\": 8572, \"label\": \"TERM\", \"start\": 8569, \"text\": \"Set\"}, {\"confidence\": 0.55, \"end\": 8707, \"label\": \"TERM\", \"start\": 8696, \"text\": \"Centralized\"}, {\"confidence\": 0.55, \"end\": 8862, \"label\": \"TERM\", \"start\": 8856, \"text\": \"Server\"}, {\"confidence\": 0.55, \"end\": 8898, \"label\": \"TERM\", \"start\": 8893, \"text\": \"Usage\"}, {\"confidence\": 0.55, \"end\": 9057, \"label\": \"TERM\", \"start\": 9052, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 9098, \"label\": \"TERM\", \"start\": 9094, \"text\": \"Just\"}, {\"confidence\": 0.55, \"end\": 9173, \"label\": \"ORG\", \"start\": 9162, \"text\": \"API Changes\"}, {\"confidence\": 0.55, \"end\": 9200, \"label\": \"ORG\", \"start\": 9179, \"text\": \"Request Configuration\"}, {\"confidence\": 0.55, \"end\": 9225, \"label\": \"TERM\", \"start\": 9218, \"text\": \"Changes\"}, {\"confidence\": 0.55, \"end\": 9253, \"label\": \"TERM\", \"start\": 9249, \"text\": \"Some\"}, {\"confidence\": 0.55, \"end\": 9324, \"label\": \"TERM\", \"start\": 9322, \"text\": \"No\"}, {\"confidence\": 0.55, \"end\": 9373, \"label\": \"TERM\", \"start\": 9371, \"text\": \"No\"}, {\"confidence\": 0.55, \"end\": 9397, \"label\": \"TERM\", \"start\": 9393, \"text\": \"More\"}, {\"confidence\": 0.55, \"end\": 9453, \"label\": \"TERM\", \"start\": 9448, \"text\": \"Still\"}, {\"confidence\": 0.55, \"end\": 9526, \"label\": \"TERM\", \"start\": 9519, \"text\": \"Default\"}, {\"confidence\": 0.55, \"end\": 9575, \"label\": \"TERM\", \"start\": 9572, \"text\": \"New\"}, {\"confidence\": 0.55, \"end\": 9617, \"label\": \"ORG\", \"start\": 9597, \"text\": \"Response Object\\n\\nThe\"}, {\"confidence\": 0.55, \"end\": 9733, \"label\": \"TERM\", \"start\": 9729, \"text\": \"Both\"}, {\"confidence\": 0.55, \"end\": 9782, \"label\": \"TERM\", \"start\": 9774, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 9810, \"label\": \"ORG\", \"start\": 9806, \"text\": \"HTTP\"}, {\"confidence\": 0.55, \"end\": 9835, \"label\": \"ORG\", \"start\": 9833, \"text\": \"OK\"}, {\"confidence\": 0.55, \"end\": 9845, \"label\": \"ORG\", \"start\": 9841, \"text\": \"HTTP\"}, {\"confidence\": 0.55, \"end\": 9889, \"label\": \"TERM\", \"start\": 9881, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 9922, \"label\": \"TERM\", \"start\": 9915, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 9954, \"label\": \"TERM\", \"start\": 9947, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 9974, \"label\": \"TERM\", \"start\": 9969, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 10051, \"label\": \"TERM\", \"start\": 10046, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 10088, \"label\": \"ORG\", \"start\": 10084, \"text\": \"HTTP\"}, {\"confidence\": 0.55, \"end\": 10126, \"label\": \"ORG\", \"start\": 10117, \"text\": \"Not Found\"}, {\"confidence\": 0.55, \"end\": 10204, \"label\": \"ORG\", \"start\": 10183, \"text\": \"Configuration Changes\"}, {\"confidence\": 0.55, \"end\": 10239, \"label\": \"ORG\", \"start\": 10210, \"text\": \"Default Configuration Updates\"}, {\"confidence\": 0.55, \"end\": 10304, \"label\": \"TERM\", \"start\": 10302, \"text\": \"No\"}, {\"confidence\": 0.55, \"end\": 10356, \"label\": \"TERM\", \"start\": 10354, \"text\": \"No\"}, {\"confidence\": 0.55, \"end\": 10430, \"label\": \"TERM\", \"start\": 10425, \"text\": \"Still\"}, {\"confidence\": 0.55, \"end\": 10576, \"label\": \"ORG\", \"start\": 10554, \"text\": \"Instance Configuration\"}, {\"confidence\": 0.55, \"end\": 10609, \"label\": \"TERM\", \"start\": 10601, \"text\": \"Instance\"}, {\"confidence\": 0.55, \"end\": 10719, \"label\": \"TERM\", \"start\": 10715, \"text\": \"Same\"}, {\"confidence\": 0.55, \"end\": 10723, \"label\": \"ORG\", \"start\": 10720, \"text\": \"API\"}, {\"confidence\": 0.55, \"end\": 10859, \"label\": \"TERM\", \"start\": 10851, \"text\": \"Infinity\"}, {\"confidence\": 0.55, \"end\": 10872, \"label\": \"TERM\", \"start\": 10864, \"text\": \"Override\"}, {\"confidence\": 0.55, \"end\": 10919, \"label\": \"TERM\", \"start\": 10911, \"text\": \"Infinity\"}, {\"confidence\": 0.55, \"end\": 10953, \"label\": \"ORG\", \"start\": 10933, \"text\": \"Migration Strategies\"}, {\"confidence\": 0.55, \"end\": 10963, \"label\": \"TERM\", \"start\": 10959, \"text\": \"Step\"}, {\"confidence\": 0.55, \"end\": 10989, \"label\": \"ORG\", \"start\": 10967, \"text\": \"Step Migration Process\"}, {\"confidence\": 0.55, \"end\": 11001, \"label\": \"TERM\", \"start\": 10996, \"text\": \"Phase\"}, {\"confidence\": 0.55, \"end\": 11016, \"label\": \"TERM\", \"start\": 11005, \"text\": \"Preparation\"}, {\"confidence\": 0.55, \"end\": 11050, \"label\": \"ORG\", \"start\": 11022, \"text\": \"Audit Current Error Handling\"}, {\"confidence\": 0.55, \"end\": 11073, \"label\": \"TERM\", \"start\": 11069, \"text\": \"Find\"}, {\"confidence\": 0.55, \"end\": 11203, \"label\": \"ORG\", \"start\": 11186, \"text\": \"Identify Patterns\"}, {\"confidence\": 0.55, \"end\": 11219, \"label\": \"TERM\", \"start\": 11211, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 11267, \"label\": \"TERM\", \"start\": 11257, \"text\": \"Components\"}, {\"confidence\": 0.55, \"end\": 11327, \"label\": \"TERM\", \"start\": 11313, \"text\": \"Authentication\"}, {\"confidence\": 0.55, \"end\": 11367, \"label\": \"ORG\", \"start\": 11350, \"text\": \"Create Test Cases\"}, {\"confidence\": 0.55, \"end\": 11397, \"label\": \"TERM\", \"start\": 11393, \"text\": \"Test\"}, {\"confidence\": 0.55, \"end\": 11467, \"label\": \"ORG\", \"start\": 11443, \"text\": \"Error Handling Migration\"}, {\"confidence\": 0.55, \"end\": 11555, \"label\": \"TERM\", \"start\": 11551, \"text\": \"Test\"}, {\"confidence\": 0.55, \"end\": 11681, \"label\": \"TERM\", \"start\": 11677, \"text\": \"Test\"}, {\"confidence\": 0.55, \"end\": 11738, \"label\": \"TERM\", \"start\": 11733, \"text\": \"Phase\"}, {\"confidence\": 0.55, \"end\": 11756, \"label\": \"TERM\", \"start\": 11742, \"text\": \"Implementation\"}, {\"confidence\": 0.55, \"end\": 11781, \"label\": \"ORG\", \"start\": 11762, \"text\": \"Update Dependencies\"}, {\"confidence\": 0.55, \"end\": 11856, \"label\": \"ORG\", \"start\": 11828, \"text\": \"Implement New Error Handling\"}, {\"confidence\": 0.55, \"end\": 11870, \"label\": \"TERM\", \"start\": 11864, \"text\": \"Choose\"}, {\"confidence\": 0.55, \"end\": 11910, \"label\": \"TERM\", \"start\": 11904, \"text\": \"Update\"}, {\"confidence\": 0.55, \"end\": 11941, \"label\": \"TERM\", \"start\": 11938, \"text\": \"Add\"}, {\"confidence\": 0.55, \"end\": 11963, \"label\": \"ORG\", \"start\": 11960, \"text\": \"API\"}, {\"confidence\": 0.55, \"end\": 12003, \"label\": \"ORG\", \"start\": 11976, \"text\": \"Update Authentication Logic\"}, {\"confidence\": 0.55, \"end\": 12168, \"label\": \"TERM\", \"start\": 12163, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 12389, \"label\": \"TERM\", \"start\": 12382, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 12414, \"label\": \"TERM\", \"start\": 12408, \"text\": \"Always\"}, {\"confidence\": 0.55, \"end\": 12456, \"label\": \"TERM\", \"start\": 12451, \"text\": \"Phase\"}, {\"confidence\": 0.55, \"end\": 12467, \"label\": \"TERM\", \"start\": 12460, \"text\": \"Testing\"}, {\"confidence\": 0.55, \"end\": 12482, \"label\": \"TERM\", \"start\": 12472, \"text\": \"Validation\"}, {\"confidence\": 0.55, \"end\": 12508, \"label\": \"ORG\", \"start\": 12488, \"text\": \"Test Error Scenarios\"}, {\"confidence\": 0.55, \"end\": 12523, \"label\": \"TERM\", \"start\": 12516, \"text\": \"Network\"}, {\"confidence\": 0.55, \"end\": 12542, \"label\": \"ORG\", \"start\": 12538, \"text\": \"HTTP\"}, {\"confidence\": 0.55, \"end\": 12594, \"label\": \"TERM\", \"start\": 12587, \"text\": \"Timeout\"}, {\"confidence\": 0.55, \"end\": 12611, \"label\": \"ORG\", \"start\": 12607, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 12657, \"label\": \"ORG\", \"start\": 12633, \"text\": \"Validate User Experience\"}, {\"confidence\": 0.55, \"end\": 12670, \"label\": \"TERM\", \"start\": 12665, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 12723, \"label\": \"TERM\", \"start\": 12709, \"text\": \"Authentication\"}, {\"confidence\": 0.55, \"end\": 12751, \"label\": \"TERM\", \"start\": 12744, \"text\": \"Loading\"}, {\"confidence\": 0.55, \"end\": 12817, \"label\": \"ORG\", \"start\": 12786, \"text\": \"Gradual Migration Approach\\n\\nFor\"}, {\"confidence\": 0.55, \"end\": 12890, \"label\": \"TERM\", \"start\": 12884, \"text\": \"Create\"}, {\"confidence\": 0.55, \"end\": 12943, \"label\": \"TERM\", \"start\": 12940, \"text\": \"Use\"}, {\"confidence\": 0.55, \"end\": 13043, \"label\": \"TERM\", \"start\": 13036, \"text\": \"Wrapper\"}, {\"confidence\": 0.55, \"end\": 13125, \"label\": \"TERM\", \"start\": 13112, \"text\": \"Configuration\"}, {\"confidence\": 0.55, \"end\": 13215, \"label\": \"TERM\", \"start\": 13212, \"text\": \"Add\"}, {\"confidence\": 0.55, \"end\": 13359, \"label\": \"TERM\", \"start\": 13353, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 13440, \"label\": \"TERM\", \"start\": 13437, \"text\": \"Don\"}, {\"confidence\": 0.55, \"end\": 13530, \"label\": \"TERM\", \"start\": 13523, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 13597, \"label\": \"TERM\", \"start\": 13590, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 13676, \"label\": \"ORG\", \"start\": 13661, \"text\": \"Common Patterns\"}, {\"confidence\": 0.55, \"end\": 13709, \"label\": \"ORG\", \"start\": 13682, \"text\": \"Authentication Interceptors\"}, {\"confidence\": 0.55, \"end\": 13746, \"label\": \"ORG\", \"start\": 13716, \"text\": \"Updated Authentication Pattern\"}, {\"confidence\": 0.55, \"end\": 13769, \"label\": \"TERM\", \"start\": 13764, \"text\": \"Token\"}, {\"confidence\": 0.55, \"end\": 14270, \"label\": \"TERM\", \"start\": 14266, \"text\": \"Wait\"}, {\"confidence\": 0.55, \"end\": 14315, \"label\": \"TERM\", \"start\": 14308, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 14421, \"label\": \"TERM\", \"start\": 14408, \"text\": \"Authorization\"}, {\"confidence\": 0.55, \"end\": 14431, \"label\": \"TERM\", \"start\": 14425, \"text\": \"Bearer\"}, {\"confidence\": 0.55, \"end\": 14779, \"label\": \"TERM\", \"start\": 14766, \"text\": \"Authorization\"}, {\"confidence\": 0.55, \"end\": 14789, \"label\": \"TERM\", \"start\": 14783, \"text\": \"Bearer\"}, {\"confidence\": 0.55, \"end\": 14944, \"label\": \"TERM\", \"start\": 14937, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 15004, \"label\": \"TERM\", \"start\": 14997, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 15047, \"label\": \"ORG\", \"start\": 15036, \"text\": \"Retry Logic\"}, {\"confidence\": 0.55, \"end\": 15071, \"label\": \"TERM\", \"start\": 15066, \"text\": \"Retry\"}, {\"confidence\": 0.55, \"end\": 15352, \"label\": \"TERM\", \"start\": 15345, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 15513, \"label\": \"TERM\", \"start\": 15506, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 15603, \"label\": \"TERM\", \"start\": 15592, \"text\": \"Exponential\"}, {\"confidence\": 0.55, \"end\": 15649, \"label\": \"TERM\", \"start\": 15645, \"text\": \"Math\"}, {\"confidence\": 0.55, \"end\": 15706, \"label\": \"TERM\", \"start\": 15699, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 15804, \"label\": \"TERM\", \"start\": 15799, \"text\": \"Usage\"}, {\"confidence\": 0.55, \"end\": 15874, \"label\": \"TERM\", \"start\": 15870, \"text\": \"Make\"}, {\"confidence\": 0.55, \"end\": 15966, \"label\": \"ORG\", \"start\": 15942, \"text\": \"Loading State Management\"}, {\"confidence\": 0.55, \"end\": 15992, \"label\": \"TERM\", \"start\": 15985, \"text\": \"Loading\"}, {\"confidence\": 0.55, \"end\": 16033, \"label\": \"TERM\", \"start\": 16019, \"text\": \"LoadingManager\"}, {\"confidence\": 0.55, \"end\": 16081, \"label\": \"TERM\", \"start\": 16078, \"text\": \"Set\"}, {\"confidence\": 0.55, \"end\": 16584, \"label\": \"TERM\", \"start\": 16577, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 16706, \"label\": \"TERM\", \"start\": 16700, \"text\": \"Update\"}, {\"confidence\": 0.55, \"end\": 16722, \"label\": \"ORG\", \"start\": 16720, \"text\": \"UI\"}, {\"confidence\": 0.55, \"end\": 16829, \"label\": \"TERM\", \"start\": 16815, \"text\": \"LoadingManager\"}, {\"confidence\": 0.55, \"end\": 16856, \"label\": \"TERM\", \"start\": 16841, \"text\": \"Troubleshooting\"}, {\"confidence\": 0.55, \"end\": 16885, \"label\": \"ORG\", \"start\": 16862, \"text\": \"Common Migration Issues\"}, {\"confidence\": 0.55, \"end\": 16897, \"label\": \"TERM\", \"start\": 16892, \"text\": \"Issue\"}, {\"confidence\": 0.55, \"end\": 16929, \"label\": \"ORG\", \"start\": 16901, \"text\": \"Unhandled Promise Rejections\"}, {\"confidence\": 0.55, \"end\": 16940, \"label\": \"TERM\", \"start\": 16933, \"text\": \"Problem\"}, {\"confidence\": 0.55, \"end\": 16965, \"label\": \"TERM\", \"start\": 16961, \"text\": \"This\"}, {\"confidence\": 0.55, \"end\": 17056, \"label\": \"TERM\", \"start\": 17054, \"text\": \"No\"}, {\"confidence\": 0.55, \"end\": 17089, \"label\": \"TERM\", \"start\": 17081, \"text\": \"Solution\"}, {\"confidence\": 0.55, \"end\": 17116, \"label\": \"TERM\", \"start\": 17110, \"text\": \"Always\"}, {\"confidence\": 0.55, \"end\": 17189, \"label\": \"TERM\", \"start\": 17183, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 17236, \"label\": \"TERM\", \"start\": 17229, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 17275, \"label\": \"TERM\", \"start\": 17273, \"text\": \"Or\"}, {\"confidence\": 0.55, \"end\": 17467, \"label\": \"TERM\", \"start\": 17460, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 17532, \"label\": \"TERM\", \"start\": 17527, \"text\": \"Issue\"}, {\"confidence\": 0.55, \"end\": 17561, \"label\": \"ORG\", \"start\": 17536, \"text\": \"Response Interceptors Not\"}, {\"confidence\": 0.55, \"end\": 17571, \"label\": \"TERM\", \"start\": 17563, \"text\": \"Handling\"}, {\"confidence\": 0.55, \"end\": 17579, \"label\": \"TERM\", \"start\": 17573, \"text\": \"Errors\"}, {\"confidence\": 0.55, \"end\": 17590, \"label\": \"TERM\", \"start\": 17583, \"text\": \"Problem\"}, {\"confidence\": 0.55, \"end\": 17746, \"label\": \"TERM\", \"start\": 17741, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 17791, \"label\": \"TERM\", \"start\": 17783, \"text\": \"Solution\"}, {\"confidence\": 0.55, \"end\": 17986, \"label\": \"TERM\", \"start\": 17980, \"text\": \"Choose\"}, {\"confidence\": 0.55, \"end\": 18077, \"label\": \"TERM\", \"start\": 18070, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 18117, \"label\": \"TERM\", \"start\": 18111, \"text\": \"Return\"}, {\"confidence\": 0.55, \"end\": 18179, \"label\": \"TERM\", \"start\": 18172, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 18294, \"label\": \"TERM\", \"start\": 18289, \"text\": \"Issue\"}, {\"confidence\": 0.55, \"end\": 18317, \"label\": \"ORG\", \"start\": 18298, \"text\": \"JSON Parsing Errors\"}, {\"confidence\": 0.55, \"end\": 18328, \"label\": \"TERM\", \"start\": 18321, \"text\": \"Problem\"}, {\"confidence\": 0.55, \"end\": 18375, \"label\": \"ORG\", \"start\": 18371, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 18391, \"label\": \"TERM\", \"start\": 18387, \"text\": \"This\"}, {\"confidence\": 0.55, \"end\": 18469, \"label\": \"TERM\", \"start\": 18461, \"text\": \"Solution\"}, {\"confidence\": 0.55, \"end\": 18493, \"label\": \"TERM\", \"start\": 18490, \"text\": \"Add\"}, {\"confidence\": 0.55, \"end\": 18665, \"label\": \"ORG\", \"start\": 18661, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 18716, \"label\": \"TERM\", \"start\": 18710, \"text\": \"Handle\"}, {\"confidence\": 0.55, \"end\": 18721, \"label\": \"ORG\", \"start\": 18717, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 18777, \"label\": \"TERM\", \"start\": 18770, \"text\": \"Invalid\"}, {\"confidence\": 0.55, \"end\": 18782, \"label\": \"ORG\", \"start\": 18778, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 18834, \"label\": \"TERM\", \"start\": 18827, \"text\": \"Invalid\"}, {\"confidence\": 0.55, \"end\": 18839, \"label\": \"ORG\", \"start\": 18835, \"text\": \"JSON\"}, {\"confidence\": 0.55, \"end\": 18912, \"label\": \"TERM\", \"start\": 18907, \"text\": \"Issue\"}, {\"confidence\": 0.55, \"end\": 18947, \"label\": \"ORG\", \"start\": 18916, \"text\": \"TypeScript Errors After Upgrade\"}, {\"confidence\": 0.55, \"end\": 18958, \"label\": \"TERM\", \"start\": 18951, \"text\": \"Problem\"}, {\"confidence\": 0.55, \"end\": 18989, \"label\": \"TERM\", \"start\": 18979, \"text\": \"TypeScript\"}, {\"confidence\": 0.55, \"end\": 19069, \"label\": \"TERM\", \"start\": 19061, \"text\": \"Property\"}, {\"confidence\": 0.55, \"end\": 19129, \"label\": \"TERM\", \"start\": 19121, \"text\": \"Solution\"}, {\"confidence\": 0.55, \"end\": 19156, \"label\": \"TERM\", \"start\": 19150, \"text\": \"Define\"}, {\"confidence\": 0.55, \"end\": 19196, \"label\": \"TERM\", \"start\": 19185, \"text\": \"ApiResponse\"}, {\"confidence\": 0.55, \"end\": 19298, \"label\": \"TERM\", \"start\": 19287, \"text\": \"ApiResponse\"}, {\"confidence\": 0.55, \"end\": 19320, \"label\": \"TERM\", \"start\": 19317, \"text\": \"Now\"}, {\"confidence\": 0.55, \"end\": 19400, \"label\": \"ORG\", \"start\": 19378, \"text\": \"Debug Migration Issues\"}, {\"confidence\": 0.55, \"end\": 19427, \"label\": \"ORG\", \"start\": 19407, \"text\": \"Enable Debug Logging\"}, {\"confidence\": 0.55, \"end\": 19448, \"label\": \"TERM\", \"start\": 19445, \"text\": \"Add\"}, {\"confidence\": 0.55, \"end\": 19539, \"label\": \"TERM\", \"start\": 19532, \"text\": \"Request\"}, {\"confidence\": 0.55, \"end\": 19648, \"label\": \"TERM\", \"start\": 19640, \"text\": \"Response\"}, {\"confidence\": 0.55, \"end\": 19724, \"label\": \"TERM\", \"start\": 19719, \"text\": \"Error\"}, {\"confidence\": 0.55, \"end\": 19754, \"label\": \"TERM\", \"start\": 19747, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 19803, \"label\": \"ORG\", \"start\": 19787, \"text\": \"Compare Behavior\"}, {\"confidence\": 0.55, \"end\": 19827, \"label\": \"TERM\", \"start\": 19821, \"text\": \"Create\"}, {\"confidence\": 0.55, \"end\": 19913, \"label\": \"TERM\", \"start\": 19909, \"text\": \"Keep\"}, {\"confidence\": 0.55, \"end\": 20068, \"label\": \"TERM\", \"start\": 20061, \"text\": \"Promise\"}, {\"confidence\": 0.55, \"end\": 20271, \"label\": \"TERM\", \"start\": 20261, \"text\": \"Comparison\"}, {\"confidence\": 0.55, \"end\": 20312, \"label\": \"TERM\", \"start\": 20303, \"text\": \"Resources\"}, {\"confidence\": 0.55, \"end\": 20340, \"label\": \"ORG\", \"start\": 20318, \"text\": \"Official Documentation\"}, {\"confidence\": 0.55, \"end\": 20349, \"label\": \"TERM\", \"start\": 20344, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 20367, \"label\": \"TERM\", \"start\": 20354, \"text\": \"Documentation\"}, {\"confidence\": 0.55, \"end\": 20402, \"label\": \"TERM\", \"start\": 20397, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 20420, \"label\": \"ORG\", \"start\": 20403, \"text\": \"GitHub Repository\"}, {\"confidence\": 0.55, \"end\": 20472, \"label\": \"ORG\", \"start\": 20457, \"text\": \"Axios Changelog\"}, {\"confidence\": 0.55, \"end\": 20524, \"label\": \"ORG\", \"start\": 20515, \"text\": \"CHANGELOG\"}, {\"confidence\": 0.55, \"end\": 20549, \"label\": \"ORG\", \"start\": 20534, \"text\": \"Migration Tools\"}, {\"confidence\": 0.55, \"end\": 20576, \"label\": \"ORG\", \"start\": 20553, \"text\": \"Axios Migration Codemod\"}, {\"confidence\": 0.55, \"end\": 20660, \"label\": \"TERM\", \"start\": 20655, \"text\": \"Rules\"}, {\"confidence\": 0.55, \"end\": 20670, \"label\": \"TERM\", \"start\": 20665, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 20763, \"label\": \"ORG\", \"start\": 20744, \"text\": \"Community Resources\"}, {\"confidence\": 0.55, \"end\": 20781, \"label\": \"ORG\", \"start\": 20767, \"text\": \"Stack Overflow\"}, {\"confidence\": 0.55, \"end\": 20809, \"label\": \"ORG\", \"start\": 20784, \"text\": \"Axios Migration Questions\"}, {\"confidence\": 0.55, \"end\": 20892, \"label\": \"ORG\", \"start\": 20874, \"text\": \"GitHub Discussions\"}, {\"confidence\": 0.55, \"end\": 20964, \"label\": \"ORG\", \"start\": 20941, \"text\": \"Axios Discord Community\"}, {\"confidence\": 0.55, \"end\": 21028, \"label\": \"ORG\", \"start\": 21014, \"text\": \"Related Issues\"}, {\"confidence\": 0.55, \"end\": 21065, \"label\": \"ORG\", \"start\": 21032, \"text\": \"Error Handling Changes Discussion\"}, {\"confidence\": 0.55, \"end\": 21137, \"label\": \"ORG\", \"start\": 21114, \"text\": \"Migration Guide Request\"}, {\"confidence\": 0.55, \"end\": 21228, \"label\": \"ORG\", \"start\": 21219, \"text\": \"Need Help\"}, {\"confidence\": 0.55, \"end\": 21233, \"label\": \"TERM\", \"start\": 21231, \"text\": \"If\"}, {\"confidence\": 0.55, \"end\": 21319, \"label\": \"TERM\", \"start\": 21313, \"text\": \"Search\"}, {\"confidence\": 0.55, \"end\": 21351, \"label\": \"TERM\", \"start\": 21346, \"text\": \"Axios\"}, {\"confidence\": 0.55, \"end\": 21358, \"label\": \"TERM\", \"start\": 21352, \"text\": \"GitHub\"}, {\"confidence\": 0.55, \"end\": 21418, \"label\": \"TERM\", \"start\": 21415, \"text\": \"Ask\"}, {\"confidence\": 0.55, \"end\": 21453, \"label\": \"ORG\", \"start\": 21435, \"text\": \"GitHub Discussions\"}, {\"confidence\": 0.55, \"end\": 21514, \"label\": \"TERM\", \"start\": 21504, \"text\": \"Contribute\"}, {\"confidence\": 0.55, \"end\": 21565, \"label\": \"TERM\", \"start\": 21561, \"text\": \"This\"}, {\"confidence\": 0.55, \"end\": 21616, \"label\": \"TERM\", \"start\": 21614, \"text\": \"If\"}]}"
+      ],
+      "expected_entity_ids": [],
+      "faithfulness_score": 0.989945113658905,
+      "graph_hits": [
+        {
+          "entity_id": "ent_1975e5784a277bf95f29fb4e",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_6cde9cf1047cfb2a5ce7c366",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_b0bc3a3c8a24641dd4eec5e3",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_b963d9732da4418c00599246",
+          "metadata": {},
+          "score": 5.0,
+          "source": "neo4j_bfs"
+        },
+        {
+          "entity_id": "ent_0bafb28b8e8ba61b47d8290e",
+          "metadata": {},
+          "score": 4.0,
+          "source": "neo4j_bfs"
+        }
+      ],
+      "latency_seconds": 3.083259833045304,
+      "query": "Explain how Axios dispatches a request through adapters and interceptors.",
+      "repo_id": "repo-axios",
+      "reranked_hits": [
+        {
+          "entity_id": "ent_c69dba9172ccd89b3b25ff71",
+          "score": 0.01639344262295082,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_a376f9289451046b665a6560",
+          "score": 0.016129032258064516,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_69fbcc75b419eaa1c64ece43",
+          "score": 0.015625,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_13dc1f24e1e87df7c5c8ba5f",
+          "score": 0.015384615384615385,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_b0bc3a3c8a24641dd4eec5e3",
+          "score": 0.015873015873015872,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_3e72bed766562f0a8c65ed5b",
+          "score": 0.015873015873015872,
+          "sources": [
+            "code_entity"
+          ]
+        },
+        {
+          "entity_id": "ent_0bafb28b8e8ba61b47d8290e",
+          "score": 0.015384615384615385,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_b963d9732da4418c00599246",
+          "score": 0.015625,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_1975e5784a277bf95f29fb4e",
+          "score": 0.01639344262295082,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        },
+        {
+          "entity_id": "ent_6cde9cf1047cfb2a5ce7c366",
+          "score": 0.016129032258064516,
+          "sources": [
+            "neo4j_bfs"
+          ]
+        }
+      ],
+      "retrieval_recall": null,
+      "rounds": 1,
+      "tenant_id": "default",
+      "trace": [
+        "router",
+        "vector_retriever",
+        "graph_traversal",
+        "synthesis",
+        "critic"
+      ],
+      "vector_hits": [
+        {
+          "entity_id": "ent_c69dba9172ccd89b3b25ff71",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 183,
+            "name": "request",
+            "path": "lib/core/Axios.js",
+            "qualified_name": "lib.core.Axios.Axios.request"
+          },
+          "score": 0.5522371530532837,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_a376f9289451046b665a6560",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 176,
+            "name": "../core/AxiosHeaders.js",
+            "path": "lib/adapters/fetch.js",
+            "qualified_name": "lib/adapters/fetch.js:../core/AxiosHeaders.js"
+          },
+          "score": 0.5513420701026917,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_3e72bed766562f0a8c65ed5b",
+          "metadata": {
+            "kind": "class",
+            "lamport_clock": 199,
+            "name": "AxiosTransformStream",
+            "path": "lib/helpers/AxiosTransformStream.js",
+            "qualified_name": "lib.helpers.AxiosTransformStream.AxiosTransformStream"
+          },
+          "score": 0.5505886077880859,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_69fbcc75b419eaa1c64ece43",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 177,
+            "name": "../helpers/AxiosTransformStream.js",
+            "path": "lib/adapters/http.js",
+            "qualified_name": "lib/adapters/http.js:../helpers/AxiosTransformStream.js"
+          },
+          "score": 0.5468947454361545,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_13dc1f24e1e87df7c5c8ba5f",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 183,
+            "name": "./dispatchRequest.js",
+            "path": "lib/core/Axios.js",
+            "qualified_name": "lib/core/Axios.js:./dispatchRequest.js"
+          },
+          "score": 0.5463651581515422,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_8a79e8938f986aef4b2fa6f1",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 189,
+            "name": "../core/AxiosHeaders.js",
+            "path": "lib/core/dispatchRequest.js",
+            "qualified_name": "lib/core/dispatchRequest.js:../core/AxiosHeaders.js"
+          },
+          "score": 0.5455751744255537,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_1f4e880a4773335ee1c1709f",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 178,
+            "name": "../core/AxiosHeaders.js",
+            "path": "lib/adapters/xhr.js",
+            "qualified_name": "lib/adapters/xhr.js:../core/AxiosHeaders.js"
+          },
+          "score": 0.5443693127852278,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_f4242a1fe17a4d5fe519c149",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 183,
+            "name": "./InterceptorManager.js",
+            "path": "lib/core/Axios.js",
+            "qualified_name": "lib/core/Axios.js:./InterceptorManager.js"
+          },
+          "score": 0.5418212413787842,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_244879116f787e67634f5452",
+          "metadata": {
+            "kind": "import",
+            "lamport_clock": 179,
+            "name": "./adapters/adapters.js",
+            "path": "lib/axios.js",
+            "qualified_name": "lib/axios.js:./adapters/adapters.js"
+          },
+          "score": 0.5394756197929382,
+          "source": "code_entity"
+        },
+        {
+          "entity_id": "ent_1f5674c0de45359b05b4264f",
+          "metadata": {
+            "kind": "function",
+            "lamport_clock": 183,
+            "name": "_request",
+            "path": "lib/core/Axios.js",
+            "qualified_name": "lib.core.Axios.Axios._request"
+          },
+          "score": 0.5390335000137398,
+          "source": "code_entity"
+        }
+      ]
+    }
+  ],
+  "created_at": "2026-08-13T19:30:14.378001+00:00",
+  "critic": {
+    "backend": "transformers-nli",
+    "model": "cross-encoder/nli-deberta-v3-large",
+    "threshold": 0.78
+  },
+  "error_count": 0,
+  "faithfulness_mean": 0.9576820015907288,
+  "faithfulness_min": 0.874405026435852,
+  "faithfulness_pass_rate": 1.0,
+  "retrieval_recall_mean": null
+}

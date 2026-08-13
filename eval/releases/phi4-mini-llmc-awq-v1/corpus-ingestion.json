@@ -1,0 +1,91 @@
+{
+  "created_at": "2026-08-13T18:50:58.244443+00:00",
+  "duration_seconds": 877.4815577678382,
+  "embedding_model": "BAAI/bge-m3",
+  "repositories": [
+    {
+      "discovered_files": 91,
+      "duration_seconds": 51.95566625590436,
+      "embeddings": 1529,
+      "entities": 1529,
+      "error_count": 0,
+      "errors": [],
+      "local_path": "data/raw/httpx",
+      "parsed_files": 91,
+      "relations": 1438,
+      "repo_id": "repo-httpx",
+      "snapshot_ref": "b5addb6",
+      "source_url": "https://github.com/encode/httpx"
+    },
+    {
+      "discovered_files": 42,
+      "duration_seconds": 11.67062630597502,
+      "embeddings": 271,
+      "entities": 271,
+      "error_count": 0,
+      "errors": [],
+      "local_path": "data/raw/telstra-messaging-api-sdk-python",
+      "parsed_files": 42,
+      "relations": 229,
+      "repo_id": "repo-telstra-messaging-api-sdk-python",
+      "snapshot_ref": "a4204ae",
+      "source_url": "https://github.com/telstra/MessagingAPI-SDK-python"
+    },
+    {
+      "discovered_files": 2832,
+      "duration_seconds": 642.3595576330554,
+      "embeddings": 11564,
+      "entities": 11564,
+      "error_count": 0,
+      "errors": [],
+      "local_path": "data/raw/fastapi",
+      "parsed_files": 2832,
+      "relations": 8732,
+      "repo_id": "repo-fastapi",
+      "snapshot_ref": "a9134f6",
+      "source_url": "https://github.com/fastapi/fastapi"
+    },
+    {
+      "discovered_files": 157,
+      "duration_seconds": 19.316540725994855,
+      "embeddings": 212,
+      "entities": 212,
+      "error_count": 0,
+      "errors": [],
+      "local_path": "data/raw/express",
+      "parsed_files": 157,
+      "relations": 55,
+      "repo_id": "repo-express",
+      "snapshot_ref": "a371447",
+      "source_url": "https://github.com/expressjs/express"
+    },
+    {
+      "discovered_files": 390,
+      "duration_seconds": 78.17938350583427,
+      "embeddings": 1254,
+      "entities": 1254,
+      "error_count": 1,
+      "errors": [
+        {
+          "error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 6 column 3 (char 170)",
+          "path": ".devcontainer/devcontainer.json"
+        }
+      ],
+      "local_path": "data/raw/axios",
+      "parsed_files": 389,
+      "relations": 865,
+      "repo_id": "repo-axios",
+      "snapshot_ref": "ba98559",
+      "source_url": "https://github.com/axios/axios"
+    }
+  ],
+  "repository_count": 5,
+  "tenant_id": "default",
+  "totals": {
+    "embeddings": 14830,
+    "entities": 14830,
+    "error_count": 1,
+    "parsed_files": 3511,
+    "relations": 11319
+  }
+}

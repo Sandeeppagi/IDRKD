@@ -1,0 +1,184 @@
+{
+  "benchmark": "openai-sse-streaming",
+  "created_at": "2026-08-13T19:41:47.660820+00:00",
+  "error_count": 0,
+  "evidence_limit": 3,
+  "latency": {
+    "mean_seconds": 1.060537419107277,
+    "min_seconds": 0.8025705402251333,
+    "p50_seconds": 1.0788457948947325,
+    "p95_seconds": 1.320149336301256
+  },
+  "measurements": [
+    {
+      "error": null,
+      "latency_seconds": 1.1010097779799253,
+      "output": "The synchronous HTTPX client builds and sends a request in the file located at `httpx/_client.py`. The relevant function for building a request is `httpx._client.BaseClient.build_request`, which is marked as synchronous (`\"async\": false`). This function takes several arguments, including `\"self\"`, `\"method\"`, `\"url\"`, `\"content\"`, `\"data\"`, `\"files\"`, `\"json\"`, `\"params\"`, `\"headers\"`, `\"cookies\"`, and `\"timeout\"`. These arguments are used to construct the HTTP request that will be sent. The request is then sent using the `httpx._client.AsyncClient.send` function, which is marked as asynchronous (`\"async\": true`). However, since the client is synchronous, it will wait for the request to complete before continuing. The `send` function takes several arguments, including `\"self\"`, `\"request\"`, `\"stream\"`, `\"auth\"`, and `\"follow_redirects\"`. These arguments are used to send the request and handle any redirects.",
+      "query": "Explain where the synchronous HTTPX client builds and sends a request.",
+      "sample": 1,
+      "ttft_seconds": 0.025262410985305905
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.80272843898274,
+      "output": "The repository path used to send an outbound SMS message is `tests/telstra/messaging/test_message.py`. This file contains a test function named `test_send_invalid_param` which is part of a larger test suite for sending SMS messages. The test function is designed to check the behavior of sending SMS messages with invalid parameters, and it uses the pytest library to run multiple parameterized tests. Each parameterized test sends an SMS message with different sets of arguments, including invalid values for the 'to' parameter, to ensure that the function handles errors correctly. The test function is not asynchronous (`async: false`) and uses decorators to mark the test cases for pytest.",
+      "query": "Explain the repository path used to send an outbound SMS message.",
+      "sample": 2,
+      "ttft_seconds": 0.03242175793275237
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.9918746859766543,
+      "output": "FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class. This method is responsible for solving dependencies, which are the required arguments that must be passed to the endpoint function. It takes into account the dependencies specified in the `APIRoute` class constructor, as well as any overrides provided in the route definition.\n\nThe `_solve_dependencies` method is an asynchronous context manager, which means it can be used with the `async with` statement to ensure that dependencies are resolved before the route is called. This allows FastAPI to handle dependencies efficiently and ensures that the endpoint function receives all the necessary arguments.\n\nIn summary, FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class, which takes into account the dependencies specified in the `APIRoute` class constructor and any overrides provided in the route definition.",
+      "query": "Explain how FastAPI resolves endpoint dependencies before calling a route.",
+      "sample": 3,
+      "ttft_seconds": 0.01632021088153124
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.3162491179537028,
+      "output": "Express matches a request to a route handler by using a series of functions and properties associated with the Express application. In the provided evidence, we have three entities that represent different ways to create an Express application, each with its own path and properties.\n\n1. ent_943461452c210ceaf59aa3d3: This entity represents a function called `lib.express.createApplication`. It is located at the path `lib/express.js`. The properties associated with this function are an empty array for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with no additional arguments, without using async, and without any decorators.\n\n2. ent_742b9601c0d350652356260b: This entity represents a function called `test.express.json.createApp`. It is located at the path `test/express.json.js`. The properties associated with this function are an array containing the string \"options\" for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with \"options\" as an argument, without using async, and without",
+      "query": "Explain how Express matches a request to a route handler.",
+      "sample": 4,
+      "ttft_seconds": 0.024579769931733608
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.0758485288824886,
+      "output": "Axios dispatches a request through adapters and interceptors by utilizing the provided adapters and interceptors in the Axios library. Axios uses the fetch adapter, which is imported from lib/adapters/fetch.js, to dispatch requests. This adapter is responsible for handling the HTTP requests and responses. Axios also uses AxiosHeaders, which is imported from lib/core/AxiosHeaders.js, to handle the headers of the requests.\n\nWhen a request is dispatched, Axios checks for any interceptors that may have been added to the Axios instance. Interceptors are functions that can modify the request or response before they are passed to the fetch adapter. If an interceptor is found, it is executed before the request is dispatched. Axios then dispatches the request through the fetch adapter, which sends the request to the server and receives the response.\n\nIn summary, Axios dispatches a request through adapters and interceptors by utilizing the fetch adapter and AxiosHeaders, and by executing any interceptors that may have been added to the Axios instance before passing the request to the fetch adapter.",
+      "query": "Explain how Axios dispatches a request through adapters and interceptors.",
+      "sample": 5,
+      "ttft_seconds": 0.025084333959966898
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.101606145966798,
+      "output": "The synchronous HTTPX client builds and sends a request in the file located at `httpx/_client.py`. The relevant function for building a request is `httpx._client.BaseClient.build_request`, which is marked as synchronous (`\"async\": false`). This function takes several arguments, including `\"self\"`, `\"method\"`, `\"url\"`, `\"content\"`, `\"data\"`, `\"files\"`, `\"json\"`, `\"params\"`, `\"headers\"`, `\"cookies\"`, and `\"timeout\"`. These arguments are used to construct the HTTP request that will be sent. The request is then sent using the `httpx._client.AsyncClient.send` function, which is marked as asynchronous (`\"async\": true`). However, since the client is synchronous, it will wait for the request to complete before continuing. The `send` function takes several arguments, including `\"self\"`, `\"request\"`, `\"stream\"`, `\"auth\"`, and `\"follow_redirects\"`. These arguments are used to send the request and handle any redirects.",
+      "query": "Explain where the synchronous HTTPX client builds and sends a request.",
+      "sample": 6,
+      "ttft_seconds": 0.026059258030727506
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.8025705402251333,
+      "output": "The repository path used to send an outbound SMS message is `tests/telstra/messaging/test_message.py`. This file contains a test function named `test_send_invalid_param` which is part of a larger test suite for sending SMS messages. The test function is designed to check the behavior of sending SMS messages with invalid parameters, and it uses the pytest library to run multiple parameterized tests. Each parameterized test sends an SMS message with different sets of arguments, including invalid values for the 'to' parameter, to ensure that the function handles errors correctly. The test function is not asynchronous (`async: false`) and uses decorators to mark the test cases for pytest.",
+      "query": "Explain the repository path used to send an outbound SMS message.",
+      "sample": 7,
+      "ttft_seconds": 0.0323472460731864
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.9922069648746401,
+      "output": "FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class. This method is responsible for solving dependencies, which are the required arguments that must be passed to the endpoint function. It takes into account the dependencies specified in the `APIRoute` class constructor, as well as any overrides provided in the route definition.\n\nThe `_solve_dependencies` method is an asynchronous context manager, which means it can be used with the `async with` statement to ensure that dependencies are resolved before the route is called. This allows FastAPI to handle dependencies efficiently and ensures that the endpoint function receives all the necessary arguments.\n\nIn summary, FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class, which takes into account the dependencies specified in the `APIRoute` class constructor and any overrides provided in the route definition.",
+      "query": "Explain how FastAPI resolves endpoint dependencies before calling a route.",
+      "sample": 8,
+      "ttft_seconds": 0.01667020283639431
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.3178596240468323,
+      "output": "Express matches a request to a route handler by using a series of functions and properties associated with the Express application. In the provided evidence, we have three entities that represent different ways to create an Express application, each with its own path and properties.\n\n1. ent_943461452c210ceaf59aa3d3: This entity represents a function called `lib.express.createApplication`. It is located at the path `lib/express.js`. The properties associated with this function are an empty array for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with no additional arguments, without using async, and without any decorators.\n\n2. ent_742b9601c0d350652356260b: This entity represents a function called `test.express.json.createApp`. It is located at the path `test/express.json.js`. The properties associated with this function are an array containing the string \"options\" for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with \"options\" as an argument, without using async, and without",
+      "query": "Explain how Express matches a request to a route handler.",
+      "sample": 9,
+      "ttft_seconds": 0.026174555998295546
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.0758967199362814,
+      "output": "Axios dispatches a request through adapters and interceptors by utilizing the provided adapters and interceptors in the Axios library. Axios uses the fetch adapter, which is imported from lib/adapters/fetch.js, to dispatch requests. This adapter is responsible for handling the HTTP requests and responses. Axios also uses AxiosHeaders, which is imported from lib/core/AxiosHeaders.js, to handle the headers of the requests.\n\nWhen a request is dispatched, Axios checks for any interceptors that may have been added to the Axios instance. Interceptors are functions that can modify the request or response before they are passed to the fetch adapter. If an interceptor is found, it is executed before the request is dispatched. Axios then dispatches the request through the fetch adapter, which sends the request to the server and receives the response.\n\nIn summary, Axios dispatches a request through adapters and interceptors by utilizing the fetch adapter and AxiosHeaders, and by executing any interceptors that may have been added to the Axios instance before passing the request to the fetch adapter.",
+      "query": "Explain how Axios dispatches a request through adapters and interceptors.",
+      "sample": 10,
+      "ttft_seconds": 0.025488738901913166
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.1052749890368432,
+      "output": "The synchronous HTTPX client builds and sends a request in the file located at `httpx/_client.py`. The relevant function for building a request is `httpx._client.BaseClient.build_request`, which is marked as synchronous (`\"async\": false`). This function takes several arguments, including `\"self\"`, `\"method\"`, `\"url\"`, `\"content\"`, `\"data\"`, `\"files\"`, `\"json\"`, `\"params\"`, `\"headers\"`, `\"cookies\"`, and `\"timeout\"`. These arguments are used to construct the HTTP request that will be sent. The request is then sent using the `httpx._client.AsyncClient.send` function, which is marked as asynchronous (`\"async\": true`). However, since the client is synchronous, it will wait for the request to complete before continuing. The `send` function takes several arguments, including `\"self\"`, `\"request\"`, `\"stream\"`, `\"auth\"`, and `\"follow_redirects\"`. These arguments are used to send the request and handle any redirects.",
+      "query": "Explain where the synchronous HTTPX client builds and sends a request.",
+      "sample": 11,
+      "ttft_seconds": 0.02625427790917456
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.8067578340414912,
+      "output": "The repository path used to send an outbound SMS message is `tests/telstra/messaging/test_message.py`. This file contains a test function named `test_send_invalid_param` which is part of a larger test suite for sending SMS messages. The test function is designed to check the behavior of sending SMS messages with invalid parameters, and it uses the pytest library to run multiple parameterized tests. Each parameterized test sends an SMS message with different sets of arguments, including invalid values for the 'to' parameter, to ensure that the function handles errors correctly. The test function is not asynchronous (`async: false`) and uses decorators to mark the test cases for pytest.",
+      "query": "Explain the repository path used to send an outbound SMS message.",
+      "sample": 12,
+      "ttft_seconds": 0.032928016036748886
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.0006077100988477,
+      "output": "FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class. This method is responsible for solving dependencies, which are the required arguments that must be passed to the endpoint function. It takes into account the dependencies specified in the `APIRoute` class constructor, as well as any overrides provided in the route definition.\n\nThe `_solve_dependencies` method is an asynchronous context manager, which means it can be used with the `async with` statement to ensure that dependencies are resolved before the route is called. This allows FastAPI to handle dependencies efficiently and ensures that the endpoint function receives all the necessary arguments.\n\nIn summary, FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class, which takes into account the dependencies specified in the `APIRoute` class constructor and any overrides provided in the route definition.",
+      "query": "Explain how FastAPI resolves endpoint dependencies before calling a route.",
+      "sample": 13,
+      "ttft_seconds": 0.01655622711405158
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.3283747809473425,
+      "output": "Express matches a request to a route handler by using a series of functions and properties associated with the Express application. In the provided evidence, we have three entities that represent different ways to create an Express application, each with its own path and properties.\n\n1. ent_943461452c210ceaf59aa3d3: This entity represents a function called `lib.express.createApplication`. It is located at the path `lib/express.js`. The properties associated with this function are an empty array for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with no additional arguments, without using async, and without any decorators.\n\n2. ent_742b9601c0d350652356260b: This entity represents a function called `test.express.json.createApp`. It is located at the path `test/express.json.js`. The properties associated with this function are an array containing the string \"options\" for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with \"options\" as an argument, without using async, and without",
+      "query": "Explain how Express matches a request to a route handler.",
+      "sample": 14,
+      "ttft_seconds": 0.02848633099347353
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.0880194890778512,
+      "output": "Axios dispatches a request through adapters and interceptors by utilizing the provided adapters and interceptors in the Axios library. Axios uses the fetch adapter, which is imported from lib/adapters/fetch.js, to dispatch requests. This adapter is responsible for handling the HTTP requests and responses. Axios also uses AxiosHeaders, which is imported from lib/core/AxiosHeaders.js, to handle the headers of the requests.\n\nWhen a request is dispatched, Axios checks for any interceptors that may have been added to the Axios instance. Interceptors are functions that can modify the request or response before they are passed to the fetch adapter. If an interceptor is found, it is executed before the request is dispatched. Axios then dispatches the request through the fetch adapter, which sends the request to the server and receives the response.\n\nIn summary, Axios dispatches a request through adapters and interceptors by utilizing the fetch adapter and AxiosHeaders, and by executing any interceptors that may have been added to the Axios instance before passing the request to the fetch adapter.",
+      "query": "Explain how Axios dispatches a request through adapters and interceptors.",
+      "sample": 15,
+      "ttft_seconds": 0.027041336987167597
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.1025416681077331,
+      "output": "The synchronous HTTPX client builds and sends a request in the file located at `httpx/_client.py`. The relevant function for building a request is `httpx._client.BaseClient.build_request`, which is marked as synchronous (`\"async\": false`). This function takes several arguments, including `\"self\"`, `\"method\"`, `\"url\"`, `\"content\"`, `\"data\"`, `\"files\"`, `\"json\"`, `\"params\"`, `\"headers\"`, `\"cookies\"`, and `\"timeout\"`. These arguments are used to construct the HTTP request that will be sent. The request is then sent using the `httpx._client.AsyncClient.send` function, which is marked as asynchronous (`\"async\": true`). However, since the client is synchronous, it will wait for the request to complete before continuing. The `send` function takes several arguments, including `\"self\"`, `\"request\"`, `\"stream\"`, `\"auth\"`, and `\"follow_redirects\"`. These arguments are used to send the request and handle any redirects.",
+      "query": "Explain where the synchronous HTTPX client builds and sends a request.",
+      "sample": 16,
+      "ttft_seconds": 0.027821363182738423
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.8069550069049001,
+      "output": "The repository path used to send an outbound SMS message is `tests/telstra/messaging/test_message.py`. This file contains a test function named `test_send_invalid_param` which is part of a larger test suite for sending SMS messages. The test function is designed to check the behavior of sending SMS messages with invalid parameters, and it uses the pytest library to run multiple parameterized tests. Each parameterized test sends an SMS message with different sets of arguments, including invalid values for the 'to' parameter, to ensure that the function handles errors correctly. The test function is not asynchronous (`async: false`) and uses decorators to mark the test cases for pytest.",
+      "query": "Explain the repository path used to send an outbound SMS message.",
+      "sample": 17,
+      "ttft_seconds": 0.03850131086073816
+    },
+    {
+      "error": null,
+      "latency_seconds": 0.9928550710901618,
+      "output": "FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class. This method is responsible for solving dependencies, which are the required arguments that must be passed to the endpoint function. It takes into account the dependencies specified in the `APIRoute` class constructor, as well as any overrides provided in the route definition.\n\nThe `_solve_dependencies` method is an asynchronous context manager, which means it can be used with the `async with` statement to ensure that dependencies are resolved before the route is called. This allows FastAPI to handle dependencies efficiently and ensures that the endpoint function receives all the necessary arguments.\n\nIn summary, FastAPI resolves endpoint dependencies before calling a route by utilizing the `_solve_dependencies` method of the `_FrontendRouteGroup` class, which takes into account the dependencies specified in the `APIRoute` class constructor and any overrides provided in the route definition.",
+      "query": "Explain how FastAPI resolves endpoint dependencies before calling a route.",
+      "sample": 18,
+      "ttft_seconds": 0.018045555101707578
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.3197164181619883,
+      "output": "Express matches a request to a route handler by using a series of functions and properties associated with the Express application. In the provided evidence, we have three entities that represent different ways to create an Express application, each with its own path and properties.\n\n1. ent_943461452c210ceaf59aa3d3: This entity represents a function called `lib.express.createApplication`. It is located at the path `lib/express.js`. The properties associated with this function are an empty array for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with no additional arguments, without using async, and without any decorators.\n\n2. ent_742b9601c0d350652356260b: This entity represents a function called `test.express.json.createApp`. It is located at the path `test/express.json.js`. The properties associated with this function are an array containing the string \"options\" for \"args\", `false` for \"async\", and an empty array for \"decorators\". This suggests that when this function is called, it creates an Express application with \"options\" as an argument, without using async, and without",
+      "query": "Explain how Express matches a request to a route handler.",
+      "sample": 19,
+      "ttft_seconds": 0.027763904072344303
+    },
+    {
+      "error": null,
+      "latency_seconds": 1.0817948698531836,
+      "output": "Axios dispatches a request through adapters and interceptors by utilizing the provided adapters and interceptors in the Axios library. Axios uses the fetch adapter, which is imported from lib/adapters/fetch.js, to dispatch requests. This adapter is responsible for handling the HTTP requests and responses. Axios also uses AxiosHeaders, which is imported from lib/core/AxiosHeaders.js, to handle the headers of the requests.\n\nWhen a request is dispatched, Axios checks for any interceptors that may have been added to the Axios instance. Interceptors are functions that can modify the request or response before they are passed to the fetch adapter. If an interceptor is found, it is executed before the request is dispatched. Axios then dispatches the request through the fetch adapter, which sends the request to the server and receives the response.\n\nIn summary, Axios dispatches a request through adapters and interceptors by utilizing the fetch adapter and AxiosHeaders, and by executing any interceptors that may have been added to the Axios instance before passing the request to the fetch adapter.",
+      "query": "Explain how Axios dispatches a request through adapters and interceptors.",
+      "sample": 20,
+      "ttft_seconds": 0.031335121020674706
+    }
+  ],
+  "model_id": "idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq",
+  "sample_count": 20,
+  "success_count": 20,
+  "ttft": {
+    "mean_seconds": 0.026257096440531313,
+    "min_seconds": 0.01632021088153124,
+    "p50_seconds": 0.026214416953735054,
+    "p95_seconds": 0.033206680777948354
+  },
+  "warmup_count": 2
+}

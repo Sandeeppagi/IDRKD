@@ -1,0 +1,156 @@
+{
+  "created_at": "2026-08-13T19:43:56.608132+00:00",
+  "criteria": {
+    "expected_holdout_cases": 89,
+    "max_latency_p95_seconds": 8.0,
+    "max_tool_f1_regression": 0.02,
+    "max_ttft_p95_seconds": 1.2,
+    "min_faithfulness": 0.78,
+    "min_tool_f1": 0.82
+  },
+  "decision": {
+    "reasons": [],
+    "status": "promoted"
+  },
+  "evaluation": {
+    "faithfulness": {
+      "cases": 5,
+      "critic": {
+        "backend": "transformers-nli",
+        "model": "cross-encoder/nli-deberta-v3-large",
+        "threshold": 0.78
+      },
+      "mean": 0.9576820015907288,
+      "minimum": 0.874405026435852,
+      "pass_rate": 1.0,
+      "retrieval_recall_mean": null
+    },
+    "holdout": {
+      "argument_accuracy": 1.0,
+      "cases": 89,
+      "pass_rate": 1.0,
+      "tool_f1": 1.0
+    },
+    "performance": {
+      "latency_p95_seconds": 1.320149336301256,
+      "samples": 20,
+      "ttft_p95_seconds": 0.033206680777948354
+    },
+    "security": {
+      "duration_seconds": 11.743899629916996,
+      "passed": true,
+      "tests": [
+        "tests/unit/test_week5_security_hardening.py",
+        "tests/unit/test_week6_mcp_a2a_security.py"
+      ]
+    }
+  },
+  "evidence_artifacts": {
+    "holdout": {
+      "path": "eval/distillation/llmc-awq-holdout.json",
+      "sha256": "5090846433d32d4d67c3097f4c7df1086bd1741d0ea4abccbab398819a541c1d",
+      "size_bytes": 87202
+    },
+    "live_rag": {
+      "path": "eval/releases/phi4-mini-llmc-awq-v1/live-rag.json",
+      "sha256": "bd6162f5aed0b2331a737c29bd48be4754a1933d0f0099fef98b923514038b24",
+      "size_bytes": 95745
+    },
+    "performance": {
+      "path": "eval/releases/phi4-mini-llmc-awq-v1/streaming-performance.json",
+      "sha256": "4524b19545450dd8af3866f152a237d1f75b5313a881f1a01787503db3a53332",
+      "size_bytes": 25692
+    },
+    "runtime": {
+      "path": "eval/releases/phi4-mini-llmc-awq-v1/runtime.json",
+      "sha256": "f97c31127c951b9ac94fbd3eb56f39fdc1ac407d8a6675389017d5f2aac9101d",
+      "size_bytes": 205
+    },
+    "security": {
+      "path": "eval/releases/phi4-mini-llmc-awq-v1/security.json",
+      "sha256": "0fcd5822ec2eb3f00d8f45161da2d3a3f65d74b17984620e37a1c1b7b397ecaf",
+      "size_bytes": 574
+    }
+  },
+  "model": {
+    "adapter_path": "/workspace/IDRKD/models/adapters/phi4-mini-dpo-tooljson-split-v2",
+    "artifact_git_commit": "8aeb3c3ee2bd03b3da18b64368dfb7e1394508cd",
+    "artifact_git_commit_short": "8aeb3c3",
+    "base_model_id": "microsoft/Phi-4-mini-instruct",
+    "checkpoint_path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq",
+    "lfs_objects": [
+      {
+        "oid": "sha256:febf589225c9728ab791f52e8897d7607a823d45368f0a4c92fa68997b40cce9",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/chat_template.jinja",
+        "size_bytes": 423
+      },
+      {
+        "oid": "sha256:c44e771f2f327305f5fac85a170e4166f6dd628b958c8c8baa0c6e6675809f5c",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/config.json",
+        "size_bytes": 3521
+      },
+      {
+        "oid": "sha256:9f39794af1b679fe93ddc427c9fd6bb37ffa809c1edf132a2ddd4995abef5bbb",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/generation_config.json",
+        "size_bytes": 169
+      },
+      {
+        "oid": "sha256:5808323c3ae9c9b774f12188229151c656eceb62904918594b2f7d1466ab1f20",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/idrkd-model-manifest.json",
+        "size_bytes": 643
+      },
+      {
+        "oid": "sha256:ce126b3e62e79cd777ed572b70a439ff24f36cf9d3399ab28862a79fcbb51694",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/model-00001-of-00002.safetensors",
+        "size_bytes": 1623242064
+      },
+      {
+        "oid": "sha256:1520432a972dfa7ad07508e5039f8f0c6a391dc6cd5f40ab8373a20bdb112bbc",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/model-00002-of-00002.safetensors",
+        "size_bytes": 1279947464
+      },
+      {
+        "oid": "sha256:fe555ce8cc533d7fdeb3de0b4eba281f86316188f71d042462b1123de386bf85",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/model.safetensors.index.json",
+        "size_bytes": 51769
+      },
+      {
+        "oid": "sha256:b2af9ba2968ef942d9e9911a8db04a18e7d505934f2a3530e970bcf032a89a3c",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/recipe.yaml",
+        "size_bytes": 824
+      },
+      {
+        "oid": "sha256:7ea8bdf68c3e7549a3fb4342523288ce628f6ab56a618f9a4dfb234a0b4d46a8",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/tokenizer.json",
+        "size_bytes": 15524476
+      },
+      {
+        "oid": "sha256:b0ee04f5d3297e8e35a8e4c10c543f793a2bda1af182d8fee2d76ab8d70555ad",
+        "path": "artifacts/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/tokenizer_config.json",
+        "size_bytes": 349
+      }
+    ],
+    "manifest_digest": "7c7847501fe5cec13d2bd43c915e3e4919d40a0b57db6a542fabd3016f0789b6",
+    "model_id": "idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq",
+    "quantization": {
+      "algorithm": "awq",
+      "backend": "llm-compressor",
+      "bits": 4,
+      "format": "compressed-tensors",
+      "group_size": 128,
+      "scheme": "W4A16_ASYM",
+      "zero_point": true
+    }
+  },
+  "record_digest": "sha256:b9fd0953f714f1a33d3eac0fba6758794a7007f191a94dcfee6f6b90abc4a0f2",
+  "runtime": {
+    "created_at": "2026-08-13T17:51:38.749239+00:00",
+    "cuda_available": true,
+    "gpu": "NVIDIA L40S",
+    "python": "3.12.13",
+    "torch": "2.13.0+cu129",
+    "torch_cuda": "12.9",
+    "vllm": "0.27.1+cu129"
+  },
+  "schema_version": 1
+}
