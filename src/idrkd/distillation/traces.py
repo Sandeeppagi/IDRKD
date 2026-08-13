@@ -16,10 +16,12 @@ SYSTEM_PROMPT = (
 )
 
 
-def _tool_schemas_json() -> str:
-    """Format available MCP tool definitions as JSON schemas (matching TaskBench format)."""
-    tools = [tool.schema() for tool in TOOL_DEFINITIONS]
-    return json.dumps(tools, indent=2, sort_keys=True)
+def _compact_tool_listing() -> str:
+    """Format available MCP tools as simple name + description (compact format for training)."""
+    lines = ["Available tools:"]
+    for tool in TOOL_DEFINITIONS:
+        lines.append(f"- {tool.name}: {tool.description}")
+    return "\n".join(lines)
 
 
 @dataclass(frozen=True)
@@ -70,11 +72,10 @@ def sft_record(trace: TeacherTrace) -> dict[str, Any]:
         for step in trace.steps
         if step.tool_calls
     ]
-    # Build user message with available MCP tools (matching TaskBench format)
+    # Build user message with available MCP tools (compact format for better learning)
     user_content = (
         f"User task:\n{trace.prompt}\n\n"
-        "Available MCP tools as JSON schemas:\n"
-        f"{_tool_schemas_json()}\n\n"
+        f"{_compact_tool_listing()}\n\n"
         "Return only a JSON object with name and arguments."
     )
     return {
