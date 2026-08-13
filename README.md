@@ -200,9 +200,14 @@ uv run python -m idrkd.distillation.cli build-taskbench-sft \
   --out artifacts/datasets/idrkd-taskbench-sft-train-v3.jsonl
 uv venv /workspace/.venv-quantization --python 3.11
 source /workspace/.venv-quantization/bin/activate
-uv pip install llmcompressor vllm peft accelerate datasets
+uv pip install llmcompressor peft accelerate datasets
 uv pip install --no-deps -e /workspace/IDRKD
 ```
+
+Do not install vLLM into this environment. Quantization uses llm-compressor's
+Transformers-based `oneshot` entry point and does not require vLLM. Use a
+separate compatible vLLM environment or the `vllm/vllm-openai` container for
+the post-quantization release gate.
 
 Verify the isolated stack and the representative SFT calibration records:
 
@@ -252,6 +257,7 @@ Serve the compressed checkpoint with vLLM:
 vllm serve \
   /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq \
   --served-model-name idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --quantization compressed-tensors \
   --host 0.0.0.0 \
   --port 8000
 ```

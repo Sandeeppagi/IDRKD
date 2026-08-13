@@ -197,7 +197,7 @@ services:
       - --port
       - "8000"
       - --quantization
-      - awq
+      - ${IDRKD_SLM_QUANTIZATION:-compressed-tensors}
       - --max-model-len
       - ${IDRKD_SLM_MAX_MODEL_LEN:-4096}
       - --gpu-memory-utilization
