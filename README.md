@@ -322,6 +322,12 @@ or does not advertise the requested model.
 
 Stop vLLM and run `deactivate` when the release gate finishes.
 
+For cryptographically signed publication and fail-closed vLLM startup, follow
+[`docs/references/secure-model-publication.md`](docs/references/secure-model-publication.md).
+The secure launcher verifies a Cosign bundle, the promotion record, manifest, and every checkpoint
+hash before serving. The hardened Compose profile also requires API authentication and offline
+model loading. Network-enforced zero egress remains a separate deployment control.
+
 `idrkd-quantize-awq` remains available as a compatibility alias. Both commands
 now use llm-compressor; AutoAWQ is no longer imported or supported.
 

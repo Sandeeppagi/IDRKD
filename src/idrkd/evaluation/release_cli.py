@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from idrkd.evaluation.live_rag import (
     run_live_rag_benchmark,
 )
 from idrkd.evaluation.live_taskbench import run_live_taskbench_benchmark
+from idrkd.evaluation.artifact_security import sign_release, verify_release
 from idrkd.evaluation.release_record import (
     build_promotion_record,
     collect_model_provenance,
@@ -256,6 +258,28 @@ def build_parser() -> argparse.ArgumentParser:
     runtime = subparsers.add_parser("runtime", help="Capture Torch, CUDA, GPU, and vLLM versions.")
     runtime.add_argument("--out", type=Path, required=True)
 
+    sign = subparsers.add_parser(
+        "sign",
+        help="Create a canonical release descriptor and sign it with Cosign.",
+    )
+    sign.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
+    sign.add_argument("--promotion-record", type=Path, required=True)
+    sign.add_argument("--key", required=True, help="Cosign private key path or KMS URI.")
+    sign.add_argument("--descriptor", type=Path, required=True)
+    sign.add_argument("--bundle", type=Path, required=True)
+    sign.add_argument("--cosign", default="cosign")
+
+    verify = subparsers.add_parser(
+        "verify",
+        help="Verify a Cosign bundle and every signed release artifact.",
+    )
+    verify.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
+    verify.add_argument("--promotion-record", type=Path, required=True)
+    verify.add_argument("--public-key", required=True, help="Cosign public key path or KMS URI.")
+    verify.add_argument("--descriptor", type=Path, required=True)
+    verify.add_argument("--bundle", type=Path, required=True)
+    verify.add_argument("--cosign", default="cosign")
+
     rag = subparsers.add_parser("rag", help="Run live pgvector/Neo4j/synthesis/NLI faithfulness.")
     _add_rag_args(rag)
     rag.add_argument("--out", type=Path, required=True)
@@ -305,6 +329,28 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.command == "runtime":
         write_json(args.out, collect_runtime_metadata())
+        return
+    if args.command == "sign":
+        result = sign_release(
+            checkpoint_dir=args.checkpoint,
+            promotion_record_path=args.promotion_record,
+            descriptor_path=args.descriptor,
+            bundle_path=args.bundle,
+            key=args.key,
+            cosign=args.cosign,
+        )
+        print(json.dumps(result, sort_keys=True))
+        return
+    if args.command == "verify":
+        result = verify_release(
+            checkpoint_dir=args.checkpoint,
+            promotion_record_path=args.promotion_record,
+            descriptor_path=args.descriptor,
+            bundle_path=args.bundle,
+            public_key=args.public_key,
+            cosign=args.cosign,
+        )
+        print(json.dumps(result, sort_keys=True))
         return
     if args.command == "rag":
         write_json(args.out, _run_rag(args))

@@ -600,11 +600,11 @@ The third phase is supervised fine-tuning. The model is fine-tuned in a supervis
 
 The fourth phase is the DPO alignment step. The student model runs a Direct Preference Optimisation (DPO) pass using DPOTrainer to enhance output faithfulness. Preference pairs are built by using critic-rejected, low-faithfulness drafts as the losing examples and fully grounded drafts as the winning examples. This steers the student model toward faithful answers without requiring an additional reward model.
 
-The fifth phase covers quantisation and publication. The LoRA adapters are merged into the base weights, and the resulting artifact is quantised to 4-bit with AWQ, which retains tool-call accuracy better than GPTQ. The finished model is cryptographically signed with cosign and uploaded to a secure model registry.
+The fifth phase covers quantisation and publication. The LoRA adapters are merged into the base weights, and the resulting artifact is quantised to 4-bit with AWQ, which retains tool-call accuracy better than GPTQ. A canonical descriptor covering the promoted evidence and every checkpoint file is cryptographically signed with Cosign and published alongside the Git LFS model artifact.
 
 The sixth phase is gated offline evaluation. Before the model is promoted, it is processed through an offline evaluation harness. If any of the seven core gates, G1 through G7, fail or degrade by more than 3 points, publication is blocked and targeted corrective measures—such as doubling the training data or retuning the critic—are initiated.
 
-The final phase is deployment of the inference server. After approval, the model is loaded into the vLLM inference server. Importantly, the production vLLM deployment operates in a zero-egress, air-gapped container and refuses to execute any model that does not have a verified cryptographic signature.
+The final phase is deployment of the inference server. After approval, a fail-closed launcher verifies the Cosign bundle, promotion record, manifest, Git LFS provenance, and every checkpoint hash before loading the model into vLLM. The hardened container uses offline model-loading settings, API authentication, immutable image digests, read-only mounts, and a non-root process. Network-enforced zero egress and an air-gapped registry remain future infrastructure controls and are not claimed by this deployment.
 
 ---
 
