@@ -26,8 +26,10 @@ from idrkd.evaluation.taskbench import (
     EvalCaseResult,
     EvalSummary,
     McpTask,
+    TaskBenchSplit,
     TaskBenchRunner,
     load_tasks_jsonl,
+    split_taskbench_tasks,
 )
 
 __all__ = [
@@ -46,6 +48,7 @@ __all__ = [
     "SyntheticSchemaCorpus",
     "SyntheticSchemaGraphBackend",
     "TaskBenchRunner",
+    "TaskBenchSplit",
     "ToolCallPredictor",
     "ToolCallMetrics",
     "build_synthetic_schema_registry",
@@ -54,6 +57,7 @@ __all__ = [
     "evaluate_promotion",
     "load_synthetic_schema_corpus",
     "load_tasks_jsonl",
+    "split_taskbench_tasks",
     "parse_tool_call",
     "score_function_calls",
 ]

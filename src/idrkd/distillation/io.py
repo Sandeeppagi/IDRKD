@@ -24,7 +24,12 @@ from idrkd.evaluation.synthetic_schemas import (
     build_synthetic_schema_tasks,
     load_synthetic_schema_corpus,
 )
-from idrkd.evaluation.taskbench import McpTask, load_tasks_jsonl
+from idrkd.evaluation.taskbench import (
+    McpTask,
+    TaskBenchSplit,
+    load_tasks_jsonl,
+    split_taskbench_tasks,
+)
 from idrkd.mcp.tools import McpToolRegistry
 
 
@@ -151,14 +156,29 @@ def build_taskbench_sft_dataset_jsonl(
     include_synthetic_schemas: bool = False,
     synthetic_schemas_path: Path = Path("eval/synthetic_schemas/schemas.jsonl"),
     synthetic_conflicts_path: Path = Path("eval/synthetic_schemas/conflicts.jsonl"),
+    split: TaskBenchSplit = "train",
+    holdout_fraction: float = 0.2,
+    split_seed: int = 17,
 ) -> list[dict[str, Any]]:
     tasks, tools = _taskbench_tasks_and_tools(
         tasks_path=tasks_path,
         include_synthetic_schemas=include_synthetic_schemas,
         synthetic_schemas_path=synthetic_schemas_path,
         synthetic_conflicts_path=synthetic_conflicts_path,
+        split=split,
+        holdout_fraction=holdout_fraction,
+        split_seed=split_seed,
     )
-    records = [_taskbench_sft_record(task, tools) for task in tasks]
+    records = [
+        _taskbench_sft_record(
+            task,
+            tools,
+            split=split,
+            holdout_fraction=holdout_fraction,
+            split_seed=split_seed,
+        )
+        for task in tasks
+    ]
     write_jsonl_records(out_path, records)
     return records
 
@@ -170,14 +190,29 @@ def build_taskbench_preference_dataset_jsonl(
     include_synthetic_schemas: bool = False,
     synthetic_schemas_path: Path = Path("eval/synthetic_schemas/schemas.jsonl"),
     synthetic_conflicts_path: Path = Path("eval/synthetic_schemas/conflicts.jsonl"),
+    split: TaskBenchSplit = "train",
+    holdout_fraction: float = 0.2,
+    split_seed: int = 17,
 ) -> list[dict[str, Any]]:
     tasks, tools = _taskbench_tasks_and_tools(
         tasks_path=tasks_path,
         include_synthetic_schemas=include_synthetic_schemas,
         synthetic_schemas_path=synthetic_schemas_path,
         synthetic_conflicts_path=synthetic_conflicts_path,
+        split=split,
+        holdout_fraction=holdout_fraction,
+        split_seed=split_seed,
     )
-    records = [_taskbench_dpo_record(task, tools) for task in tasks]
+    records = [
+        _taskbench_dpo_record(
+            task,
+            tools,
+            split=split,
+            holdout_fraction=holdout_fraction,
+            split_seed=split_seed,
+        )
+        for task in tasks
+    ]
     write_jsonl_records(out_path, records)
     return records
 
@@ -192,6 +227,9 @@ def _taskbench_tasks_and_tools(
     include_synthetic_schemas: bool,
     synthetic_schemas_path: Path,
     synthetic_conflicts_path: Path,
+    split: TaskBenchSplit,
+    holdout_fraction: float,
+    split_seed: int,
 ) -> tuple[list[McpTask], list[dict[str, Any]]]:
     tasks = load_tasks_jsonl(tasks_path)
     registry: McpToolRegistry
@@ -204,10 +242,25 @@ def _taskbench_tasks_and_tools(
         registry = build_synthetic_schema_registry(corpus)
     else:
         registry = McpToolRegistry(principal_tenant_id="default")
-    return tasks, registry.list_tools()
+    return (
+        split_taskbench_tasks(
+            tasks,
+            split=split,
+            holdout_fraction=holdout_fraction,
+            seed=split_seed,
+        ),
+        registry.list_tools(),
+    )
 
 
-def _taskbench_sft_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[str, Any]:
+def _taskbench_sft_record(
+    task: McpTask,
+    tools: list[dict[str, Any]],
+    *,
+    split: TaskBenchSplit,
+    holdout_fraction: float,
+    split_seed: int,
+) -> dict[str, Any]:
     target = ToolCall(name=task.expected_tool, arguments=task.arguments)
     return {
         "messages": [
@@ -219,12 +272,22 @@ def _taskbench_sft_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[st
             "source": "taskbench",
             "task_id": task.id,
             "category": task.category,
+            "taskbench_split": split,
+            "taskbench_holdout_fraction": holdout_fraction,
+            "taskbench_split_seed": split_seed,
             "target_tool_call": {"name": target.name, "arguments": target.arguments},
         },
     }
 
 
-def _taskbench_dpo_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[str, Any]:
+def _taskbench_dpo_record(
+    task: McpTask,
+    tools: list[dict[str, Any]],
+    *,
+    split: TaskBenchSplit,
+    holdout_fraction: float,
+    split_seed: int,
+) -> dict[str, Any]:
     target = ToolCall(name=task.expected_tool, arguments=task.arguments)
     rejected = ToolCall(
         name=_taskbench_hard_negative_tool(task.expected_tool),
@@ -238,6 +301,9 @@ def _taskbench_dpo_record(task: McpTask, tools: list[dict[str, Any]]) -> dict[st
             "source": "taskbench",
             "task_id": task.id,
             "category": task.category,
+            "taskbench_split": split,
+            "taskbench_holdout_fraction": holdout_fraction,
+            "taskbench_split_seed": split_seed,
             "target_tool_call": {"name": target.name, "arguments": target.arguments},
             "rejected_tool_call": {"name": rejected.name, "arguments": rejected.arguments},
         },

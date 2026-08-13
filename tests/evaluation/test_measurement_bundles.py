@@ -8,7 +8,8 @@ def test_measurement_bundle_writes_three_seed_mode_outputs(tmp_path: Path) -> No
     manifest = build_measurement_bundle(MeasurementJob(output_dir=tmp_path))
 
     assert manifest["seeds"] == [11, 23, 37]
-    assert manifest["task_count_per_run"] == 416
+    assert manifest["task_count_per_run"] == 440
+    assert manifest["split"] == "all"
     assert len(manifest["runs"]) == 9
     assert set(manifest["aggregate"]) == {"registry-smoke", "student-agent", "teacher-agent"}
 
@@ -24,7 +25,7 @@ def test_measurement_bundle_writes_three_seed_mode_outputs(tmp_path: Path) -> No
         if run["mode"] == "registry-smoke":
             assert raw_outputs == []
         else:
-            assert len(raw_outputs) == 416
+            assert len(raw_outputs) == 440
             assert raw_outputs[0]["raw_model_output"]
 
     assert (tmp_path / "manifest.json").is_file()

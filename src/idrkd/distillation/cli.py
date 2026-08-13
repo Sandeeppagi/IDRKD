@@ -135,8 +135,22 @@ def main() -> None:
             include_synthetic_schemas=args.include_synthetic_schemas,
             synthetic_schemas_path=args.synthetic_schemas,
             synthetic_conflicts_path=args.synthetic_conflicts,
+            split=args.split,
+            holdout_fraction=args.holdout_fraction,
+            split_seed=args.split_seed,
         )
-        print(json.dumps({"records": len(records), "out": str(args.out)}, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "holdout_fraction": args.holdout_fraction,
+                    "out": str(args.out),
+                    "records": len(records),
+                    "split": args.split,
+                    "split_seed": args.split_seed,
+                },
+                sort_keys=True,
+            )
+        )
         return
     if args.command == "build-taskbench-dpo":
         records = build_taskbench_preference_dataset_jsonl(
@@ -145,8 +159,22 @@ def main() -> None:
             include_synthetic_schemas=args.include_synthetic_schemas,
             synthetic_schemas_path=args.synthetic_schemas,
             synthetic_conflicts_path=args.synthetic_conflicts,
+            split=args.split,
+            holdout_fraction=args.holdout_fraction,
+            split_seed=args.split_seed,
         )
-        print(json.dumps({"records": len(records), "out": str(args.out)}, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "holdout_fraction": args.holdout_fraction,
+                    "out": str(args.out),
+                    "records": len(records),
+                    "split": args.split,
+                    "split_seed": args.split_seed,
+                },
+                sort_keys=True,
+            )
+        )
         return
 
     if args.command == "local-smoke":
@@ -254,6 +282,9 @@ def _add_taskbench_dataset_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--include-synthetic-schemas", action="store_true")
     parser.add_argument("--synthetic-schemas", type=Path, default=Path("eval/synthetic_schemas/schemas.jsonl"))
     parser.add_argument("--synthetic-conflicts", type=Path, default=Path("eval/synthetic_schemas/conflicts.jsonl"))
+    parser.add_argument("--split", choices=("train", "holdout", "all"), default="train")
+    parser.add_argument("--holdout-fraction", type=float, default=0.2)
+    parser.add_argument("--split-seed", type=int, default=17)
 
 
 def _normalise_device_map(value: str | None) -> str | None:

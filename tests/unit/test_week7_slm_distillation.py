@@ -61,7 +61,10 @@ def test_sft_record_preserves_messages_evidence_and_tool_trace() -> None:
     record = sft_record(_trace())
 
     assert record["messages"][0]["role"] == "system"
-    assert record["messages"][1]["content"] == "Find the customer API entrypoint"
+    user_content = record["messages"][1]["content"]
+    assert user_content.startswith("User task:\nFind the customer API entrypoint\n\n")
+    assert "Available tools:\n- search_code:" in user_content
+    assert user_content.endswith("Return only a JSON object with name and arguments.")
     assert record["messages"][2]["content"] == '{"arguments":{"query":"customer API"},"name":"search_code"}'
     assert record["metadata"]["evidence_ids"] == ["entity-a"]
     assert record["metadata"]["tool_trace"] == [{"agent": "router", "tool_calls": ["search_code"]}]

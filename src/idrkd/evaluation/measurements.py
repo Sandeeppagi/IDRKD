@@ -20,7 +20,15 @@ from idrkd.evaluation.synthetic_schemas import (
     build_synthetic_schema_tasks,
     load_synthetic_schema_corpus,
 )
-from idrkd.evaluation.taskbench import BenchmarkMode, EvalSummary, McpTask, TaskBenchRunner, load_tasks_jsonl
+from idrkd.evaluation.taskbench import (
+    BenchmarkMode,
+    EvalSummary,
+    McpTask,
+    TaskBenchRunner,
+    TaskBenchSplit,
+    load_tasks_jsonl,
+    split_taskbench_tasks,
+)
 from idrkd.mcp.server import build_registry_from_env
 from idrkd.mcp.tools import McpToolRegistry
 
@@ -34,6 +42,9 @@ class MeasurementJob:
     output_dir: Path = Path("eval/measurements")
     include_synthetic_schemas: bool = True
     seeds: tuple[int, ...] = DEFAULT_SEEDS
+    split: TaskBenchSplit = "all"
+    holdout_fraction: float = 0.2
+    split_seed: int = 17
 
 
 class OracleToolCallPredictor:
@@ -72,6 +83,12 @@ def build_measurement_bundle(job: MeasurementJob = MeasurementJob()) -> dict[str
         corpus = load_synthetic_schema_corpus()
         tasks.extend(build_synthetic_schema_tasks(corpus))
         registry = build_synthetic_schema_registry(corpus)
+    tasks = split_taskbench_tasks(
+        tasks,
+        split=job.split,
+        holdout_fraction=job.holdout_fraction,
+        seed=job.split_seed,
+    )
 
     runs: list[dict[str, Any]] = []
     for seed in job.seeds:
@@ -107,6 +124,9 @@ def build_measurement_bundle(job: MeasurementJob = MeasurementJob()) -> dict[str
         ),
         "seeds": list(job.seeds),
         "include_synthetic_schemas": job.include_synthetic_schemas,
+        "split": job.split,
+        "holdout_fraction": job.holdout_fraction,
+        "split_seed": job.split_seed,
         "task_count_per_run": len(tasks),
         "runs": runs,
         "aggregate": _aggregate_runs(runs),

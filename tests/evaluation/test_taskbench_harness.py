@@ -1,13 +1,18 @@
 from pathlib import Path
 
+import pytest
+
 from idrkd.evaluation import (
     FunctionCallPrediction,
     PromotionInputs,
     TaskBenchRunner,
+    build_synthetic_schema_tasks,
     evaluate_promotion,
+    load_synthetic_schema_corpus,
     load_tasks_jsonl,
     parse_tool_call,
     score_function_calls,
+    split_taskbench_tasks,
 )
 from idrkd.mcp.tools import McpToolRegistry
 
@@ -67,6 +72,42 @@ def test_taskbench_runner_executes_seed_tasks_against_registry() -> None:
         "drift_trigger",
         "a2a_delegation",
     }
+
+
+def test_taskbench_split_is_disjoint_stratified_and_balances_conflict_tools() -> None:
+    tasks = load_tasks_jsonl(Path("eval/taskbench/seed_tasks.jsonl"))
+    tasks.extend(build_synthetic_schema_tasks(load_synthetic_schema_corpus()))
+
+    train = split_taskbench_tasks(tasks, split="train", holdout_fraction=0.2, seed=17)
+    holdout = split_taskbench_tasks(tasks, split="holdout", holdout_fraction=0.2, seed=17)
+
+    assert len(tasks) == 440
+    assert {task.id for task in train}.isdisjoint(task.id for task in holdout)
+    assert {task.id for task in train} | {task.id for task in holdout} == {
+        task.id for task in tasks
+    }
+
+    scope_marker = "\n\nTask scope and identifiers as JSON:"
+    train_prompts = {task.prompt.partition(scope_marker)[0] for task in train}
+    holdout_prompts = {task.prompt.partition(scope_marker)[0] for task in holdout}
+    assert train_prompts.isdisjoint(holdout_prompts)
+
+    expected_tools = {task.expected_tool for task in tasks}
+    assert {task.expected_tool for task in train} == expected_tools
+    assert {task.expected_tool for task in holdout} == expected_tools
+    assert sum(task.expected_tool == "reconcile" for task in tasks) == 54
+    assert sum(task.expected_tool == "get_conflict" for task in tasks) == 54
+    assert sum(task.expected_tool == "reconcile" for task in train) == 43
+    assert sum(task.expected_tool == "get_conflict" for task in train) == 43
+    assert sum(task.expected_tool == "reconcile" for task in holdout) == 11
+    assert sum(task.expected_tool == "get_conflict" for task in holdout) == 11
+
+
+def test_taskbench_split_validates_configuration() -> None:
+    tasks = load_tasks_jsonl(Path("eval/taskbench/seed_tasks.jsonl"))
+
+    with pytest.raises(ValueError, match="holdout_fraction"):
+        split_taskbench_tasks(tasks, split="train", holdout_fraction=1.0)
 
 
 def test_parse_tool_call_from_raw_model_output() -> None:

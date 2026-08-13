@@ -117,10 +117,12 @@ def test_taskbench_dataset_builders_match_evaluation_prompt_and_expected_call(tm
     sft_records = build_taskbench_sft_dataset_jsonl(
         tasks_path=Path("eval/taskbench/seed_tasks.jsonl"),
         out_path=sft_path,
+        split="all",
     )
     dpo_records = build_taskbench_preference_dataset_jsonl(
         tasks_path=Path("eval/taskbench/seed_tasks.jsonl"),
         out_path=dpo_path,
+        split="all",
     )
 
     assert len(sft_records) == 360
@@ -147,6 +149,10 @@ def test_taskbench_dataset_builders_match_evaluation_prompt_and_expected_call(tm
         },
     }
     assert dpo_records[0]["metadata"]["rejected_tool_call"]["name"] == "get_entity"
+    assert sft_records[0]["metadata"]["taskbench_split"] == "all"
+    assert dpo_records[0]["metadata"]["taskbench_split"] == "all"
+    assert sft_records[0]["metadata"]["taskbench_holdout_fraction"] == 0.2
+    assert dpo_records[0]["metadata"]["taskbench_split_seed"] == 17
 
 
 def test_sft_and_dpo_training_dry_run_writes_reproducible_summary(tmp_path: Path) -> None:

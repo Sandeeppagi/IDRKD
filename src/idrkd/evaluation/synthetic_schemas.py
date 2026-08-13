@@ -177,6 +177,20 @@ def build_synthetic_schema_tasks(
         )
         tasks.append(
             McpTask(
+                id=f"synthetic-conflict-get-{conflict_id}",
+                category="a2a_delegation",
+                prompt=(
+                    f"Fetch the existing injected {conflict['conflict_type']} conflict record on "
+                    f"{conflict['field']} without producing a reconciliation recommendation, using "
+                    f"conflict_id {conflict_id}, tenant_id {tenant_id}, and repo_id {repo_id}."
+                ),
+                expected_tool="get_conflict",
+                arguments={"tenant_id": tenant_id, "repo_id": repo_id, "conflict_id": conflict_id},
+                expected_result_keys=["found", "conflict"],
+            )
+        )
+        tasks.append(
+            McpTask(
                 id=f"synthetic-conflict-resolve-{conflict_id}",
                 category="conflict_resolution",
                 prompt=(

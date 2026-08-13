@@ -45,13 +45,19 @@ def test_synthetic_schema_fixtures_execute_through_mcp_taskbench() -> None:
 
     summary = TaskBenchRunner(registry).run(tasks)
 
-    assert len(tasks) == 56
+    assert len(tasks) == 80
     assert "tenant_id default" in tasks[0].prompt
     assert "repo_id synthetic-schemas" in tasks[0].prompt
     assert summary.pass_rate == 1.0
     assert summary.schema_valid_rate == 1.0
     assert summary.tool_f1 == 1.0
-    assert summary.by_category() == {"conflict_resolution": 1.0, "schema_conformance": 1.0}
+    assert summary.by_category() == {
+        "a2a_delegation": 1.0,
+        "conflict_resolution": 1.0,
+        "schema_conformance": 1.0,
+    }
+    assert sum(task.expected_tool == "reconcile" for task in tasks) == 24
+    assert sum(task.expected_tool == "get_conflict" for task in tasks) == 24
 
 
 def test_mcp_task_suite_fixture_has_360_tasks_across_six_categories() -> None:

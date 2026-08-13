@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Literal
@@ -19,6 +20,7 @@ from idrkd.mcp.tools import JsonRpcRequest, McpToolRegistry
 
 
 BenchmarkMode = Literal["registry-smoke", "student-agent", "teacher-agent", "ablation"]
+TaskBenchSplit = Literal["all", "train", "holdout"]
 
 
 class McpTask(BaseModel):
@@ -254,6 +256,64 @@ def load_tasks_jsonl(path: Path) -> list[McpTask]:
     return tasks
 
 
+def split_taskbench_tasks(
+    tasks: list[McpTask],
+    *,
+    split: TaskBenchSplit,
+    holdout_fraction: float = 0.2,
+    seed: int = 17,
+) -> list[McpTask]:
+    """Select a deterministic, tool-stratified TaskBench partition.
+
+    Repeated seed cases are grouped by their natural-language prompt before
+    assignment so equivalent wording cannot appear in both partitions.
+    """
+
+    if split not in {"all", "train", "holdout"}:
+        raise ValueError(f"Unsupported TaskBench split: {split}")
+    if not 0.0 < holdout_fraction < 1.0:
+        raise ValueError("holdout_fraction must be between 0 and 1")
+    if split == "all":
+        return list(tasks)
+
+    groups_by_tool: dict[str, dict[str, list[McpTask]]] = {}
+    for task in tasks:
+        prompt_group = _taskbench_prompt_group(task)
+        groups_by_tool.setdefault(task.expected_tool, {}).setdefault(prompt_group, []).append(task)
+
+    holdout_groups: set[tuple[str, str]] = set()
+    for tool_name, prompt_groups in groups_by_tool.items():
+        ranked = sorted(
+            prompt_groups,
+            key=lambda prompt: hashlib.sha256(
+                f"{seed}\0{tool_name}\0{prompt}".encode("utf-8")
+            ).hexdigest(),
+        )
+        if len(ranked) == 1:
+            continue
+        target_count = round(sum(len(prompt_groups[prompt]) for prompt in ranked) * holdout_fraction)
+        subsets: dict[int, tuple[str, ...]] = {0: ()}
+        for prompt in ranked:
+            group_size = len(prompt_groups[prompt])
+            additions = {
+                count + group_size: selected + (prompt,)
+                for count, selected in subsets.items()
+                if count + group_size not in subsets
+            }
+            subsets.update(additions)
+        total_count = sum(len(group) for group in prompt_groups.values())
+        valid_counts = [count for count in subsets if 0 < count < total_count]
+        selected_count = min(valid_counts, key=lambda count: (abs(count - target_count), count))
+        holdout_groups.update((tool_name, prompt) for prompt in subsets[selected_count])
+
+    selected = []
+    for task in tasks:
+        is_holdout = (task.expected_tool, _taskbench_prompt_group(task)) in holdout_groups
+        if (split == "holdout" and is_holdout) or (split == "train" and not is_holdout):
+            selected.append(task)
+    return selected
+
+
 def write_summary(path: Path, summary: EvalSummary) -> None:
     path.write_text(json.dumps(summary.as_dict(), indent=2, sort_keys=True), encoding="utf-8")
 
@@ -275,3 +335,8 @@ def _make_prompt_self_contained(task: McpTask) -> McpTask:
             )
         }
     )
+
+
+def _taskbench_prompt_group(task: McpTask) -> str:
+    prompt, _, _ = task.prompt.partition("\n\nTask scope and identifiers as JSON:")
+    return prompt.strip()

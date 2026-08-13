@@ -14,7 +14,12 @@ from idrkd.evaluation.synthetic_schemas import (
     build_synthetic_schema_tasks,
     load_synthetic_schema_corpus,
 )
-from idrkd.evaluation.taskbench import TaskBenchRunner, load_tasks_jsonl, write_summary
+from idrkd.evaluation.taskbench import (
+    TaskBenchRunner,
+    load_tasks_jsonl,
+    split_taskbench_tasks,
+    write_summary,
+)
 from idrkd.mcp.server import build_registry_from_env
 
 
@@ -29,6 +34,7 @@ def main() -> None:
     measurements_parser.add_argument("--out-dir", type=Path, default=Path("eval/measurements"))
     measurements_parser.add_argument("--seed", action="append", type=int, default=[])
     measurements_parser.add_argument("--without-synthetic-schemas", action="store_true")
+    _add_split_args(measurements_parser, default="all")
     parser.add_argument("--tasks", type=Path, default=Path("eval/taskbench/seed_tasks.jsonl"))
     parser.add_argument("--out", type=Path, default=Path("eval/taskbench/latest-summary.json"))
     parser.add_argument(
@@ -48,6 +54,7 @@ def main() -> None:
     )
     parser.add_argument("--synthetic-schemas", type=Path, default=Path("eval/synthetic_schemas/schemas.jsonl"))
     parser.add_argument("--synthetic-conflicts", type=Path, default=Path("eval/synthetic_schemas/conflicts.jsonl"))
+    _add_split_args(parser, default="all")
     args = parser.parse_args()
 
     if args.command == "build-measurements":
@@ -57,6 +64,9 @@ def main() -> None:
                 output_dir=args.out_dir,
                 include_synthetic_schemas=not args.without_synthetic_schemas,
                 seeds=tuple(args.seed) if args.seed else (11, 23, 37),
+                split=args.split,
+                holdout_fraction=args.holdout_fraction,
+                split_seed=args.split_seed,
             )
         )
         print(json.dumps({"manifest": str(args.out_dir / "manifest.json"), "runs": len(manifest["runs"])}, sort_keys=True))
@@ -71,6 +81,12 @@ def main() -> None:
         )
         tasks.extend(build_synthetic_schema_tasks(corpus))
         registry = build_synthetic_schema_registry(corpus)
+    tasks = split_taskbench_tasks(
+        tasks,
+        split=args.split,
+        holdout_fraction=args.holdout_fraction,
+        seed=args.split_seed,
+    )
     predictor = None
     if args.mode != "registry-smoke":
         base_url = args.model_base_url or os.getenv("IDRKD_EVAL_MODEL_BASE_URL")
@@ -102,6 +118,12 @@ def main() -> None:
         f"mode={summary.mode} pass_rate={summary.pass_rate:.3f} "
         f"tool_f1={summary.tool_f1:.3f} cases={len(summary.cases)}"
     )
+
+
+def _add_split_args(parser: argparse.ArgumentParser, *, default: str) -> None:
+    parser.add_argument("--split", choices=("train", "holdout", "all"), default=default)
+    parser.add_argument("--holdout-fraction", type=float, default=0.2)
+    parser.add_argument("--split-seed", type=int, default=17)
 
 
 if __name__ == "__main__":

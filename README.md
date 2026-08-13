@@ -113,8 +113,8 @@ Build and smoke-run the distillation execution path:
 ```bash
 uv run python -m idrkd.distillation.cli build-sft --traces eval/distillation/seed_teacher_traces.jsonl --out /private/tmp/idrkd-sft.jsonl
 uv run python -m idrkd.distillation.cli build-dpo --traces eval/distillation/seed_teacher_traces.jsonl --out /private/tmp/idrkd-dpo.jsonl
-uv run python -m idrkd.distillation.cli build-taskbench-sft --include-synthetic-schemas --out /private/tmp/idrkd-taskbench-sft.jsonl
-uv run python -m idrkd.distillation.cli build-taskbench-dpo --include-synthetic-schemas --out /private/tmp/idrkd-taskbench-dpo.jsonl
+uv run python -m idrkd.distillation.cli build-taskbench-sft --include-synthetic-schemas --split train --out /private/tmp/idrkd-taskbench-sft.jsonl
+uv run python -m idrkd.distillation.cli build-taskbench-dpo --include-synthetic-schemas --split train --out /private/tmp/idrkd-taskbench-dpo.jsonl
 uv run python -m idrkd.distillation.cli train-sft --dataset /private/tmp/idrkd-sft.jsonl --out /private/tmp/idrkd-sft-out --base-model local/tiny-student --dry-run
 uv run python -m idrkd.distillation.cli train-dpo --dataset /private/tmp/idrkd-dpo.jsonl --out /private/tmp/idrkd-dpo-out --base-model local/tiny-student --dry-run
 ```
@@ -135,6 +135,7 @@ projection names:
 rm -rf models/adapters/phi4-mini-sft-tooljson-smoke
 uv run python -m idrkd.distillation.cli build-taskbench-sft \
   --include-synthetic-schemas \
+  --split train \
   --out artifacts/datasets/idrkd-taskbench-tooljson-v2.jsonl
 uv run python -m idrkd.distillation.cli train-sft \
   --dataset artifacts/datasets/idrkd-taskbench-tooljson-v2.jsonl \
@@ -150,9 +151,38 @@ uv run python scripts/probe_taskbench_adapter.py \
   --adapter models/adapters/phi4-mini-sft-tooljson-smoke \
   --base-model microsoft/Phi-4-mini-instruct \
   --include-synthetic-schemas \
+  --split holdout \
   --limit 5 \
   --use-4bit
 ```
+
+TaskBench datasets use a deterministic, tool-stratified 80/20 split. Repeated
+natural-language prompts remain together, so equivalent wording cannot leak
+between training and holdout. With synthetic schemas enabled, the current split
+contains 351 training records and 89 holdout records. The synthetic conflict
+tasks also balance `reconcile` and `get_conflict` in both partitions.
+
+Use only the training partition for both SFT and DPO, then evaluate the adapters
+against the matching holdout partition and seed:
+
+```bash
+uv run python -m idrkd.distillation.cli build-taskbench-dpo \
+  --include-synthetic-schemas \
+  --split train \
+  --split-seed 17 \
+  --out artifacts/datasets/idrkd-taskbench-dpo-hardneg-train-v2.jsonl
+uv run python scripts/probe_taskbench_adapter.py \
+  --adapter models/adapters/phi4-mini-dpo-tooljson-smoke \
+  --base-model microsoft/Phi-4-mini-instruct \
+  --include-synthetic-schemas \
+  --split holdout \
+  --split-seed 17 \
+  --limit 1000 \
+  --use-4bit
+```
+
+Adapters trained from the former unsplit dataset must be retrained before their
+holdout score is valid, including the SFT adapter used to initialise DPO.
 
 Production AWQ quantization is intended for a Linux/CUDA builder. AutoAWQ is
 deprecated, so run Stage 12 from a separate pinned environment instead of
@@ -259,10 +289,10 @@ against the running MCP server and live Neo4j/pgvector data.
 Run benchmark modes:
 
 ```bash
-uv run python -m idrkd.evaluation.cli --mode registry-smoke --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-registry-smoke.json
-uv run python -m idrkd.evaluation.cli --mode student-agent --model-base-url http://localhost:11434/v1 --model-id qwen2.5:0.5b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-student-agent.json
-uv run python -m idrkd.evaluation.cli --mode teacher-agent --model-base-url http://localhost:11434/v1 --teacher-model-id qwen2.5:7b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-teacher-agent.json
-uv run python -m idrkd.evaluation.cli --mode ablation --ablation no_graph --model-base-url http://localhost:11434/v1 --model-id qwen2.5:0.5b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-ablation-no-graph.json
+uv run python -m idrkd.evaluation.cli --mode registry-smoke --split all --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-registry-smoke.json
+uv run python -m idrkd.evaluation.cli --mode student-agent --split holdout --model-base-url http://localhost:11434/v1 --model-id qwen2.5:0.5b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-student-agent.json
+uv run python -m idrkd.evaluation.cli --mode teacher-agent --split holdout --model-base-url http://localhost:11434/v1 --teacher-model-id qwen2.5:7b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-teacher-agent.json
+uv run python -m idrkd.evaluation.cli --mode ablation --split holdout --ablation no_graph --model-base-url http://localhost:11434/v1 --model-id qwen2.5:0.5b --tasks eval/taskbench/seed_tasks.jsonl --out /private/tmp/idrkd-ablation-no-graph.json
 ```
 
 Run the Dockerized re-index worker and verify MCP enqueue consumption:

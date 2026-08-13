@@ -27,10 +27,12 @@ uv run python -m idrkd.distillation.cli build-dpo \
 uv run python -m idrkd.distillation.cli build-taskbench-sft \
   --tasks "$TASKS_PATH" \
   --include-synthetic-schemas \
+  --split train \
   --out "$OUT_DIR/idrkd-taskbench-sft.jsonl"
 uv run python -m idrkd.distillation.cli build-taskbench-dpo \
   --tasks "$TASKS_PATH" \
   --include-synthetic-schemas \
+  --split train \
   --out "$OUT_DIR/idrkd-taskbench-dpo.jsonl"
 
 section "3. Show that training targets match TaskBench parser contract"
