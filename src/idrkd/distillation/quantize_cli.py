@@ -36,14 +36,9 @@ def main() -> None:
         required=True,
         help="Representative JSONL calibration data with messages, text, or prompt/chosen fields.",
     )
-    parser.add_argument("--max-calibration-samples", type=int, default=128)
-    parser.add_argument("--max-sequence-length", type=int, default=4096)
-    parser.add_argument(
-        "--sequential-target",
-        action="append",
-        default=None,
-        help="Module class calibrated as one sequential unit; defaults to Linear.",
-    )
+    parser.add_argument("--max-calibration-samples", type=int, default=64)
+    parser.add_argument("--max-sequence-length", type=int, default=3072)
+    parser.add_argument("--calibration-seed", type=int, default=17)
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--trust-remote-code", action="store_true")
 
@@ -65,7 +60,7 @@ def main() -> None:
             trust_remote_code=args.trust_remote_code,
             max_calibration_samples=args.max_calibration_samples,
             max_sequence_length=args.max_sequence_length,
-            sequential_targets=tuple(args.sequential_target or ("Linear",)),
+            calibration_seed=args.calibration_seed,
         )
     )
     payload = manifest.payload()

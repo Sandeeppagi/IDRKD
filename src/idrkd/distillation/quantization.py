@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 from pathlib import Path
+import random
 from tempfile import TemporaryDirectory
 from typing import Any
 
@@ -80,9 +81,9 @@ class AwqQuantizationJob:
     quantization: AwqQuantizationConfig = AwqQuantizationConfig()
     local_files_only: bool = False
     trust_remote_code: bool = False
-    max_calibration_samples: int = 128
-    max_sequence_length: int = 4096
-    sequential_targets: tuple[str, ...] = ("Linear",)
+    max_calibration_samples: int = 64
+    max_sequence_length: int = 3072
+    calibration_seed: int = 17
 
 
 def run_awq_quantization(job: AwqQuantizationJob) -> ModelArtifactManifest:
@@ -137,7 +138,6 @@ def _quantize_merged_model(
         recipe=recipe,
         max_seq_length=job.max_sequence_length,
         num_calibration_samples=len(samples),
-        sequential_targets=list(job.sequential_targets),
     )
 
     job.output_dir.mkdir(parents=True, exist_ok=True)
@@ -187,18 +187,18 @@ def _calibration_data(job: AwqQuantizationJob, tokenizer: Any) -> list[str]:
     if job.calibration_path is None:
         raise ValueError("llm-compressor AWQ requires a representative calibration JSONL file")
 
-    samples = []
+    samples: list[str] = []
     for line in job.calibration_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         sample = _calibration_sample(json.loads(line), tokenizer)
         if sample:
             samples.append(sample)
-        if len(samples) >= job.max_calibration_samples:
-            break
     if not samples:
         raise ValueError(f"No calibration samples found in {job.calibration_path}")
-    return samples
+    if len(samples) <= job.max_calibration_samples:
+        return samples
+    return random.Random(job.calibration_seed).sample(samples, job.max_calibration_samples)
 
 
 def _calibration_sample(raw: Any, tokenizer: Any) -> str:
@@ -264,8 +264,6 @@ def _validate_job(job: AwqQuantizationJob) -> None:
         raise ValueError("max_calibration_samples must be positive")
     if job.max_sequence_length <= 0:
         raise ValueError("max_sequence_length must be positive")
-    if not job.sequential_targets or any(not target.strip() for target in job.sequential_targets):
-        raise ValueError("sequential_targets must contain at least one module class")
     if job.adapter_path is None and not job.input_model_path.exists():
         raise ValueError(f"Merged input model does not exist: {job.input_model_path}")
     if job.adapter_path is not None and not job.adapter_path.exists():

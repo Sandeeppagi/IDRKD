@@ -144,6 +144,30 @@ def test_calibration_data_renders_chat_and_teacher_trace(tmp_path: Path) -> None
     assert "assistant:{\"arguments\":{\"entity_id\":\"entity-1\"}" in samples[1]
 
 
+def test_calibration_sampling_is_deterministic_and_not_a_prefix(tmp_path: Path) -> None:
+    calibration = tmp_path / "calibration.jsonl"
+    calibration.write_text(
+        "\n".join(json.dumps(f"sample-{index}") for index in range(10)),
+        encoding="utf-8",
+    )
+
+    def samples(seed: int) -> list[str]:
+        job = AwqQuantizationJob(
+            input_model_path=tmp_path,
+            output_dir=tmp_path / "out",
+            model_id="test",
+            base_model_id="test/base",
+            calibration_path=calibration,
+            max_calibration_samples=3,
+            calibration_seed=seed,
+        )
+        return quantization._calibration_data(job, _FakeTokenizer())
+
+    assert samples(17) == samples(17)
+    assert samples(17) != samples(18)
+    assert samples(17) != ["sample-0", "sample-1", "sample-2"]
+
+
 def test_quantization_merges_adapter_and_runs_llm_compressor(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -188,15 +212,14 @@ def test_quantization_merges_adapter_and_runs_llm_compressor(
         base_model_id="microsoft/Phi-4-mini-instruct",
         adapter_path=adapter,
         calibration_path=calibration,
-        max_sequence_length=4096,
+        max_sequence_length=3072,
     )
 
     manifest = run_awq_quantization(job)
 
     assert len(calls) == 1
-    assert calls[0]["max_seq_length"] == 4096
+    assert calls[0]["max_seq_length"] == 3072
     assert calls[0]["num_calibration_samples"] == 1
-    assert calls[0]["sequential_targets"] == ["Linear"]
     assert calls[0]["dataset"]["text"][0].startswith("<chat>user:")
     assert isinstance(calls[0]["recipe"][0], _FakeAWQModifier)
     assert calls[0]["recipe"][1].kwargs == {

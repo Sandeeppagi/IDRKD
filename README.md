@@ -242,14 +242,15 @@ idrkd-quantize \
   --out /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq \
   --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
   --calibration /workspace/IDRKD/artifacts/datasets/idrkd-taskbench-sft-train-v3.jsonl \
-  --max-calibration-samples 128 \
-  --max-sequence-length 4096 \
-  --sequential-target Linear
+  --max-calibration-samples 64 \
+  --max-sequence-length 3072 \
+  --calibration-seed 17
 ```
 
-`Linear` sequential targets keep AWQ calibration bounded to one dense module at
-a time. The expandable CUDA allocator also reduces fragmentation during AWQ
-smoothing on 48 GB builders.
+The 3072-token budget covers the measured TaskBench training sequences while
+keeping AWQ calibration within a 48 GB builder. The loader samples records
+deterministically across the full training dataset instead of taking a biased
+prefix. The expandable CUDA allocator reduces fragmentation during smoothing.
 
 Inspect the checkpoint and manifest:
 
