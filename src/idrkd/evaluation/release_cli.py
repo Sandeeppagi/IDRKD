@@ -61,6 +61,7 @@ class _LivePipelineFactory:
         )
         self._embeddings = BgeM3EmbeddingAdapter.from_sentence_transformers(
             args.embedding_model,
+            device=args.embedding_device,
             local_files_only=args.local_files_only,
         )
         self._reranker = MiniLmReranker.from_sentence_transformers(
@@ -184,6 +185,7 @@ def _add_rag_args(parser: argparse.ArgumentParser) -> None:
         default=_environment_value("NEO4J_PASSWORD", DEFAULT_NEO4J_PASSWORD),
     )
     parser.add_argument("--embedding-model", default="BAAI/bge-m3")
+    parser.add_argument("--embedding-device", default="cpu")
     parser.add_argument("--reranker-model", default="cross-encoder/ms-marco-MiniLM-L-6-v2")
     parser.add_argument("--critic-model", default="cross-encoder/nli-deberta-v3-large")
     parser.add_argument("--faithfulness-threshold", type=float, default=0.78)

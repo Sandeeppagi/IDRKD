@@ -54,7 +54,13 @@ class CommitIngestionPipeline:
         self._slo = slo or IngestionSlo()
         self._clock = clock or LamportClock()
 
-    def process(self, event: CommitEvent, *, correlation_id: str) -> IngestionResult:
+    def process(
+        self,
+        event: CommitEvent,
+        *,
+        correlation_id: str,
+        apply_schema: bool = True,
+    ) -> IngestionResult:
         with traced_span(
             "ingestion.commit",
             correlation_id=correlation_id,
@@ -62,7 +68,8 @@ class CommitIngestionPipeline:
             repo_id=event.repo_id,
             file_count=len(event.changed_paths),
         ):
-            self._writer.apply_schema()
+            if apply_schema:
+                self._writer.apply_schema()
             parsed_files = [
                 parsed
                 for path in event.changed_paths
@@ -119,14 +126,16 @@ class CommitIngestionPipeline:
             repo_id=parsed.repo_id,
             entity_count=len(parsed.entities),
         ):
+            texts = [embedding_text_for_entity(entity) for entity in parsed.entities]
+            vectors = self._embeddings.embed_many(texts)
             records = [
                 vector_record_from_entity(
                     entity,
-                    text=embedding_text_for_entity(entity),
-                    embedding=self._embeddings.embed(embedding_text_for_entity(entity)),
+                    text=text,
+                    embedding=embedding,
                     embedding_model=self._embedding_model_name,
                 )
-                for entity in parsed.entities
+                for entity, text, embedding in zip(parsed.entities, texts, vectors, strict=True)
             ]
             return self._embedding_sink.upsert_records(records)
 

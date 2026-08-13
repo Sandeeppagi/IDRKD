@@ -24,6 +24,25 @@ these produce retrieval recall evidence but do not replace the NLI faithfulness 
 The repositories in the case file must already be ingested into Neo4j and pgvector under the same
 tenant and repository IDs. The vLLM OpenAI-compatible server must be listening before the run.
 
+For a native Runpod installation, ingest the committed five-repository corpus after PostgreSQL,
+pgvector, and Neo4j are running. Stop vLLM first if it owns most GPU memory, then run:
+
+```bash
+idrkd-ingest-corpus \
+  --tenant-id default \
+  --postgres-dsn "${POSTGRES_DSN:-postgresql://idrkd:idrkd@localhost:5432/idrkd}" \
+  --neo4j-uri "${NEO4J_URI:-bolt://localhost:7687}" \
+  --neo4j-user "${NEO4J_USER:-neo4j}" \
+  --neo4j-password "${NEO4J_PASSWORD:-change-me}" \
+  --embedding-device cuda \
+  --out /workspace/release-evidence/corpus-ingestion.json
+```
+
+The command is idempotent and captures individual parser failures instead of discarding completed
+repositories. Use repeated `--repo-id` options to ingest or retry a subset. At release time the RAG
+command defaults query embeddings to CPU so vLLM can retain GPU memory; set
+`--embedding-device cuda` only when sufficient GPU memory remains.
+
 ## 3. Run all release gates
 
 Run this from the normal IDRKD environment, which owns the database, sentence-transformer, NLI, and

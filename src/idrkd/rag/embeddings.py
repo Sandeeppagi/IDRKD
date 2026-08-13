@@ -17,9 +17,15 @@ class BgeM3EmbeddingAdapter:
     uses hashing so local tests remain runnable without model downloads.
     """
 
-    def __init__(self, dimensions: int = 1536, model: object | None = None) -> None:
+    def __init__(
+        self,
+        dimensions: int = 1536,
+        model: object | None = None,
+        batch_size: int = 32,
+    ) -> None:
         self.dimensions = dimensions
         self._model = model
+        self._batch_size = batch_size
 
     def embed(self, text: str) -> list[float]:
         if self._model is not None:
@@ -36,19 +42,39 @@ class BgeM3EmbeddingAdapter:
             vector /= norm
         return vector.tolist()
 
+    def embed_many(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        if self._model is None:
+            return [self.embed(text) for text in texts]
+        encode = getattr(self._model, "encode")
+        raw = encode(texts, batch_size=self._batch_size, show_progress_bar=False)
+        values = raw.tolist() if hasattr(raw, "tolist") else raw
+        return [
+            _normalise_dimensions([float(value) for value in row], self.dimensions)
+            for row in values
+        ]
+
     @classmethod
     def from_sentence_transformers(
         cls,
         model_name: str = "BAAI/bge-m3",
         *,
         dimensions: int = 1536,
+        batch_size: int = 32,
+        device: str | None = None,
         local_files_only: bool = False,
     ) -> BgeM3EmbeddingAdapter:
         from sentence_transformers import SentenceTransformer
 
         return cls(
             dimensions=dimensions,
-            model=SentenceTransformer(model_name, local_files_only=local_files_only),
+            model=SentenceTransformer(
+                model_name,
+                device=device,
+                local_files_only=local_files_only,
+            ),
+            batch_size=batch_size,
         )
 
 

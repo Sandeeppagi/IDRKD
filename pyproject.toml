@@ -54,6 +54,7 @@ idrkd-drift-worker = "idrkd.drift.cli:main"
 idrkd-graphify = "idrkd.graph.graphify_importer:main"
 idrkd-mcp-smoke = "idrkd.mcp.live_smoke:main"
 idrkd-release = "idrkd.evaluation.release_cli:main"
+idrkd-ingest-corpus = "idrkd.ingestion.corpus_cli:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
