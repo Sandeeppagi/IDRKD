@@ -48,6 +48,7 @@ ml = [
 
 [project.scripts]
 idrkd-distill = "idrkd.distillation.cli:main"
+idrkd-quantize = "idrkd.distillation.quantize_cli:main"
 idrkd-quantize-awq = "idrkd.distillation.quantize_cli:main"
 idrkd-drift-worker = "idrkd.drift.cli:main"
 idrkd-graphify = "idrkd.graph.graphify_importer:main"

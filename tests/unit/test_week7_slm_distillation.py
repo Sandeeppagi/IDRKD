@@ -163,8 +163,10 @@ def test_manifest_digest_signature_awq_and_vllm_command_are_deterministic() -> N
         "bits": 4,
         "group_size": 128,
         "zero_point": True,
-        "backend": "awq",
-        "version": "GEMM",
+        "backend": "llm-compressor",
+        "algorithm": "awq",
+        "scheme": "W4A16_ASYM",
+        "format": "compressed-tensors",
     }
     assert serving.openai_base_url() == "http://127.0.0.1:8080/v1"
     assert serving.command()[:3] == ("vllm", "serve", "models/checkpoints/phi4-mini-awq")

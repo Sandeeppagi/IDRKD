@@ -184,58 +184,100 @@ uv run python scripts/probe_taskbench_adapter.py \
 Adapters trained from the former unsplit dataset must be retrained before their
 holdout score is valid, including the SFT adapter used to initialise DPO.
 
-Production AWQ quantization is intended for a Linux/CUDA builder. AutoAWQ is
-deprecated, so run Stage 12 from a separate pinned environment instead of
-installing it into the working IDRKD `.venv`.
+Production AWQ quantization uses
+[vLLM llm-compressor](https://github.com/vllm-project/llm-compressor) and writes
+a compressed-tensors checkpoint for vLLM. Run Stage 12 from a separate
+Linux/CUDA environment instead of changing the working IDRKD `.venv`.
 
-Create the legacy AWQ environment on the CUDA builder:
+Create the quantization environment on the CUDA builder:
 
 ```bash
 cd /workspace/IDRKD
-uv venv /workspace/.venv-awq --python 3.11
-source /workspace/.venv-awq/bin/activate
-uv pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu126
-uv pip install "autoawq==0.2.9" "transformers==4.51.3" "peft>=0.11" "accelerate" "datasets>=2.20"
+uv run python -m idrkd.distillation.cli build-taskbench-sft \
+  --include-synthetic-schemas \
+  --split train \
+  --split-seed 17 \
+  --out artifacts/datasets/idrkd-taskbench-sft-train-v3.jsonl
+uv venv /workspace/.venv-quantization --python 3.11
+source /workspace/.venv-quantization/bin/activate
+uv pip install llmcompressor vllm peft accelerate datasets
 uv pip install --no-deps -e /workspace/IDRKD
 ```
 
-Verify the isolated stack and calibration traces:
+Verify the isolated stack and the representative SFT calibration records:
 
 ```bash
 python - <<'PY'
+from importlib.metadata import version
+
 import torch
 import transformers
-from awq import AutoAWQForCausalLM
+import llmcompressor
 
 print("Torch:", torch.__version__)
 print("CUDA:", torch.version.cuda)
 print("CUDA available:", torch.cuda.is_available())
 print("Transformers:", transformers.__version__)
+print("llm-compressor:", version("llmcompressor"))
 PY
-wc -l /workspace/IDRKD/eval/distillation/frontier_admitted_teacher_traces.jsonl
+wc -l /workspace/IDRKD/artifacts/datasets/idrkd-taskbench-sft-train-v3.jsonl
 ```
 
 Then quantize. The `--input-model` value may be a placeholder when `--adapter`
-is supplied, because the CLI merges the base model and PEFT adapter before AWQ:
+is supplied, because the CLI merges the base model and PEFT adapter first. The
+calibration loader applies the model chat template to SFT `messages` records:
 
 ```bash
-idrkd-quantize-awq \
+idrkd-quantize \
   --input-model /workspace/IDRKD/models/checkpoints/merged-placeholder \
   --base-model microsoft/Phi-4-mini-instruct \
-  --adapter /workspace/IDRKD/models/adapters/phi4-mini-dpo \
-  --out /workspace/IDRKD/models/checkpoints/phi4-mini-awq \
-  --model-id idrkd-phi4-mini-awq \
-  --calibration /workspace/IDRKD/eval/distillation/frontier_admitted_teacher_traces.jsonl \
-  --max-calibration-samples 128
-ls -lah /workspace/IDRKD/models/checkpoints/phi4-mini-awq
-cat /workspace/IDRKD/models/checkpoints/phi4-mini-awq/idrkd-model-manifest.json | jq .
-deactivate
+  --adapter /workspace/IDRKD/models/adapters/phi4-mini-dpo-tooljson-split-v2 \
+  --out /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --calibration /workspace/IDRKD/artifacts/datasets/idrkd-taskbench-sft-train-v3.jsonl \
+  --max-calibration-samples 128 \
+  --max-sequence-length 4096
 ```
 
-If AutoAWQ fails because Phi-4-mini is unsupported by the archived package, stop
-there and leave the working training environment unchanged. The appropriate next
-code change is to migrate quantization to AutoAWQ's recommended successor,
-vLLM's `llm-compressor`.
+Inspect the checkpoint and manifest:
+
+```bash
+ls -lah /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq
+jq . /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/idrkd-model-manifest.json
+```
+
+Serve the compressed checkpoint with vLLM:
+
+```bash
+vllm serve \
+  /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --served-model-name idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --host 0.0.0.0 \
+  --port 8000
+```
+
+In another terminal, run the same deterministic 89-case holdout gate used for
+the adapters. `pass_rate`, `tool_f1`, and `argument_accuracy` must all remain
+`1.0` before promotion:
+
+```bash
+cd /workspace/IDRKD
+uv run python -m idrkd.evaluation.cli \
+  --mode student-agent \
+  --model-base-url http://127.0.0.1:8000/v1 \
+  --model-id idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq \
+  --include-synthetic-schemas \
+  --split holdout \
+  --split-seed 17 \
+  --out /workspace/llmc-awq-holdout.json
+jq '{cases: (.cases | length), pass_rate, tool_f1, argument_accuracy}' \
+  /workspace/llmc-awq-holdout.json
+```
+
+Stop vLLM and run `deactivate` when the release gate finishes.
+
+`idrkd-quantize-awq` remains available as a compatibility alias. Both commands
+now use llm-compressor; AutoAWQ is no longer imported or supported.
 
 The expected local service stack is:
 
