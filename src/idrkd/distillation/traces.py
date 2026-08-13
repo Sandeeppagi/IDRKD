@@ -7,11 +7,19 @@ from datetime import UTC, datetime
 import json
 from typing import Any
 
+from idrkd.mcp.tools import TOOL_DEFINITIONS
+
 
 SYSTEM_PROMPT = (
     "You are the IDRKD student model. Select exactly one MCP tool for the user task. "
     'Return only JSON with keys: "name" and "arguments".'
 )
+
+
+def _tool_schemas_json() -> str:
+    """Format available MCP tool definitions as JSON schemas (matching TaskBench format)."""
+    tools = [tool.schema() for tool in TOOL_DEFINITIONS]
+    return json.dumps(tools, indent=2, sort_keys=True)
 
 
 @dataclass(frozen=True)
@@ -62,10 +70,17 @@ def sft_record(trace: TeacherTrace) -> dict[str, Any]:
         for step in trace.steps
         if step.tool_calls
     ]
+    # Build user message with available MCP tools (matching TaskBench format)
+    user_content = (
+        f"User task:\n{trace.prompt}\n\n"
+        "Available MCP tools as JSON schemas:\n"
+        f"{_tool_schemas_json()}\n\n"
+        "Return only a JSON object with name and arguments."
+    )
     return {
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": trace.prompt},
+            {"role": "user", "content": user_content},
             {"role": "assistant", "content": tool_call_json(target_call)},
         ],
         "metadata": {
