@@ -1,4 +1,6 @@
 from datetime import UTC, datetime
+import subprocess
+import sys
 from pathlib import Path
 
 from idrkd.distillation import (
@@ -55,6 +57,30 @@ def test_teacher_trace_selects_grounded_tool_using_records_for_sft() -> None:
 
     assert [trace.id for trace in selected] == ["trace-1"]
     assert selected[0].uses_tool("search_code") is True
+
+
+def test_awq_cli_import_does_not_require_fastapi() -> None:
+    script = """
+import builtins
+
+real_import = builtins.__import__
+
+def guarded_import(name, *args, **kwargs):
+    if name == "fastapi" or name.startswith("fastapi."):
+        raise AssertionError("AWQ CLI imported FastAPI")
+    return real_import(name, *args, **kwargs)
+
+builtins.__import__ = guarded_import
+import idrkd.distillation.quantize_cli
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_sft_record_preserves_messages_evidence_and_tool_trace() -> None:

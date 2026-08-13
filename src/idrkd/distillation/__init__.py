@@ -1,97 +1,73 @@
-"""Pillar 5 student model distillation contracts."""
+"""Pillar 5 student model distillation contracts.
 
-from idrkd.distillation.admission import (
-    TraceAdmissionPolicy,
-    TraceAdmissionRecord,
-    admit_teacher_traces,
-    write_admission_bundle,
-)
-from idrkd.distillation.artifact_validation import (
-    AdapterStageValidation,
-    DistilledArtifactValidation,
-    validate_distilled_adapter_artifact,
-    validate_extracted_adapter_artifacts,
-)
-from idrkd.distillation.evaluation import BfclMetrics, DistillationGate
-from idrkd.distillation.execution import (
-    DistillationRuntimeConfig,
-    DistillationRunResult,
-    DistillationSmokeResult,
-    adapter_artifacts_written,
-    run_laptop_smoke_distillation,
-    train_dpo,
-    train_sft,
-)
-from idrkd.distillation.io import (
-    build_preference_dataset_jsonl,
-    build_sft_dataset_jsonl,
-    build_taskbench_preference_dataset_jsonl,
-    build_taskbench_sft_dataset_jsonl,
-    load_teacher_traces,
-    teacher_trace_from_dict,
-    teacher_trace_to_dict,
-)
-from idrkd.distillation.preferences import PreferencePair, build_preference_pair
-from idrkd.distillation.quantization import (
-    AwqQuantizationConfig,
-    AwqQuantizationJob,
-    ModelArtifactManifest,
-    run_awq_quantization,
-    write_manifest,
-)
-from idrkd.distillation.serving import (
-    OllamaServingConfig,
-    OpenAICompatibleStudentClient,
-    StudentModelClient,
-    VllmServingConfig,
-    student_model_client_from_env,
-)
-from idrkd.distillation.traces import TeacherTrace, TraceStep, ToolCall, sft_record, select_sft_traces
-from idrkd.distillation.training import DpoConfig, QLoRAConfig, TrainingPlan
+Exports are loaded lazily so lightweight entry points such as AWQ quantization
+do not require the training, serving, or MCP application dependency stacks.
+"""
 
-__all__ = [
-    "AwqQuantizationConfig",
-    "AwqQuantizationJob",
-    "AdapterStageValidation",
-    "BfclMetrics",
-    "DistilledArtifactValidation",
-    "DistillationGate",
-    "DistillationRuntimeConfig",
-    "DistillationRunResult",
-    "DistillationSmokeResult",
-    "DpoConfig",
-    "ModelArtifactManifest",
-    "OllamaServingConfig",
-    "OpenAICompatibleStudentClient",
-    "PreferencePair",
-    "QLoRAConfig",
-    "StudentModelClient",
-    "TeacherTrace",
-    "TraceAdmissionPolicy",
-    "TraceAdmissionRecord",
-    "ToolCall",
-    "TraceStep",
-    "TrainingPlan",
-    "VllmServingConfig",
-    "admit_teacher_traces",
-    "adapter_artifacts_written",
-    "build_preference_dataset_jsonl",
-    "build_preference_pair",
-    "build_sft_dataset_jsonl",
-    "build_taskbench_preference_dataset_jsonl",
-    "build_taskbench_sft_dataset_jsonl",
-    "load_teacher_traces",
-    "run_laptop_smoke_distillation",
-    "run_awq_quantization",
-    "select_sft_traces",
-    "sft_record",
-    "student_model_client_from_env",
-    "teacher_trace_from_dict",
-    "teacher_trace_to_dict",
-    "train_dpo",
-    "train_sft",
-    "validate_distilled_adapter_artifact",
-    "validate_extracted_adapter_artifacts",
-    "write_manifest",
-    "write_admission_bundle",
-]
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+
+_EXPORT_MODULES = {
+    "AdapterStageValidation": "artifact_validation",
+    "AwqQuantizationConfig": "quantization",
+    "AwqQuantizationJob": "quantization",
+    "BfclMetrics": "evaluation",
+    "DistilledArtifactValidation": "artifact_validation",
+    "DistillationGate": "evaluation",
+    "DistillationRunResult": "execution",
+    "DistillationRuntimeConfig": "execution",
+    "DistillationSmokeResult": "execution",
+    "DpoConfig": "training",
+    "ModelArtifactManifest": "quantization",
+    "OllamaServingConfig": "serving",
+    "OpenAICompatibleStudentClient": "serving",
+    "PreferencePair": "preferences",
+    "QLoRAConfig": "training",
+    "StudentModelClient": "serving",
+    "TeacherTrace": "traces",
+    "ToolCall": "traces",
+    "TraceAdmissionPolicy": "admission",
+    "TraceAdmissionRecord": "admission",
+    "TraceStep": "traces",
+    "TrainingPlan": "training",
+    "VllmServingConfig": "serving",
+    "adapter_artifacts_written": "execution",
+    "admit_teacher_traces": "admission",
+    "build_preference_dataset_jsonl": "io",
+    "build_preference_pair": "preferences",
+    "build_sft_dataset_jsonl": "io",
+    "build_taskbench_preference_dataset_jsonl": "io",
+    "build_taskbench_sft_dataset_jsonl": "io",
+    "load_teacher_traces": "io",
+    "run_awq_quantization": "quantization",
+    "run_laptop_smoke_distillation": "execution",
+    "select_sft_traces": "traces",
+    "sft_record": "traces",
+    "student_model_client_from_env": "serving",
+    "teacher_trace_from_dict": "io",
+    "teacher_trace_to_dict": "io",
+    "train_dpo": "execution",
+    "train_sft": "execution",
+    "validate_distilled_adapter_artifact": "artifact_validation",
+    "validate_extracted_adapter_artifacts": "artifact_validation",
+    "write_admission_bundle": "admission",
+    "write_manifest": "quantization",
+}
+
+__all__ = sorted(_EXPORT_MODULES)
+
+
+def __getattr__(name: str) -> Any:
+    module_name = _EXPORT_MODULES.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    value = getattr(import_module(f"{__name__}.{module_name}"), name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted([*globals(), *__all__])
