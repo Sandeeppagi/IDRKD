@@ -141,7 +141,7 @@ uv run python -m idrkd.distillation.cli train-sft \
   --out models/adapters/phi4-mini-sft-tooljson-smoke \
   --base-model microsoft/Phi-4-mini-instruct \
   --max-steps 20 \
-  --max-seq-length 1024 \
+  --max-seq-length 4096 \
   --learning-rate 2e-4 \
   --batch-size 1 \
   --gradient-accumulation-steps 4 \

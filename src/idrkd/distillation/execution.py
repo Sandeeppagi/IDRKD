@@ -234,6 +234,9 @@ def train_dpo(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    rendered_records = _render_dpo_records(records, tokenizer)
+    _ensure_dpo_sequences_fit(rendered_records, tokenizer, config.max_seq_length)
+
     model_kwargs: dict[str, Any] = {"local_files_only": config.local_files_only}
     if config.device_map is not None:
         model_kwargs["device_map"] = config.device_map
@@ -263,7 +266,7 @@ def train_dpo(
         model = modules["get_peft_model"](model, modules["LoraConfig"](**active_qlora.peft_kwargs()))
     _ensure_trainable_parameters(model)
 
-    dataset = modules["Dataset"].from_list(_render_dpo_records(records, tokenizer))
+    dataset = modules["Dataset"].from_list(rendered_records)
     args = modules["DPOConfig"](
         output_dir=str(config.output_dir),
         num_train_epochs=active_dpo.epochs,
@@ -338,6 +341,33 @@ def _validate_sft_adapter_path(adapter_path: Path | None) -> Path | None:
     if not adapter_artifacts_written(adapter_path):
         raise ValueError(f"SFT adapter artifacts are incomplete: {adapter_path}")
     return adapter_path
+
+
+def _ensure_dpo_sequences_fit(
+    records: list[dict[str, Any]],
+    tokenizer: Any,
+    max_seq_length: int,
+) -> None:
+    """Fail before training when TRL's max_length truncation would drop completions.
+
+    TRL truncates each prompt+completion sequence to max_length from the right, so a
+    prompt at or beyond the limit leaves zero completion tokens and DPO silently
+    trains on a constant ln(2) loss with zero gradients.
+    """
+
+    def token_count(text: str) -> int:
+        return len(tokenizer(text, add_special_tokens=False)["input_ids"])
+
+    required = 0
+    for record in records:
+        completion = max(token_count(record["chosen"]), token_count(record["rejected"]))
+        required = max(required, token_count(record["prompt"]) + completion + 1)
+    if required > max_seq_length:
+        raise ValueError(
+            f"DPO records need up to {required} tokens (prompt + completion + EOS) but "
+            f"max_seq_length is {max_seq_length}; completions would be truncated away. "
+            "Increase --max-seq-length."
+        )
 
 
 def _ensure_trainable_parameters(model: Any) -> None:

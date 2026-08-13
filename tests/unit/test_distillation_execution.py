@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 import idrkd.distillation.execution as execution
 from idrkd.distillation import (
     DistillationRuntimeConfig,
@@ -194,6 +196,19 @@ def test_adapter_artifact_check_requires_peft_config_and_weights(tmp_path: Path)
     assert adapter_artifacts_written(output_dir) is True
 
 
+def test_dpo_sequence_guard_rejects_prompts_that_fill_max_length() -> None:
+    class CountingTokenizer:
+        def __call__(self, text: str, **kwargs: object) -> dict[str, list[int]]:
+            return {"input_ids": [0] * len(text.split())}
+
+    records = [{"prompt": "word " * 50, "chosen": "ok", "rejected": "very bad"}]
+
+    with pytest.raises(ValueError, match="max_seq_length is 50"):
+        execution._ensure_dpo_sequences_fit(records, CountingTokenizer(), 50)
+
+    execution._ensure_dpo_sequences_fit(records, CountingTokenizer(), 53)
+
+
 def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypatch) -> None:
     dpo_path = tmp_path / "dpo.jsonl"
     write_jsonl_records(dpo_path, [{"prompt": "Where is reconcile defined?", "chosen": "Use search_code.", "rejected": "Unknown."}])
@@ -208,6 +223,9 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
     class FakeTokenizer:
         pad_token = None
         eos_token = "<eos>"
+
+        def __call__(self, text: str, **kwargs: object) -> dict[str, list[int]]:
+            return {"input_ids": [0] * len(text.split())}
 
         def apply_chat_template(self, messages: list[dict[str, str]], **kwargs: object) -> str:
             assert kwargs["tokenize"] is False
