@@ -146,6 +146,12 @@ uv run python -m idrkd.distillation.cli train-sft \
   --batch-size 1 \
   --gradient-accumulation-steps 4 \
   --use-4bit
+uv run python scripts/probe_taskbench_adapter.py \
+  --adapter models/adapters/phi4-mini-sft-tooljson-smoke \
+  --base-model microsoft/Phi-4-mini-instruct \
+  --include-synthetic-schemas \
+  --limit 5 \
+  --use-4bit
 ```
 
 Production AWQ quantization is intended for a Linux/CUDA builder. AutoAWQ is
