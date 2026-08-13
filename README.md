@@ -259,7 +259,18 @@ ls -lah /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc
 jq . /workspace/IDRKD/models/checkpoints/phi4-mini-dpo-tooljson-split-v2-llmc-awq/idrkd-model-manifest.json
 ```
 
-Serve the compressed checkpoint with vLLM:
+Create a separate vLLM environment. On NVIDIA builders, `--torch-backend=auto`
+selects a current prebuilt wheel for the installed driver, avoiding local CUDA
+extension builds:
+
+```bash
+deactivate
+uv venv /workspace/.venv-vllm --python 3.12 --seed
+source /workspace/.venv-vllm/bin/activate
+uv pip install vllm --torch-backend=auto
+```
+
+Serve the compressed checkpoint with vLLM and leave this terminal running:
 
 ```bash
 vllm serve \
@@ -270,11 +281,15 @@ vllm serve \
   --port 8000
 ```
 
-In another terminal, run the same deterministic 89-case holdout gate used for
-the adapters. `pass_rate`, `tool_f1`, and `argument_accuracy` must all remain
-`1.0` before promotion:
+In another terminal, wait for model readiness before running the same
+deterministic 89-case holdout gate used for the adapters:
 
 ```bash
+until curl -fsS http://127.0.0.1:8000/v1/models | jq -e \
+  '.data[].id == "idrkd-phi4-mini-dpo-tooljson-split-v2-llmc-awq"' >/dev/null; do
+  sleep 5
+done
+
 cd /workspace/IDRKD
 uv run python -m idrkd.evaluation.cli \
   --mode student-agent \
@@ -287,6 +302,10 @@ uv run python -m idrkd.evaluation.cli \
 jq '{cases: (.cases | length), pass_rate, tool_f1, argument_accuracy}' \
   /workspace/llmc-awq-holdout.json
 ```
+
+`pass_rate`, `tool_f1`, and `argument_accuracy` must all remain `1.0` before
+promotion. The evaluator aborts before scoring if the endpoint is unavailable
+or does not advertise the requested model.
 
 Stop vLLM and run `deactivate` when the release gate finishes.
 

@@ -40,6 +40,34 @@ class OpenAICompatibleToolCallPredictor:
     temperature: float = 0.0
     max_tokens: int = 512
 
+    def verify_model_available(self) -> None:
+        """Fail before evaluation when the model server or model id is unavailable."""
+
+        http_request = request.Request(
+            f"{self.base_url.rstrip('/')}/models",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+        )
+        try:
+            with request.urlopen(http_request, timeout=self.timeout_seconds) as response:
+                raw = json.loads(response.read().decode("utf-8"))
+        except Exception as exc:  # pragma: no cover - network boundary
+            raise RuntimeError(
+                f"Cannot reach the model server at {self.base_url.rstrip('/')}. "
+                "Start it and verify /models before running TaskBench."
+            ) from exc
+        model_ids: set[str] = set()
+        for item in raw.get("data", []):
+            if not isinstance(item, dict):
+                continue
+            model_id = item.get("id")
+            if isinstance(model_id, str):
+                model_ids.add(model_id)
+        if self.model not in model_ids:
+            raise RuntimeError(
+                f"Model server does not advertise {self.model!r}; available models: "
+                f"{sorted(model_ids)}"
+            )
+
     def predict_tool_call(
         self,
         *,

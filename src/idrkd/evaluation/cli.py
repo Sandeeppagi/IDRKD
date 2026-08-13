@@ -107,6 +107,7 @@ def main() -> None:
             model=model_id,
             api_key=args.api_key,
         )
+        predictor.verify_model_available()
     summary = TaskBenchRunner(registry).run(
         tasks,
         mode=args.mode,
