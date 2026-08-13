@@ -28,7 +28,7 @@ class FaithfulnessCritic:
     @classmethod
     def from_transformers(
         cls,
-        model_name: str = "microsoft/deberta-v3-large-mnli",
+        model_name: str = "cross-encoder/nli-deberta-v3-large",
         *,
         threshold: float = 0.78,
         local_files_only: bool = False,

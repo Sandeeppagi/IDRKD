@@ -69,7 +69,7 @@ def test_minilm_reranker_runs_cached_real_cross_encoder() -> None:
 
 def test_deberta_critic_runs_cached_real_nli_model() -> None:
     pytest.importorskip("transformers")
-    model_name = os.getenv("IDRKD_DEBERTA_CRITIC_MODEL", "microsoft/deberta-v3-large-mnli")
+    model_name = os.getenv("IDRKD_DEBERTA_CRITIC_MODEL", "cross-encoder/nli-deberta-v3-large")
     critic = _cached_or_skip(
         lambda: FaithfulnessCritic.from_transformers(
             model_name,

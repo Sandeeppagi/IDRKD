@@ -43,6 +43,7 @@ ml = [
   "trl>=0.9",
   "accelerate>=0.32",
   "bitsandbytes",
+  "sentencepiece>=0.2.2",
 ]
 
 [project.scripts]
