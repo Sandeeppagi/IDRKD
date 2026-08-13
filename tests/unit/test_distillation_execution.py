@@ -194,18 +194,6 @@ def test_adapter_artifact_check_requires_peft_config_and_weights(tmp_path: Path)
     assert adapter_artifacts_written(output_dir) is True
 
 
-def test_supported_kwargs_filters_by_runtime_signature() -> None:
-    class OlderDPOConfig:
-        def __init__(self, *, output_dir: str, beta: float) -> None:
-            self.output_dir = output_dir
-            self.beta = beta
-
-    assert execution._supported_kwargs(
-        OlderDPOConfig,
-        {"output_dir": "out", "beta": 0.1, "model_adapter_name": "policy"},
-    ) == {"output_dir": "out", "beta": 0.1}
-
-
 def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypatch) -> None:
     dpo_path = tmp_path / "dpo.jsonl"
     write_jsonl_records(dpo_path, [{"prompt": "Where is reconcile defined?", "chosen": "Use search_code.", "rejected": "Unknown."}])
@@ -252,21 +240,11 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
             adapter_path: str,
             *,
             is_trainable: bool,
-            adapter_name: str,
         ) -> "FakePeftModel":
             calls["peft_model"] = model
             calls["adapter_path"] = adapter_path
             calls["is_trainable"] = is_trainable
-            calls["adapter_name"] = adapter_name
             return FakePeftModel()
-
-        def load_adapter(self, adapter_path: str, *, adapter_name: str, is_trainable: bool) -> None:
-            calls["reference_adapter_path"] = adapter_path
-            calls["reference_adapter_name"] = adapter_name
-            calls["reference_is_trainable"] = is_trainable
-
-        def set_adapter(self, adapter_name: str) -> None:
-            calls["active_adapter_name"] = adapter_name
 
     class FakeDataset:
         @staticmethod
@@ -326,14 +304,10 @@ def test_dpo_loads_trainable_sft_adapter_when_provided(tmp_path: Path, monkeypat
 
     assert calls["adapter_path"] == str(sft_adapter)
     assert calls["is_trainable"] is True
-    assert calls["adapter_name"] == "policy"
-    assert calls["reference_adapter_path"] == str(sft_adapter)
-    assert calls["reference_adapter_name"] == "reference"
-    assert calls["reference_is_trainable"] is False
-    assert calls["active_adapter_name"] == "policy"
     assert calls["get_peft_model_called"] is False
-    assert calls["trainer_kwargs"]["args"].kwargs["model_adapter_name"] == "policy"
-    assert calls["trainer_kwargs"]["args"].kwargs["ref_adapter_name"] == "reference"
+    assert calls["trainer_kwargs"]["ref_model"] is None
+    assert "model_adapter_name" not in calls["trainer_kwargs"]["args"].kwargs
+    assert "ref_adapter_name" not in calls["trainer_kwargs"]["args"].kwargs
     assert calls["records"] == [
         {
             "prompt": f"<system>{SYSTEM_PROMPT}</system><user>Where is reconcile defined?</user><assistant>",

@@ -10,7 +10,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 import importlib
-import inspect
 import json
 from pathlib import Path
 from typing import Any, cast
@@ -248,14 +247,13 @@ def train_dpo(
     if config.use_4bit:
         model = modules["prepare_model_for_kbit_training"](model)
     if sft_adapter_path is not None:
+        # TRL >= 1.0 requires the trainable adapter to keep PEFT's default name
+        # ("default"); DPOTrainer clones it into a frozen "ref" adapter itself.
         model = modules["PeftModel"].from_pretrained(
             model,
             str(sft_adapter_path),
             is_trainable=True,
-            adapter_name="policy",
         )
-        model.load_adapter(str(sft_adapter_path), adapter_name="reference", is_trainable=False)
-        model.set_adapter("policy")
     else:
         active_qlora = QLoRAConfig(
             base_model_id=config.base_model_id,
@@ -266,15 +264,6 @@ def train_dpo(
     _ensure_trainable_parameters(model)
 
     dataset = modules["Dataset"].from_list(_render_dpo_records(records, tokenizer))
-    dpo_config_kwargs: dict[str, Any] = {}
-    if sft_adapter_path is not None:
-        dpo_config_kwargs = _supported_kwargs(
-            modules["DPOConfig"],
-            {
-                "model_adapter_name": "policy",
-                "ref_adapter_name": "reference",
-            },
-        )
     args = modules["DPOConfig"](
         output_dir=str(config.output_dir),
         num_train_epochs=active_dpo.epochs,
@@ -288,7 +277,6 @@ def train_dpo(
         seed=config.seed,
         beta=active_dpo.beta,
         max_length=config.max_seq_length,
-        **dpo_config_kwargs,
     )
     trainer = modules["DPOTrainer"](
         model=model,
@@ -359,17 +347,6 @@ def _ensure_trainable_parameters(model: Any) -> None:
     trainable_count = sum(param.numel() for _, param in named_parameters() if getattr(param, "requires_grad", False))
     if trainable_count == 0:
         raise RuntimeError("DPO model has no trainable parameters")
-
-
-def _supported_kwargs(callable_or_type: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
-    try:
-        signature = inspect.signature(callable_or_type)
-    except (TypeError, ValueError):
-        return kwargs
-    parameters = signature.parameters
-    if any(parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()):
-        return kwargs
-    return {key: value for key, value in kwargs.items() if key in parameters}
 
 
 def _tokenize_text_dataset(dataset: Any, tokenizer: Any, max_seq_length: int) -> Any:
