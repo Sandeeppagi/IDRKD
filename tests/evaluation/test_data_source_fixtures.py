@@ -46,6 +46,8 @@ def test_synthetic_schema_fixtures_execute_through_mcp_taskbench() -> None:
     summary = TaskBenchRunner(registry).run(tasks)
 
     assert len(tasks) == 56
+    assert "tenant_id default" in tasks[0].prompt
+    assert "repo_id synthetic-schemas" in tasks[0].prompt
     assert summary.pass_rate == 1.0
     assert summary.schema_valid_rate == 1.0
     assert summary.tool_f1 == 1.0
@@ -64,3 +66,6 @@ def test_mcp_task_suite_fixture_has_360_tasks_across_six_categories() -> None:
         "schema_conformance",
         "tool_selection",
     }
+    assert "Task scope and identifiers as JSON:" in tasks[0].prompt
+    assert '"repo_id": "repo-a"' in tasks[0].prompt
+    assert '"tenant_id": "default"' in tasks[0].prompt

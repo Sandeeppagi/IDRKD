@@ -249,7 +249,8 @@ def load_tasks_jsonl(path: Path) -> list[McpTask]:
     tasks = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
-            tasks.append(McpTask.model_validate_json(line))
+            task = McpTask.model_validate_json(line)
+            tasks.append(_make_prompt_self_contained(task))
     return tasks
 
 
@@ -260,3 +261,17 @@ def write_summary(path: Path, summary: EvalSummary) -> None:
 def _tool_exists_in_schema(result: dict[str, Any], tool_name: str) -> bool:
     tools = result.get("tools", [])
     return any(isinstance(tool, dict) and tool.get("name") == tool_name for tool in tools)
+
+
+def _make_prompt_self_contained(task: McpTask) -> McpTask:
+    if "Task scope and identifiers as JSON:" in task.prompt:
+        return task
+    return task.model_copy(
+        update={
+            "prompt": (
+                f"{task.prompt}\n\n"
+                "Task scope and identifiers as JSON:\n"
+                f"{json.dumps(task.arguments, sort_keys=True)}"
+            )
+        }
+    )

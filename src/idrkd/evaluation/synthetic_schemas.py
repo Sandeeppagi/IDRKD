@@ -145,7 +145,11 @@ def build_synthetic_schema_tasks(
             McpTask(
                 id=f"synthetic-schema-diff-{schema_id}",
                 category="schema_conformance",
-                prompt=f"Compare the baseline and injected variant for schema {schema['name']}.",
+                prompt=(
+                    f"Compare the baseline and injected variant for schema {schema['name']} "
+                    f"using left_id {schema_id}:baseline, right_id {schema_id}:variant, "
+                    f"tenant_id {tenant_id}, and repo_id {repo_id}."
+                ),
                 expected_tool="schema_diff",
                 arguments={
                     "tenant_id": tenant_id,
@@ -162,7 +166,10 @@ def build_synthetic_schema_tasks(
             McpTask(
                 id=f"synthetic-conflict-open-{conflict_id}",
                 category="conflict_resolution",
-                prompt=f"Inspect the injected {conflict['conflict_type']} conflict on {conflict['field']}.",
+                prompt=(
+                    f"Inspect the injected {conflict['conflict_type']} conflict on {conflict['field']} "
+                    f"using conflict_id {conflict_id}, tenant_id {tenant_id}, and repo_id {repo_id}."
+                ),
                 expected_tool="reconcile",
                 arguments={"tenant_id": tenant_id, "repo_id": repo_id, "conflict_id": conflict_id},
                 expected_result_keys=["conflict", "recommendation"],
@@ -172,7 +179,10 @@ def build_synthetic_schema_tasks(
             McpTask(
                 id=f"synthetic-conflict-resolve-{conflict_id}",
                 category="conflict_resolution",
-                prompt=f"Persist the oracle resolution for synthetic conflict {conflict_id}.",
+                prompt=(
+                    f"Persist the oracle resolution {conflict['oracle_resolution']} for synthetic "
+                    f"conflict_id {conflict_id}, tenant_id {tenant_id}, and repo_id {repo_id}."
+                ),
                 expected_tool="resolve_conflict",
                 arguments={
                     "tenant_id": tenant_id,
