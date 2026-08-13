@@ -1,0 +1,2629 @@
+{
+  "ablations": [],
+  "argument_accuracy": 1.0,
+  "by_category": {
+    "a2a_delegation": 1.0,
+    "conflict_resolution": 1.0,
+    "drift_trigger": 1.0,
+    "multi_hop_planning": 1.0,
+    "schema_conformance": 1.0,
+    "tool_selection": 1.0
+  },
+  "cases": [
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-003",
+        "neighbors": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 671.7001621145755,
+      "parsed_tool_call": {
+        "arguments": {
+          "depth": 3,
+          "entity_id": "entity-003",
+          "limit": 7,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "graph_bfs"
+      },
+      "raw_model_output": "{\"arguments\":{\"depth\":3,\"entity_id\":\"entity-003\",\"limit\":7,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"graph_bfs\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-bfs-003",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 326.7016699537635,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-012",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-012\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-a2a-conflict-012",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "path": null,
+        "reason": "graph traversal backend is not configured",
+        "source_id": "entity-016",
+        "target_id": "consumer-016"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 391.7350268457085,
+      "parsed_tool_call": {
+        "arguments": {
+          "max_hops": 6,
+          "repo_id": "repo-a",
+          "source_id": "entity-016",
+          "target_id": "consumer-016",
+          "tenant_id": "default"
+        },
+        "name": "graph_path"
+      },
+      "raw_model_output": "{\"arguments\":{\"max_hops\":6,\"repo_id\":\"repo-a\",\"source_id\":\"entity-016\",\"target_id\":\"consumer-016\",\"tenant_id\":\"default\"},\"name\":\"graph_path\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-path-016",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "item": {
+          "entity_id": "entity-018",
+          "queue_position": 1,
+          "repo_id": "repo-c",
+          "status": "queued",
+          "tenant_id": "default"
+        },
+        "queued": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 311.5099840797484,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-018",
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "enqueue_reindex"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-018\",\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"enqueue_reindex\"}",
+      "schema_valid": true,
+      "task_id": "tb-reindex-018",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "downstream": [],
+        "entity_id": "entity-020",
+        "impact_count": 0,
+        "neighbors": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 305.40460092015564,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-020",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "impact_analysis"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-020\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"impact_analysis\"}",
+      "schema_valid": true,
+      "task_id": "tb-impact-020",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-021",
+          "recommendation": "review_latest_entity_version",
+          "repo_id": "repo-a",
+          "resolution": null,
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "review_latest_entity_version"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 318.90630000270903,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-021",
+          "repo_id": "repo-a",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-021\",\"repo_id\":\"repo-a\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "tb-reconcile-021",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-022",
+          "recommendation": "manual_resolution_recorded",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 354.5925149228424,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-022",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-022\",\"repo_id\":\"repo-b\",\"resolution\":\"use_latest\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-resolve-022",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "tool_selection",
+      "error": null,
+      "execution_result": {
+        "hits": [],
+        "sources": {
+          "neo4j_keyword": true,
+          "pgvector": false
+        }
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 316.1403259728104,
+      "parsed_tool_call": {
+        "arguments": {
+          "limit": 4,
+          "query": "notification routing",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "search_code"
+      },
+      "raw_model_output": "{\"arguments\":{\"limit\":4,\"query\":\"notification routing\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"search_code\"}",
+      "schema_valid": true,
+      "task_id": "tb-search-037",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [],
+        "left_found": false,
+        "removed": [],
+        "right_found": false,
+        "unchanged": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 364.70061214640737,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-left-011",
+          "repo_id": "repo-c",
+          "right_id": "schema-right-011",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-left-011\",\"repo_id\":\"repo-c\",\"right_id\":\"schema-right-011\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "tb-schema-diff-043",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "entity": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 302.8985890559852,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-050",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "get_entity"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-050\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"get_entity\"}",
+      "schema_valid": true,
+      "task_id": "tb-entity-050",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-053",
+        "members": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 337.05979003570974,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-053",
+          "limit": 12,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "get_community"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-053\",\"limit\":12,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"get_community\"}",
+      "schema_valid": true,
+      "task_id": "tb-community-053",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "centroid_drift": null,
+        "community_id": "community-005"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 327.05424702726305,
+      "parsed_tool_call": {
+        "arguments": {
+          "community_id": "community-005",
+          "repo_id": "repo-d",
+          "tenant_id": "default"
+        },
+        "name": "get_centroid_drift"
+      },
+      "raw_model_output": "{\"arguments\":{\"community_id\":\"community-005\",\"repo_id\":\"repo-d\",\"tenant_id\":\"default\"},\"name\":\"get_centroid_drift\"}",
+      "schema_valid": true,
+      "task_id": "tb-centroid-059",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-003",
+        "neighbors": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 274.06963892281055,
+      "parsed_tool_call": {
+        "arguments": {
+          "depth": 3,
+          "entity_id": "entity-003",
+          "limit": 7,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "graph_bfs"
+      },
+      "raw_model_output": "{\"arguments\":{\"depth\":3,\"entity_id\":\"entity-003\",\"limit\":7,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"graph_bfs\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-bfs-063",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 322.9136320296675,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-024",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-024\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-a2a-conflict-072",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "path": null,
+        "reason": "graph traversal backend is not configured",
+        "source_id": "entity-016",
+        "target_id": "consumer-036"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 387.25476898252964,
+      "parsed_tool_call": {
+        "arguments": {
+          "max_hops": 6,
+          "repo_id": "repo-a",
+          "source_id": "entity-016",
+          "target_id": "consumer-036",
+          "tenant_id": "default"
+        },
+        "name": "graph_path"
+      },
+      "raw_model_output": "{\"arguments\":{\"max_hops\":6,\"repo_id\":\"repo-a\",\"source_id\":\"entity-016\",\"target_id\":\"consumer-036\",\"tenant_id\":\"default\"},\"name\":\"graph_path\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-path-076",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "item": {
+          "entity_id": "entity-018",
+          "queue_position": 2,
+          "repo_id": "repo-c",
+          "status": "queued",
+          "tenant_id": "default"
+        },
+        "queued": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 222.53988310694695,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-018",
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "enqueue_reindex"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-018\",\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"enqueue_reindex\"}",
+      "schema_valid": true,
+      "task_id": "tb-reindex-078",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "downstream": [],
+        "entity_id": "entity-020",
+        "impact_count": 0,
+        "neighbors": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 215.39379213936627,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-020",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "impact_analysis"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-020\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"impact_analysis\"}",
+      "schema_valid": true,
+      "task_id": "tb-impact-080",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-009",
+          "recommendation": "review_latest_entity_version",
+          "repo_id": "repo-a",
+          "resolution": null,
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "review_latest_entity_version"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 312.95503908768296,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-009",
+          "repo_id": "repo-a",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-009\",\"repo_id\":\"repo-a\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "tb-reconcile-081",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-010",
+          "recommendation": "manual_resolution_recorded",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 358.8172299787402,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-010",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-010\",\"repo_id\":\"repo-b\",\"resolution\":\"use_latest\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-resolve-082",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "tool_selection",
+      "error": null,
+      "execution_result": {
+        "hits": [],
+        "sources": {
+          "neo4j_keyword": true,
+          "pgvector": false
+        }
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 228.5462289582938,
+      "parsed_tool_call": {
+        "arguments": {
+          "limit": 4,
+          "query": "notification routing",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "search_code"
+      },
+      "raw_model_output": "{\"arguments\":{\"limit\":4,\"query\":\"notification routing\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"search_code\"}",
+      "schema_valid": true,
+      "task_id": "tb-search-097",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [],
+        "left_found": false,
+        "removed": [],
+        "right_found": false,
+        "unchanged": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 367.2145188320428,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-left-007",
+          "repo_id": "repo-c",
+          "right_id": "schema-right-007",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-left-007\",\"repo_id\":\"repo-c\",\"right_id\":\"schema-right-007\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "tb-schema-diff-103",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "entity": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 215.36266314797103,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-050",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "get_entity"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-050\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"get_entity\"}",
+      "schema_valid": true,
+      "task_id": "tb-entity-110",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-053",
+        "members": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 333.55208300054073,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-053",
+          "limit": 8,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "get_community"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-053\",\"limit\":8,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"get_community\"}",
+      "schema_valid": true,
+      "task_id": "tb-community-113",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "centroid_drift": null,
+        "community_id": "community-011"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 323.1337589677423,
+      "parsed_tool_call": {
+        "arguments": {
+          "community_id": "community-011",
+          "repo_id": "repo-d",
+          "tenant_id": "default"
+        },
+        "name": "get_centroid_drift"
+      },
+      "raw_model_output": "{\"arguments\":{\"community_id\":\"community-011\",\"repo_id\":\"repo-d\",\"tenant_id\":\"default\"},\"name\":\"get_centroid_drift\"}",
+      "schema_valid": true,
+      "task_id": "tb-centroid-119",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-003",
+        "neighbors": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 274.68521310947835,
+      "parsed_tool_call": {
+        "arguments": {
+          "depth": 3,
+          "entity_id": "entity-003",
+          "limit": 7,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "graph_bfs"
+      },
+      "raw_model_output": "{\"arguments\":{\"depth\":3,\"entity_id\":\"entity-003\",\"limit\":7,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"graph_bfs\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-bfs-123",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 232.76670509949327,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-012",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-012\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-a2a-conflict-132",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "path": null,
+        "reason": "graph traversal backend is not configured",
+        "source_id": "entity-016",
+        "target_id": "consumer-016"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 299.6583180502057,
+      "parsed_tool_call": {
+        "arguments": {
+          "max_hops": 6,
+          "repo_id": "repo-a",
+          "source_id": "entity-016",
+          "target_id": "consumer-016",
+          "tenant_id": "default"
+        },
+        "name": "graph_path"
+      },
+      "raw_model_output": "{\"arguments\":{\"max_hops\":6,\"repo_id\":\"repo-a\",\"source_id\":\"entity-016\",\"target_id\":\"consumer-016\",\"tenant_id\":\"default\"},\"name\":\"graph_path\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-path-136",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "item": {
+          "entity_id": "entity-018",
+          "queue_position": 3,
+          "repo_id": "repo-c",
+          "status": "queued",
+          "tenant_id": "default"
+        },
+        "queued": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 219.89279496483505,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-018",
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "enqueue_reindex"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-018\",\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"enqueue_reindex\"}",
+      "schema_valid": true,
+      "task_id": "tb-reindex-138",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "downstream": [],
+        "entity_id": "entity-020",
+        "impact_count": 0,
+        "neighbors": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 215.25808493606746,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-020",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "impact_analysis"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-020\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"impact_analysis\"}",
+      "schema_valid": true,
+      "task_id": "tb-impact-140",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-021",
+          "recommendation": "review_latest_entity_version",
+          "repo_id": "repo-a",
+          "resolution": null,
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "review_latest_entity_version"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 229.27449690178037,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-021",
+          "repo_id": "repo-a",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-021\",\"repo_id\":\"repo-a\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "tb-reconcile-141",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-022",
+          "recommendation": "manual_resolution_recorded",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 268.9032331109047,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-022",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-022\",\"repo_id\":\"repo-b\",\"resolution\":\"use_latest\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-resolve-142",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "tool_selection",
+      "error": null,
+      "execution_result": {
+        "hits": [],
+        "sources": {
+          "neo4j_keyword": true,
+          "pgvector": false
+        }
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 227.66655404120684,
+      "parsed_tool_call": {
+        "arguments": {
+          "limit": 4,
+          "query": "notification routing",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "search_code"
+      },
+      "raw_model_output": "{\"arguments\":{\"limit\":4,\"query\":\"notification routing\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"search_code\"}",
+      "schema_valid": true,
+      "task_id": "tb-search-157",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [],
+        "left_found": false,
+        "removed": [],
+        "right_found": false,
+        "unchanged": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 363.30190603621304,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-left-003",
+          "repo_id": "repo-c",
+          "right_id": "schema-right-003",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-left-003\",\"repo_id\":\"repo-c\",\"right_id\":\"schema-right-003\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "tb-schema-diff-163",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "entity": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 215.10407305322587,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-050",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "get_entity"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-050\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"get_entity\"}",
+      "schema_valid": true,
+      "task_id": "tb-entity-170",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-053",
+        "members": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 247.25227407179773,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-053",
+          "limit": 12,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "get_community"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-053\",\"limit\":12,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"get_community\"}",
+      "schema_valid": true,
+      "task_id": "tb-community-173",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "centroid_drift": null,
+        "community_id": "community-017"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 324.95200890116394,
+      "parsed_tool_call": {
+        "arguments": {
+          "community_id": "community-017",
+          "repo_id": "repo-d",
+          "tenant_id": "default"
+        },
+        "name": "get_centroid_drift"
+      },
+      "raw_model_output": "{\"arguments\":{\"community_id\":\"community-017\",\"repo_id\":\"repo-d\",\"tenant_id\":\"default\"},\"name\":\"get_centroid_drift\"}",
+      "schema_valid": true,
+      "task_id": "tb-centroid-179",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-003",
+        "neighbors": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 273.5834289342165,
+      "parsed_tool_call": {
+        "arguments": {
+          "depth": 3,
+          "entity_id": "entity-003",
+          "limit": 7,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "graph_bfs"
+      },
+      "raw_model_output": "{\"arguments\":{\"depth\":3,\"entity_id\":\"entity-003\",\"limit\":7,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"graph_bfs\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-bfs-183",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 233.31443080678582,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-024",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-024\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-a2a-conflict-192",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "path": null,
+        "reason": "graph traversal backend is not configured",
+        "source_id": "entity-016",
+        "target_id": "consumer-036"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 299.6820730622858,
+      "parsed_tool_call": {
+        "arguments": {
+          "max_hops": 6,
+          "repo_id": "repo-a",
+          "source_id": "entity-016",
+          "target_id": "consumer-036",
+          "tenant_id": "default"
+        },
+        "name": "graph_path"
+      },
+      "raw_model_output": "{\"arguments\":{\"max_hops\":6,\"repo_id\":\"repo-a\",\"source_id\":\"entity-016\",\"target_id\":\"consumer-036\",\"tenant_id\":\"default\"},\"name\":\"graph_path\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-path-196",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "item": {
+          "entity_id": "entity-018",
+          "queue_position": 4,
+          "repo_id": "repo-c",
+          "status": "queued",
+          "tenant_id": "default"
+        },
+        "queued": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 224.081058986485,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-018",
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "enqueue_reindex"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-018\",\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"enqueue_reindex\"}",
+      "schema_valid": true,
+      "task_id": "tb-reindex-198",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "downstream": [],
+        "entity_id": "entity-020",
+        "impact_count": 0,
+        "neighbors": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 213.43721891753376,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-020",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "impact_analysis"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-020\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"impact_analysis\"}",
+      "schema_valid": true,
+      "task_id": "tb-impact-200",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-009",
+          "recommendation": "review_latest_entity_version",
+          "repo_id": "repo-a",
+          "resolution": null,
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "review_latest_entity_version"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 227.30042203329504,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-009",
+          "repo_id": "repo-a",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-009\",\"repo_id\":\"repo-a\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "tb-reconcile-201",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-010",
+          "recommendation": "manual_resolution_recorded",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 270.1529080513865,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-010",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-010\",\"repo_id\":\"repo-b\",\"resolution\":\"use_latest\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-resolve-202",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "tool_selection",
+      "error": null,
+      "execution_result": {
+        "hits": [],
+        "sources": {
+          "neo4j_keyword": true,
+          "pgvector": false
+        }
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 227.75397985242307,
+      "parsed_tool_call": {
+        "arguments": {
+          "limit": 4,
+          "query": "notification routing",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "search_code"
+      },
+      "raw_model_output": "{\"arguments\":{\"limit\":4,\"query\":\"notification routing\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"search_code\"}",
+      "schema_valid": true,
+      "task_id": "tb-search-217",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [],
+        "left_found": false,
+        "removed": [],
+        "right_found": false,
+        "unchanged": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 359.60688279010355,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-left-031",
+          "repo_id": "repo-c",
+          "right_id": "schema-right-031",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-left-031\",\"repo_id\":\"repo-c\",\"right_id\":\"schema-right-031\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "tb-schema-diff-223",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "entity": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 216.23465209268034,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-050",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "get_entity"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-050\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"get_entity\"}",
+      "schema_valid": true,
+      "task_id": "tb-entity-230",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-053",
+        "members": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 245.39917800575495,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-053",
+          "limit": 8,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "get_community"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-053\",\"limit\":8,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"get_community\"}",
+      "schema_valid": true,
+      "task_id": "tb-community-233",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "centroid_drift": null,
+        "community_id": "community-005"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 233.17642998881638,
+      "parsed_tool_call": {
+        "arguments": {
+          "community_id": "community-005",
+          "repo_id": "repo-d",
+          "tenant_id": "default"
+        },
+        "name": "get_centroid_drift"
+      },
+      "raw_model_output": "{\"arguments\":{\"community_id\":\"community-005\",\"repo_id\":\"repo-d\",\"tenant_id\":\"default\"},\"name\":\"get_centroid_drift\"}",
+      "schema_valid": true,
+      "task_id": "tb-centroid-239",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-003",
+        "neighbors": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 272.24121894687414,
+      "parsed_tool_call": {
+        "arguments": {
+          "depth": 3,
+          "entity_id": "entity-003",
+          "limit": 7,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "graph_bfs"
+      },
+      "raw_model_output": "{\"arguments\":{\"depth\":3,\"entity_id\":\"entity-003\",\"limit\":7,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"graph_bfs\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-bfs-243",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 234.0091948863119,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-012",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-012\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-a2a-conflict-252",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "path": null,
+        "reason": "graph traversal backend is not configured",
+        "source_id": "entity-016",
+        "target_id": "consumer-016"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 298.33569494076073,
+      "parsed_tool_call": {
+        "arguments": {
+          "max_hops": 6,
+          "repo_id": "repo-a",
+          "source_id": "entity-016",
+          "target_id": "consumer-016",
+          "tenant_id": "default"
+        },
+        "name": "graph_path"
+      },
+      "raw_model_output": "{\"arguments\":{\"max_hops\":6,\"repo_id\":\"repo-a\",\"source_id\":\"entity-016\",\"target_id\":\"consumer-016\",\"tenant_id\":\"default\"},\"name\":\"graph_path\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-path-256",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "item": {
+          "entity_id": "entity-018",
+          "queue_position": 5,
+          "repo_id": "repo-c",
+          "status": "queued",
+          "tenant_id": "default"
+        },
+        "queued": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 219.79398792609572,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-018",
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "enqueue_reindex"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-018\",\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"enqueue_reindex\"}",
+      "schema_valid": true,
+      "task_id": "tb-reindex-258",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "downstream": [],
+        "entity_id": "entity-020",
+        "impact_count": 0,
+        "neighbors": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 213.1442849058658,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-020",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "impact_analysis"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-020\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"impact_analysis\"}",
+      "schema_valid": true,
+      "task_id": "tb-impact-260",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-021",
+          "recommendation": "review_latest_entity_version",
+          "repo_id": "repo-a",
+          "resolution": null,
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "review_latest_entity_version"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 225.89462087489665,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-021",
+          "repo_id": "repo-a",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-021\",\"repo_id\":\"repo-a\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "tb-reconcile-261",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-022",
+          "recommendation": "manual_resolution_recorded",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 267.52516510896385,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-022",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-022\",\"repo_id\":\"repo-b\",\"resolution\":\"use_latest\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-resolve-262",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "tool_selection",
+      "error": null,
+      "execution_result": {
+        "hits": [],
+        "sources": {
+          "neo4j_keyword": true,
+          "pgvector": false
+        }
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 231.3054099213332,
+      "parsed_tool_call": {
+        "arguments": {
+          "limit": 4,
+          "query": "notification routing",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "search_code"
+      },
+      "raw_model_output": "{\"arguments\":{\"limit\":4,\"query\":\"notification routing\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"search_code\"}",
+      "schema_valid": true,
+      "task_id": "tb-search-277",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [],
+        "left_found": false,
+        "removed": [],
+        "right_found": false,
+        "unchanged": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 366.2236041855067,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-left-027",
+          "repo_id": "repo-c",
+          "right_id": "schema-right-027",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-left-027\",\"repo_id\":\"repo-c\",\"right_id\":\"schema-right-027\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "tb-schema-diff-283",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "entity": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 214.23951722681522,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-050",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "get_entity"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-050\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"get_entity\"}",
+      "schema_valid": true,
+      "task_id": "tb-entity-290",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-053",
+        "members": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 246.49850791320205,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-053",
+          "limit": 12,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "get_community"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-053\",\"limit\":12,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"get_community\"}",
+      "schema_valid": true,
+      "task_id": "tb-community-293",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "centroid_drift": null,
+        "community_id": "community-011"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 232.34065901488066,
+      "parsed_tool_call": {
+        "arguments": {
+          "community_id": "community-011",
+          "repo_id": "repo-d",
+          "tenant_id": "default"
+        },
+        "name": "get_centroid_drift"
+      },
+      "raw_model_output": "{\"arguments\":{\"community_id\":\"community-011\",\"repo_id\":\"repo-d\",\"tenant_id\":\"default\"},\"name\":\"get_centroid_drift\"}",
+      "schema_valid": true,
+      "task_id": "tb-centroid-299",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-003",
+        "neighbors": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 272.4437229335308,
+      "parsed_tool_call": {
+        "arguments": {
+          "depth": 3,
+          "entity_id": "entity-003",
+          "limit": 7,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "graph_bfs"
+      },
+      "raw_model_output": "{\"arguments\":{\"depth\":3,\"entity_id\":\"entity-003\",\"limit\":7,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"graph_bfs\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-bfs-303",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 232.90888406336308,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-024",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-024\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-a2a-conflict-312",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "path": null,
+        "reason": "graph traversal backend is not configured",
+        "source_id": "entity-016",
+        "target_id": "consumer-036"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 299.0036599803716,
+      "parsed_tool_call": {
+        "arguments": {
+          "max_hops": 6,
+          "repo_id": "repo-a",
+          "source_id": "entity-016",
+          "target_id": "consumer-036",
+          "tenant_id": "default"
+        },
+        "name": "graph_path"
+      },
+      "raw_model_output": "{\"arguments\":{\"max_hops\":6,\"repo_id\":\"repo-a\",\"source_id\":\"entity-016\",\"target_id\":\"consumer-036\",\"tenant_id\":\"default\"},\"name\":\"graph_path\"}",
+      "schema_valid": true,
+      "task_id": "tb-graph-path-316",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "item": {
+          "entity_id": "entity-018",
+          "queue_position": 6,
+          "repo_id": "repo-c",
+          "status": "queued",
+          "tenant_id": "default"
+        },
+        "queued": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 219.3052931688726,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-018",
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "enqueue_reindex"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-018\",\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"enqueue_reindex\"}",
+      "schema_valid": true,
+      "task_id": "tb-reindex-318",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "downstream": [],
+        "entity_id": "entity-020",
+        "impact_count": 0,
+        "neighbors": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 213.11413799412549,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-020",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "impact_analysis"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-020\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"impact_analysis\"}",
+      "schema_valid": true,
+      "task_id": "tb-impact-320",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-009",
+          "recommendation": "review_latest_entity_version",
+          "repo_id": "repo-a",
+          "resolution": null,
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "review_latest_entity_version"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 232.1492158807814,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-009",
+          "repo_id": "repo-a",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-009\",\"repo_id\":\"repo-a\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "tb-reconcile-321",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "conflict-010",
+          "recommendation": "manual_resolution_recorded",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 268.33973708562553,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "conflict-010",
+          "repo_id": "repo-b",
+          "resolution": "use_latest",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"conflict-010\",\"repo_id\":\"repo-b\",\"resolution\":\"use_latest\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "tb-resolve-322",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "tool_selection",
+      "error": null,
+      "execution_result": {
+        "hits": [],
+        "sources": {
+          "neo4j_keyword": true,
+          "pgvector": false
+        }
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 226.63706610910594,
+      "parsed_tool_call": {
+        "arguments": {
+          "limit": 4,
+          "query": "notification routing",
+          "repo_id": "repo-b",
+          "tenant_id": "default"
+        },
+        "name": "search_code"
+      },
+      "raw_model_output": "{\"arguments\":{\"limit\":4,\"query\":\"notification routing\",\"repo_id\":\"repo-b\",\"tenant_id\":\"default\"},\"name\":\"search_code\"}",
+      "schema_valid": true,
+      "task_id": "tb-search-337",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [],
+        "left_found": false,
+        "removed": [],
+        "right_found": false,
+        "unchanged": []
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 365.678341826424,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-left-023",
+          "repo_id": "repo-c",
+          "right_id": "schema-right-023",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-left-023\",\"repo_id\":\"repo-c\",\"right_id\":\"schema-right-023\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "tb-schema-diff-343",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "entity": null,
+        "found": false
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 213.8888139743358,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-050",
+          "repo_id": "repo-e",
+          "tenant_id": "default"
+        },
+        "name": "get_entity"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-050\",\"repo_id\":\"repo-e\",\"tenant_id\":\"default\"},\"name\":\"get_entity\"}",
+      "schema_valid": true,
+      "task_id": "tb-entity-350",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "multi_hop_planning",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "entity_id": "entity-053",
+        "members": [],
+        "reason": "graph traversal backend is not configured"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 246.54500605538487,
+      "parsed_tool_call": {
+        "arguments": {
+          "entity_id": "entity-053",
+          "limit": 8,
+          "repo_id": "repo-c",
+          "tenant_id": "default"
+        },
+        "name": "get_community"
+      },
+      "raw_model_output": "{\"arguments\":{\"entity_id\":\"entity-053\",\"limit\":8,\"repo_id\":\"repo-c\",\"tenant_id\":\"default\"},\"name\":\"get_community\"}",
+      "schema_valid": true,
+      "task_id": "tb-community-353",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "drift_trigger",
+      "error": null,
+      "execution_result": {
+        "available": false,
+        "centroid_drift": null,
+        "community_id": "community-017"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 233.9117310475558,
+      "parsed_tool_call": {
+        "arguments": {
+          "community_id": "community-017",
+          "repo_id": "repo-d",
+          "tenant_id": "default"
+        },
+        "name": "get_centroid_drift"
+      },
+      "raw_model_output": "{\"arguments\":{\"community_id\":\"community-017\",\"repo_id\":\"repo-d\",\"tenant_id\":\"default\"},\"name\":\"get_centroid_drift\"}",
+      "schema_valid": true,
+      "task_id": "tb-centroid-359",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [
+          "billing_audit_marker"
+        ],
+        "left_found": true,
+        "removed": [],
+        "right_found": true,
+        "unchanged": [
+          "account_id",
+          "balance_cents",
+          "billing_status",
+          "customer_id",
+          "payment_terms"
+        ]
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 430.1255298778415,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-03-billing_account:baseline",
+          "repo_id": "synthetic-schemas",
+          "right_id": "schema-03-billing_account:variant",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-03-billing_account:baseline\",\"repo_id\":\"synthetic-schemas\",\"right_id\":\"schema-03-billing_account:variant\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-schema-diff-schema-03-billing_account",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "schema_conformance",
+      "error": null,
+      "execution_result": {
+        "added": [
+          "customers_audit_marker"
+        ],
+        "left_found": true,
+        "removed": [],
+        "right_found": true,
+        "unchanged": [
+          "channel",
+          "customer_id",
+          "opt_in",
+          "preference_id",
+          "updated_at"
+        ]
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 443.1049700360745,
+      "parsed_tool_call": {
+        "arguments": {
+          "left_id": "schema-07-notification_preference:baseline",
+          "repo_id": "synthetic-schemas",
+          "right_id": "schema-07-notification_preference:variant",
+          "tenant_id": "default"
+        },
+        "name": "schema_diff"
+      },
+      "raw_model_output": "{\"arguments\":{\"left_id\":\"schema-07-notification_preference:baseline\",\"repo_id\":\"synthetic-schemas\",\"right_id\":\"schema-07-notification_preference:variant\",\"tenant_id\":\"default\"},\"name\":\"schema_diff\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-schema-diff-schema-07-notification_preference",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-001",
+          "conflict_type": "type_mismatch",
+          "field": "customer_id",
+          "left_source": "customers_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": "cast_and_validate",
+          "right_source": "customers_warehouse",
+          "schema_id": "schema-01-customer_profile",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "recommendation": "cast_and_validate"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 340.63294087536633,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-001",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-001\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-open-synth-conflict-001",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-001",
+          "conflict_type": "type_mismatch",
+          "field": "customer_id",
+          "left_source": "customers_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": "cast_and_validate",
+          "right_source": "customers_warehouse",
+          "schema_id": "schema-01-customer_profile",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 386.6669770795852,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-001",
+          "repo_id": "synthetic-schemas",
+          "resolution": "cast_and_validate",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-001\",\"repo_id\":\"synthetic-schemas\",\"resolution\":\"cast_and_validate\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-resolve-synth-conflict-001",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-002",
+          "conflict_type": "name_mismatch",
+          "field": "order_id",
+          "left_source": "orders_crm",
+          "recommendation": "map_alias",
+          "repo_id": "synthetic-schemas",
+          "resolution": "map_alias",
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-02-order_lifecycle",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "recommendation": "map_alias"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 343.57761312276125,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-002",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-002\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-open-synth-conflict-002",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-002",
+          "conflict_type": "name_mismatch",
+          "field": "order_id",
+          "left_source": "orders_crm",
+          "recommendation": "map_alias",
+          "repo_id": "synthetic-schemas",
+          "resolution": "map_alias",
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-02-order_lifecycle",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 387.89858808740973,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-002",
+          "repo_id": "synthetic-schemas",
+          "resolution": "map_alias",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-002\",\"repo_id\":\"synthetic-schemas\",\"resolution\":\"map_alias\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-resolve-synth-conflict-002",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-004",
+          "conflict_type": "type_mismatch",
+          "field": "account_id",
+          "left_source": "billing_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": null,
+          "right_source": "billing_warehouse",
+          "schema_id": "schema-04-payment_event",
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "found": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 352.65294602140784,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-004",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-004\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-get-synth-conflict-004",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-010",
+          "conflict_type": "type_mismatch",
+          "field": "total_amount",
+          "left_source": "orders_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": "cast_and_validate",
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-02-order_lifecycle",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 389.26798896864057,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-010",
+          "repo_id": "synthetic-schemas",
+          "resolution": "cast_and_validate",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-010\",\"repo_id\":\"synthetic-schemas\",\"resolution\":\"cast_and_validate\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-resolve-synth-conflict-010",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-012",
+          "conflict_type": "missing_required",
+          "field": "provider",
+          "left_source": "billing_crm",
+          "recommendation": "request_source_fix",
+          "repo_id": "synthetic-schemas",
+          "resolution": "request_source_fix",
+          "right_source": "billing_warehouse",
+          "schema_id": "schema-04-payment_event",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "found": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 348.05829101242125,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-012",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-012\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-get-synth-conflict-012",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-012",
+          "conflict_type": "missing_required",
+          "field": "provider",
+          "left_source": "billing_crm",
+          "recommendation": "request_source_fix",
+          "repo_id": "synthetic-schemas",
+          "resolution": "request_source_fix",
+          "right_source": "billing_warehouse",
+          "schema_id": "schema-04-payment_event",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 389.42496618255973,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-012",
+          "repo_id": "synthetic-schemas",
+          "resolution": "request_source_fix",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-012\",\"repo_id\":\"synthetic-schemas\",\"resolution\":\"request_source_fix\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-resolve-synth-conflict-012",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-016",
+          "conflict_type": "type_mismatch",
+          "field": "shipment_id",
+          "left_source": "orders_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": null,
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-08-shipment_record",
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "cast_and_validate"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 340.7789880875498,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-016",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-016\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-open-synth-conflict-016",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-018",
+          "conflict_type": "missing_required",
+          "field": "submitted_at",
+          "left_source": "orders_crm",
+          "recommendation": "request_source_fix",
+          "repo_id": "synthetic-schemas",
+          "resolution": null,
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-02-order_lifecycle",
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "found": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 351.4006461482495,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-018",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-018\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-get-synth-conflict-018",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-019",
+          "conflict_type": "type_mismatch",
+          "field": "customer_id",
+          "left_source": "billing_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": null,
+          "right_source": "billing_warehouse",
+          "schema_id": "schema-03-billing_account",
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "recommendation": "cast_and_validate"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 342.3528838902712,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-019",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-019\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-open-synth-conflict-019",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-020",
+          "conflict_type": "name_mismatch",
+          "field": "account_id",
+          "left_source": "billing_crm",
+          "recommendation": "map_alias",
+          "repo_id": "synthetic-schemas",
+          "resolution": null,
+          "right_source": "billing_warehouse",
+          "schema_id": "schema-04-payment_event",
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "found": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 351.40588507056236,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-020",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-020\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-get-synth-conflict-020",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "a2a_delegation",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-022",
+          "conflict_type": "type_mismatch",
+          "field": "customer_id",
+          "left_source": "services_crm",
+          "recommendation": "cast_and_validate",
+          "repo_id": "synthetic-schemas",
+          "resolution": null,
+          "right_source": "services_warehouse",
+          "schema_id": "schema-06-support_ticket",
+          "status": "open",
+          "tenant_id": "default"
+        },
+        "found": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 346.52859601192176,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-022",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "get_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-022\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"get_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-get-synth-conflict-022",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-024",
+          "conflict_type": "missing_required",
+          "field": "carrier",
+          "left_source": "orders_crm",
+          "recommendation": "request_source_fix",
+          "repo_id": "synthetic-schemas",
+          "resolution": "request_source_fix",
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-08-shipment_record",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "recommendation": "request_source_fix"
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 342.32273790985346,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-024",
+          "repo_id": "synthetic-schemas",
+          "tenant_id": "default"
+        },
+        "name": "reconcile"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-024\",\"repo_id\":\"synthetic-schemas\",\"tenant_id\":\"default\"},\"name\":\"reconcile\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-open-synth-conflict-024",
+      "tool_correct": true
+    },
+    {
+      "arguments_correct": true,
+      "category": "conflict_resolution",
+      "error": null,
+      "execution_result": {
+        "conflict": {
+          "conflict_id": "synth-conflict-024",
+          "conflict_type": "missing_required",
+          "field": "carrier",
+          "left_source": "orders_crm",
+          "recommendation": "request_source_fix",
+          "repo_id": "synthetic-schemas",
+          "resolution": "request_source_fix",
+          "right_source": "orders_warehouse",
+          "schema_id": "schema-08-shipment_record",
+          "status": "resolved",
+          "tenant_id": "default"
+        },
+        "resolved": true
+      },
+      "execution_success": true,
+      "expected_result_keys_present": true,
+      "latency_ms": 383.83760396391153,
+      "parsed_tool_call": {
+        "arguments": {
+          "conflict_id": "synth-conflict-024",
+          "repo_id": "synthetic-schemas",
+          "resolution": "request_source_fix",
+          "tenant_id": "default"
+        },
+        "name": "resolve_conflict"
+      },
+      "raw_model_output": "{\"arguments\":{\"conflict_id\":\"synth-conflict-024\",\"repo_id\":\"synthetic-schemas\",\"resolution\":\"request_source_fix\",\"tenant_id\":\"default\"},\"name\":\"resolve_conflict\"}",
+      "schema_valid": true,
+      "task_id": "synthetic-conflict-resolve-synth-conflict-024",
+      "tool_correct": true
+    }
+  ],
+  "mode": "student-agent",
+  "pass_rate": 1.0,
+  "schema_valid_rate": 1.0,
+  "tool_f1": 1.0,
+  "tool_precision": 1.0,
+  "tool_recall": 1.0
+}
