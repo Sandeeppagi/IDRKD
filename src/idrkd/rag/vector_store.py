@@ -84,6 +84,15 @@ class InMemoryVectorStore:
             EMBEDDING_UPSERTS.labels("in_memory").inc(len(records))
         return len(records)
 
+    def snapshot_records(self, record_ids: list[str]) -> list[dict[str, Any]]:
+        selected = set(record_ids)
+        return [_vector_record_to_dict(record) for record in self._records if record.id in selected]
+
+    def compensate_records(self, record_ids: list[str], snapshot: list[dict[str, Any]]) -> None:
+        selected = set(record_ids)
+        self._records = [record for record in self._records if record.id not in selected]
+        self.upsert_records([VectorRecord(**record) for record in snapshot])
+
     def search(self, embedding: list[float], *, limit: int = 10) -> list[SearchHit]:
         hits = [
             SearchHit(
@@ -106,23 +115,7 @@ class PostgresVectorStore:
     def upsert_records(self, records: list[VectorRecord]) -> int:
         if not records:
             return 0
-        now = datetime.now(UTC)
-        rows = [
-            {
-                "id": record.id,
-                "tenant_id": record.tenant_id,
-                "repo_id": record.repo_id,
-                "entity_id": record.entity_id,
-                "source": record.source,
-                "content_hash": record.content_hash,
-                "embedding_model": record.embedding_model,
-                "embedding": vector_literal(record.embedding),
-                "metadata": json.dumps(record.metadata, sort_keys=True),
-                "created_at": now,
-                "updated_at": now,
-            }
-            for record in records
-        ]
+        rows = _vector_rows(records)
         with traced_span(
             "pgvector.embedding_upsert",
             correlation_id="",
@@ -134,6 +127,45 @@ class PostgresVectorStore:
                     cursor.executemany(PGVECTOR_UPSERT_SQL, rows)
         EMBEDDING_UPSERTS.labels("postgres").inc(len(records))
         return len(records)
+
+    def snapshot_records(self, record_ids: list[str]) -> list[dict[str, Any]]:
+        if not record_ids:
+            return []
+        sql = """
+        SELECT id, entity_id, metadata, tenant_id, repo_id, source, content_hash,
+               embedding_model, embedding::text
+        FROM knowledge_embeddings
+        WHERE id = ANY(%(record_ids)s)
+        """
+        with psycopg.connect(self._dsn) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, {"record_ids": record_ids})
+                rows = cursor.fetchall()
+        return [
+            _vector_record_to_dict(
+                VectorRecord(
+                    id=str(row[0]),
+                    entity_id=str(row[1]),
+                    text="",
+                    metadata=dict(row[2]),
+                    tenant_id=str(row[3]),
+                    repo_id=str(row[4]),
+                    source=str(row[5]),
+                    content_hash=str(row[6]),
+                    embedding_model=str(row[7]),
+                    embedding=parse_vector_literal(str(row[8])),
+                )
+            )
+            for row in rows
+        ]
+
+    def compensate_records(self, record_ids: list[str], snapshot: list[dict[str, Any]]) -> None:
+        restored = [VectorRecord(**record) for record in snapshot]
+        with psycopg.connect(self._dsn) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM knowledge_embeddings WHERE id = ANY(%s)", (record_ids,))
+                if restored:
+                    cursor.executemany(PGVECTOR_UPSERT_SQL, _vector_rows(restored))
 
     def search(
         self,
@@ -257,6 +289,41 @@ def vector_record_from_entity(
             "lamport_clock": entity.lamport_clock,
         },
     )
+
+
+def _vector_record_to_dict(record: VectorRecord) -> dict[str, Any]:
+    return {
+        "id": record.id,
+        "entity_id": record.entity_id,
+        "text": record.text,
+        "embedding": record.embedding,
+        "metadata": record.metadata,
+        "tenant_id": record.tenant_id,
+        "repo_id": record.repo_id,
+        "source": record.source,
+        "content_hash": record.content_hash,
+        "embedding_model": record.embedding_model,
+    }
+
+
+def _vector_rows(records: list[VectorRecord]) -> list[dict[str, Any]]:
+    now = datetime.now(UTC)
+    return [
+        {
+            "id": record.id,
+            "tenant_id": record.tenant_id,
+            "repo_id": record.repo_id,
+            "entity_id": record.entity_id,
+            "source": record.source,
+            "content_hash": record.content_hash,
+            "embedding_model": record.embedding_model,
+            "embedding": vector_literal(record.embedding),
+            "metadata": json.dumps(record.metadata, sort_keys=True),
+            "created_at": now,
+            "updated_at": now,
+        }
+        for record in records
+    ]
 
 
 def embedding_text_for_entity(entity: CodeEntity) -> str:

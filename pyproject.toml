@@ -13,6 +13,7 @@ dependencies = [
   "redis>=5.0",
   "celery>=5.4",
   "kafka-python>=2.0",
+  "minio>=7.2",
   "opentelemetry-api>=1.25",
   "opentelemetry-sdk>=1.25",
   "tree-sitter>=0.22",
@@ -60,6 +61,8 @@ idrkd-ingest-corpus = "idrkd.ingestion.corpus_cli:main"
 idrkd-secure-serve = "idrkd.distillation.secure_serving:main"
 idrkd-autogen-reconciler = "idrkd.a2a.autogen_server:main"
 idrkd-c3-eval = "idrkd.evaluation.c3_cli:main"
+idrkd-ingestion-worker = "idrkd.ingestion.worker_cli:main"
+idrkd-ingestion-webhook = "idrkd.ingestion.webhook_server:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

@@ -8,18 +8,26 @@ import os
 from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from pydantic import ValidationError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from idrkd.ingestion.events import CommitEvent
 from idrkd.ingestion.kafka import CommitEventProducer, ProducerLike
 
 
 class CommitWebhookPayload(BaseModel):
-    tenant_id: str = "default"
-    repo_id: str
-    commit_sha: str = Field(alias="after")
-    changed_paths: list[str]
+    tenant_id: str = Field(default="default", min_length=1, max_length=128)
+    repo_id: str = Field(min_length=1, max_length=256)
+    commit_sha: str = Field(alias="after", min_length=1, max_length=128)
+    changed_paths: list[str] = Field(min_length=1, max_length=10_000)
+
+    @field_validator("changed_paths")
+    @classmethod
+    def validate_changed_paths(cls, paths: list[str]) -> list[str]:
+        for path in paths:
+            normalised = path.replace("\\", "/")
+            if not path or normalised.startswith("/") or ".." in normalised.split("/"):
+                raise ValueError("changed paths must be non-empty and repository-relative")
+        return paths
 
 
 def create_app(producer: ProducerLike, *, webhook_secret: str | None = None) -> FastAPI:
@@ -52,7 +60,13 @@ def create_app(producer: ProducerLike, *, webhook_secret: str | None = None) -> 
             commit_sha=payload.commit_sha,
             changed_paths=tuple(payload.changed_paths),
         )
-        commit_producer.publish(event, correlation_id=correlation_id)
+        published = commit_producer.publish(event, correlation_id=correlation_id)
+        wait = getattr(published, "get", None)
+        if callable(wait):
+            try:
+                wait(timeout=10)
+            except Exception as exc:
+                raise HTTPException(status_code=503, detail="commit event broker unavailable") from exc
         return {"status": "accepted", "correlation_id": correlation_id}
 
     return app

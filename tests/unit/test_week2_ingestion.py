@@ -133,6 +133,37 @@ async def test_webhook_requires_valid_hmac_signature_when_secret_is_configured()
     assert len(producer.messages) == 1
 
 
+async def test_webhook_returns_503_when_kafka_does_not_acknowledge() -> None:
+    class FailedFuture:
+        def get(self, timeout: int) -> None:
+            raise RuntimeError("broker unavailable")
+
+    class Producer:
+        def send(self, topic: str, key: bytes, value: bytes) -> FailedFuture:
+            return FailedFuture()
+
+    app = create_app(Producer(), webhook_secret="secret")
+    body = json.dumps(
+        {
+            "tenant_id": "tenant-a",
+            "repo_id": "repo-a",
+            "after": "abc123",
+            "changed_paths": ["src/example.py"],
+        }
+    ).encode("utf-8")
+    signature = hmac.new(b"secret", body, hashlib.sha256).hexdigest()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post(
+            "/webhooks/git/commit",
+            content=body,
+            headers={"x-hub-signature-256": f"sha256={signature}"},
+        )
+
+    assert response.status_code == 503
+
+
 def test_slo_and_lamport_clock() -> None:
     clock = LamportClock()
     assert clock.tick() == 1

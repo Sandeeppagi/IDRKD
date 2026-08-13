@@ -367,6 +367,28 @@ Run the Dockerized MCP server with the local stack:
 docker compose -f docker/docker-compose.yml up -d --build mcp-server
 ```
 
+Run signed, event-driven ingestion with each repository mounted at
+`data/raw/<repo_id>` (or set `IDRKD_REPOSITORY_ROOT`):
+
+```bash
+export IDRKD_WEBHOOK_SECRET='replace-with-a-secret'
+docker compose -f docker/docker-compose.yml up -d --build \
+  ingestion-webhook ingestion-worker ingestion-repair-worker
+```
+
+`POST /webhooks/git/commit` on port `8081` requires an
+`X-Hub-Signature-256: sha256=<HMAC>` header. The webhook waits for Kafka broker
+acknowledgement before returning `200`. The consumer uses manual offset commits,
+archives content-addressed source blobs and an event manifest in MinIO, records
+the staged write plan and before-images in Postgres, then updates Neo4j and
+pgvector. It publishes `entity-changed` only after commit. Failed writes are
+compensated from the before-images and sent to `ingestion-dlq`; failed
+compensation is additionally sent to `ingestion-repair` and retried by the
+repair worker. This is a durable logical transaction, not distributed ACID.
+
+The mounted repository must represent the `commit_sha` in the event. Immutable
+MinIO manifests make the archived inputs replayable after the event is accepted.
+
 Serve the quantized student model through a CUDA/vLLM OpenAI-compatible API:
 
 ```bash

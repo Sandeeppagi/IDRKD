@@ -25,7 +25,15 @@ def commit_event_to_json(event: CommitEvent, *, correlation_id: str) -> bytes:
 
 def commit_event_from_json(payload: bytes) -> tuple[CommitEvent, str]:
     data = json.loads(payload.decode("utf-8"))
-    correlation_id = data.pop("correlation_id")
+    if not isinstance(data, dict):
+        raise ValueError("Commit event must be a JSON object")
+    correlation_id = data.pop("correlation_id", None)
+    if not isinstance(correlation_id, str) or not correlation_id.strip():
+        raise ValueError("Commit event requires a correlation_id")
+    if data.get("schema_version") != 1:
+        raise ValueError("Unsupported commit event schema_version")
+    if not isinstance(data.get("changed_paths"), list):
+        raise ValueError("Commit event changed_paths must be an array")
     data["changed_paths"] = tuple(data["changed_paths"])
     data["received_at"] = datetime.fromisoformat(data["received_at"])
     return CommitEvent(**data), correlation_id

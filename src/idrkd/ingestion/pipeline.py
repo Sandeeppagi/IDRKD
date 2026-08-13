@@ -34,6 +34,13 @@ class IngestionResult:
     lamport_clock: int
 
 
+@dataclass(frozen=True)
+class PreparedIngestion:
+    parsed_files: tuple[ParsedFile, ...]
+    vector_records: tuple[VectorRecord, ...]
+    lamport_clock: int
+
+
 class CommitIngestionPipeline:
     def __init__(
         self,
@@ -68,37 +75,57 @@ class CommitIngestionPipeline:
             repo_id=event.repo_id,
             file_count=len(event.changed_paths),
         ):
-            if apply_schema:
-                self._writer.apply_schema()
-            parsed_files = [
-                parsed
-                for path in event.changed_paths
-                if (parsed := self._parse_path(event, path)) is not None
-            ]
-            entities = 0
-            relations = 0
-            embeddings = 0
-            for parsed in parsed_files:
-                current_clock = self._clock.tick()
-                _stamp_lamport(parsed, current_clock)
-                counts = self._writer.upsert_parsed_file(parsed)
-                entities += counts["entities"]
-                relations += counts["relations"]
-                embeddings += self._upsert_embeddings(parsed)
+            prepared = self.prepare(event)
+            result = self.apply(prepared, apply_schema=apply_schema)
 
             completed_at = utc_now()
             return IngestionResult(
-                parsed_files=len(parsed_files),
-                entities=entities,
-                relations=relations,
-                embeddings=embeddings,
+                parsed_files=len(prepared.parsed_files),
+                entities=result["entities"],
+                relations=result["relations"],
+                embeddings=result["embeddings"],
                 slo_passed=self._slo.check(
                     received_at=event.received_at,
                     completed_at=completed_at,
                     file_count=len(event.changed_paths),
                 ),
-                lamport_clock=self._clock.value,
+                lamport_clock=prepared.lamport_clock,
             )
+
+    def prepare(self, event: CommitEvent) -> PreparedIngestion:
+        parsed_files = tuple(
+            parsed
+            for path in event.changed_paths
+            if (parsed := self._parse_path(event, path)) is not None
+        )
+        vector_records: list[VectorRecord] = []
+        for parsed in parsed_files:
+            _stamp_lamport(parsed, self._clock.tick())
+            vector_records.extend(self._embedding_records(parsed))
+        return PreparedIngestion(
+            parsed_files=parsed_files,
+            vector_records=tuple(vector_records),
+            lamport_clock=self._clock.value,
+        )
+
+    def apply(
+        self,
+        prepared: PreparedIngestion,
+        *,
+        apply_schema: bool = True,
+    ) -> dict[str, int]:
+        if apply_schema:
+            self._writer.apply_schema()
+        entities = 0
+        relations = 0
+        for parsed in prepared.parsed_files:
+            counts = self._writer.upsert_parsed_file(parsed)
+            entities += counts["entities"]
+            relations += counts["relations"]
+        embeddings = 0
+        if self._embedding_sink is not None:
+            embeddings = self._embedding_sink.upsert_records(list(prepared.vector_records))
+        return {"entities": entities, "relations": relations, "embeddings": embeddings}
 
     def _parse_path(self, event: CommitEvent, path: str) -> ParsedFile | None:
         full_path = self._repo_root / path
@@ -116,9 +143,9 @@ class CommitIngestionPipeline:
             return parse_document_file(tenant_id=event.tenant_id, repo_id=event.repo_id, path=path, source=source)
         return None
 
-    def _upsert_embeddings(self, parsed: ParsedFile) -> int:
+    def _embedding_records(self, parsed: ParsedFile) -> list[VectorRecord]:
         if self._embedding_sink is None:
-            return 0
+            return []
         with traced_span(
             "ingestion.embedding_upsert",
             correlation_id="",
@@ -137,7 +164,7 @@ class CommitIngestionPipeline:
                 )
                 for entity, text, embedding in zip(parsed.entities, texts, vectors, strict=True)
             ]
-            return self._embedding_sink.upsert_records(records)
+            return records
 
 
 def _stamp_lamport(parsed: ParsedFile, value: int) -> None:

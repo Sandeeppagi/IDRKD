@@ -19,4 +19,13 @@ topics:
     retention: 7d
     key: entity_id
     schema: ReindexRequest.v1
-
+  ingestion-repair:
+    partitions: 6
+    retention: 30d
+    key: repo_id
+    schema: IngestionFailure.v1
+  ingestion-dlq:
+    partitions: 6
+    retention: 30d
+    key: repo_id
+    schema: IngestionFailure.v1

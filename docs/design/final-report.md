@@ -629,7 +629,7 @@ At the cluster level, a nightly Celery Beat task evaluates domain-level drift ac
 
 Phase 3: The Decision Gate: When entities become stale, the system gauges the graph’s overall health by calculating the ratio of stale nodes to active nodes. If the ratio signals large-scale changes, such as a framework migration, the system skips Celery queueing and schedules a Full System Re-index. Otherwise, it issues a selective 2-Hop Re-index request to a Redis FIFO queue at redis://redis:6379/0. Phase 4: Asynchronous Re-index Engine: A pool of Celery workers pulls tasks from Redis and runs a five-step extraction pipeline. First, each worker retrieves the two-hop neighborhood of the stale node using a parameterised Neo4j Cypher Breadth-First Search query (MATCH p=(n:CodeEntity {id:$id})-[*1..2]-(m)), which specifies the local impact region. Second, it resolves the associated source file paths. Third, it re-parses those files with Tree-sitter for Python and JavaScript ASTs and SpanBERT for unstructured documents, producing updated entities and relationships.
 
-Next, the system carries out an atomic logical transaction: raw file blobs are stored in the object store, structural metadata is updated in Neo4j using parameterised MERGE statements, and updated embeddings are written to Postgres via pgvector. After a successful commit, the stale and staled_at properties are deleted, the entities are marked as fresh, and the system waits for the next commit.
+Next, the system carries out a compensating logical transaction: raw file blobs are stored in the object store, before-images are staged in Postgres, structural metadata is updated in Neo4j using parameterised MERGE statements, and updated embeddings are written through pgvector. After success, the Postgres journal and `entity-changed` outbox are committed together. On failure, scoped compensations restore the before-images; this is not a cross-store ACID commit.
 
 Phase 5: Back-Pressure and Fairness Controls: To manage large ingestion bursts, the scheduling layer uses two safeguards. Redis sorted sets provide a priority queue with per-tenant rate limiting, ensuring that no repository uses more than 30% of the active re-indexing workers. Prometheus monitors the reindex_lag_seconds metric; if a tenant’s p95 re-indexing lag exceeds 5 minutes, the system creates a warning ticket and triggers a critical alert, instructing Site Reliability Engineering (SRE) to scale the Celery workers.
 
@@ -818,7 +818,7 @@ This chapter maps the six-pillar design to the research prototype. To avoid conf
 
 | Phase | Timeline | Work delivered | Status |
 | --- | --- | --- | --- |
-| 1. Foundation and ingestion MVP | Weeks 1–2 | Docker Compose stack; Tree-sitter ingestion for Python/JavaScript; direct writes to Neo4j and pgvector. Kafka consumption, object archival, and cross-store repair remain design targets. | Partial |
+| 1. Foundation and ingestion MVP | Weeks 1–2 | Docker Compose stack; signed webhook; manual-commit Kafka consumer; immutable MinIO archive; Tree-sitter ingestion; Postgres saga journal/outbox; Neo4j and pgvector writes; compensating rollback, repair worker, and DLQ. Repository checkout automation and production retry tuning remain deployment work. | Implemented; deployment validation pending |
 | 2. Graph and retrieval MVP | Weeks 3–4 | Parameterised graph traversal, vector search, Reciprocal Rank Fusion (RRF), reranking, and query–answer flow. | Implemented |
 | 3. MCP tool gateway | Weeks 5–6 | JSON-RPC 2.0-style tools with Pydantic schema validation, tenant checks, metrics, and structured errors. Durable audit persistence remains partial. | Partial |
 | 4. MCP-TaskBench | Weeks 7–8 | 440 internal cases, case-aligned scoring, deterministic train/holdout split, and live-model conformance execution. Independent authorship and human grading remain future work. | Implemented internally |
@@ -830,11 +830,11 @@ This chapter maps the six-pillar design to the research prototype. To avoid conf
 
 ## 5.2 P1 — Structural Ingestion with Deterministic Fingerprints
 
-The executable ingestion path accepts typed commit events, applies Tree-sitter [55] to modified files, and upserts derived entities, edges, and optional embeddings. A webhook-to-Kafka producer boundary and event serialization are implemented, while a production Kafka consumer, raw-object archival, and the multi-store repair sequence remain design work. Deterministic content fingerprints and Neo4j `MERGE` operations provide idempotent entity identity. Algorithm 1 therefore specifies the intended complete event-driven workflow rather than claiming that every step is deployed.
+The executable ingestion path accepts HMAC-authenticated commit webhooks, waits for Kafka broker acknowledgement, and consumes typed events with manual offset commits. It stores content-addressed source blobs and an immutable event manifest in MinIO before parsing, stages deterministic IDs and before-images in a Postgres saga journal, and then writes Neo4j and pgvector. A transactional outbox publishes `entity-changed` after commit. Deterministic fingerprints and Neo4j `MERGE` operations provide idempotent identity; duplicate event IDs are not applied again.
 
 Algorithm 1: Idempotent structural ingestion
 
-procedure INGEST_TARGET(change_event): artifact ← fetch(change_event.uri); archive(artifact) // object-store step is not yet wired tree ← TreeSitter.parse(artifact) for each entity e extracted from tree: fp ← SHA256(canonicalise(e.content) ‖ e.kind ‖ e.path) graph.upsert(e, fp); vectors.upsert(e.id, embed(e.text)) for each relationship r extracted from tree: graph.upsert_edge(r.src, r.type, r.dst) emit(affected_set) // future Kafka drift topic
+procedure INGEST_TARGET(change_event): verify_hmac(change_event); archive_manifest ← archive_immutable(change_event.files); staged ← persist_plan_and_before_images(change_event, archive_manifest); try: graph.upsert(staged.entities, staged.relations); vectors.upsert(staged.embeddings); commit_journal_and_outbox(staged, "entity-changed") catch error: compensate_vectors(staged.before_vectors); compensate_graph(staged.before_graph); publish_dlq(error); if compensation_failed: publish_repair(error)
 
 ---
 
@@ -921,7 +921,7 @@ Values for θ_e, θ_c, and neighbourhood radius r are selected using a held-out 
 
 ## 5.7 Deployment and Operational Considerations
 
-The reference Docker Compose environment defines Kafka, Neo4j, Postgres with pgvector, Redis, MinIO, observability services, the MCP gateway, a separate AutoGen A2A reconciliation service, re-index workers, and optional local model serving. LangGraph runs in the query/evaluation process rather than as a standalone service. A Kafka ingestion-consumer service is still absent. The release package captures model/runtime evidence, while complete container digests and training-run provenance remain to be added.
+The reference Docker Compose environment defines Kafka and topic bootstrap, Neo4j, Postgres with pgvector, Redis, MinIO, observability services, signed ingestion webhook, ingestion and repair workers, the MCP gateway, a separate AutoGen A2A reconciliation service, re-index workers, and optional local model serving. LangGraph runs in the query/evaluation process rather than as a standalone service. The release package captures model/runtime evidence, while complete container digests, a production secret manager, and training-run provenance remain to be added.
 
 Implementation explicitly required observability, bounded execution, and replay. For every tool call, delegation, and re-index decision, the system produces structured records, which proved essential for debugging. The implementation sets limits for critic iterations, traversal depth, per-query tool calls, and A2A timeouts, thereby converting worst-case latency into an explicit system parameter. In addition, keeping raw artefacts, fingerprints, and audit histories enables previously generated answers to be regenerated and examined, supporting both engineering analysis and scientific reproducibility.
 
@@ -929,9 +929,9 @@ An important implementation finding emerged from schema evolution within the too
 
 ## 5.8 Detailed Runtime and Resilience Flows
 
-### 5.8.1 Event-Driven Ingestion and Logical Transaction The prototype exposes a typed Git-commit webhook and Kafka producer adapter, plus a direct ingestion pipeline that parses changed paths and writes Neo4j and pgvector. Webhook signature verification, a runnable Kafka consumer, MinIO archival, entity-change publication, and the repair dead-letter flow are not present in the executable stack. Kafka replay and the logical transaction sequence below are therefore resilience design targets rather than measured implementation behavior [39].
+### 5.8.1 Event-Driven Ingestion and Logical Transaction The prototype exposes an HMAC-verified Git-commit webhook, Kafka producer, manual-commit consumer, immutable MinIO source archive, Postgres saga journal and outbox, Neo4j and pgvector writers, and dedicated repair and dead-letter topics. Invalid Kafka records are routed to the DLQ so that a poison record cannot indefinitely block a partition. Kafka offsets advance only after the saga result and its pending outbox messages have been durably published [39].
 
-The proposed logical transaction stores raw content first, stages Postgres updates, commits Neo4j, and then completes Postgres, with repair messages for partial failure. The current prototype relies on idempotent Neo4j and pgvector upserts but does not implement this coordinator. It must not be treated as evidence of cross-store atomicity.
+The logical transaction stores raw content first, snapshots affected graph and vector records, and persists the staged plan before either destination is changed. On a later failure, compensation deletes records created by the event and restores overwritten records from their before-images. If compensation itself fails, the journal remains in `repair_required`, a repair notification is emitted, and the repair worker retries from the durable plan. The final journal transition and outbox inserts share one Postgres transaction. This coordinator provides replayable saga semantics; it must not be treated as evidence of cross-store ACID atomicity.
 
 ---
 
@@ -973,9 +973,9 @@ BGE-M3 supplies the initial bi-encoder representations, pgvector HNSW performs a
 | --- | --- | --- |
 | Webhook cannot publish to Kafka | Return HTTP 503 and rely on source-control webhook retry | No unlogged ingestion acceptance |
 | Tree-sitter contains ERROR nodes | Skip the invalid subtree, continue valid extraction, and emit a warning | Partial progress with visible data-quality status |
-| Neo4j transient deadlock | Exponential backoff with three attempts, then repair dead-letter queue | Bounded retry and replayable failure |
-| Postgres commit fails after Neo4j commit | Emit idempotent repair event | Restore graph-vector consistency |
-| Object-store write fails | Retry three times; fail the ingestion if still unavailable | Raw source remains a hard prerequisite for replay |
+| Neo4j write fails | Restore graph/vector before-images; emit repair and DLQ messages if compensation fails | Replayable failure without accepting a partial logical commit |
+| Postgres commit fails after Neo4j commit | Compensate graph and vector writes; retain `repair_required` state when restoration fails | Restore graph-vector consistency |
+| Object-store write fails | Stop before graph/vector mutation and emit a DLQ record | Raw source remains a hard prerequisite for replay |
 | MCP tool timeout | Return a structured timeout error and record duration | Agent may recover without hallucinating a result |
 | A2A target unavailable | Retry with jitter, apply circuit breaker, then return controlled delegation failure | Protect the main query path from indefinite waiting |
 | Re-index queue pressure | Per-tenant rate limits and fair scheduling | Prevent one noisy repository from monopolising workers |
