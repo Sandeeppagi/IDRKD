@@ -283,7 +283,7 @@ def write_manifest(output_dir: Path, manifest: ModelArtifactManifest) -> Path:
 
 def _load_quantization_modules() -> dict[str, Any]:
     try:
-        from datasets import Dataset  # type: ignore[import-untyped]
+        from datasets import Dataset
         from llmcompressor import oneshot  # type: ignore[import-not-found]
         from llmcompressor.modifiers.quantization import (  # type: ignore[import-not-found]
             QuantizationModifier,

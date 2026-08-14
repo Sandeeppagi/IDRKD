@@ -97,3 +97,13 @@ target-version = "py311"
 python_version = "3.11"
 strict = true
 packages = ["idrkd"]
+
+[[tool.mypy.overrides]]
+module = [
+  "datasets",
+  "peft",
+  "sentence_transformers",
+  "torch",
+  "transformers",
+]
+ignore_missing_imports = true
